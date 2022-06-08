@@ -1,3 +1,16 @@
+const fs = require("fs");
+const fsp = fs.promises;
+const deepFreeze = require("./deepFreeze");
+
+async function exists(filepath, mode) {
+  try {
+    await fsp.access(filepath, mode);
+    return true;
+  } catch (ex) {
+    return false;
+  }
+}
+
 class EPP extends Error {
   constructor(message, code, otherInfo = {}) {
     super(message);
@@ -47,8 +60,15 @@ function makeEnum({ keys, startingValue = 1 }) {
   return Object.freeze(_enum);
 }
 
+function isDatesEqual(dateA, dateB) {
+  return dateA.toLocaleDateString() === dateB.toLocaleDateString();
+}
+
 module.exports = {
   EPP,
+  exists,
   required,
   makeEnum,
+  deepFreeze,
+  isDatesEqual,
 };
