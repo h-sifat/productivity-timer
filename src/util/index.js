@@ -64,6 +64,15 @@ function isDatesEqual(dateA, dateB) {
   return dateA.toLocaleDateString() === dateB.toLocaleDateString();
 }
 
+function assertNonNullObject({
+  object,
+  name = "object",
+  errorCode = "NOT_NON_NULL_OBJECT",
+}) {
+  if (typeof object !== "object" || object === null)
+    throw new EPP(`${name} must be a non null object.`, errorCode);
+}
+
 module.exports = {
   EPP,
   exists,
@@ -71,4 +80,5 @@ module.exports = {
   makeEnum,
   deepFreeze,
   isDatesEqual,
+  assertNonNullObject,
 };

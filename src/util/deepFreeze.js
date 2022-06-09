@@ -1,5 +1,5 @@
 module.exports = function deepFreeze(object) {
-  if (typeof object !== "object") return object;
+  if (object === null || typeof object !== "object") return object;
 
   if (Array.isArray(object)) return Object.freeze(object.map(deepFreeze));
 
