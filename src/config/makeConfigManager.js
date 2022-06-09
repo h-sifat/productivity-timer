@@ -28,6 +28,19 @@ module.exports = function makeConfigManager({
     #savedTimers = {};
     #beepDuration = 10_000;
 
+    /**
+     * @type {{
+     *    ROOT_DIR: string;
+     *    TIMER_LOGS_DIR: string;
+     *    ERROR_LOGS_DIR: string;
+     * }}
+     */
+    #constants = Object.freeze({
+      ROOT_DIR: TIMER_DIR_PATH,
+      TIMER_LOGS_DIR: TIMER_LOGS_DIR_PATH,
+      ERROR_LOGS_DIR: ERROR_LOGS_DIR_PATH,
+    });
+
     #isInitiated = false;
 
     static #instance = null;
@@ -123,23 +136,23 @@ module.exports = function makeConfigManager({
 
     /**
      * @returns {{
-     *  rootDir: string;
      *  beepDuration: number,
-     *  timerLogsDir: string,
-     *  errorLogsDir: string,
      *  savedTimers: { [key: string]: {name: string, duration: number, description: string} },
      * }}
      * */
-    getConfig() {
+    async getConfig() {
+      await this.#readConfigFile();
+
       const config = {
-        rootDir: TIMER_DIR_PATH,
         beepDuration: this.#beepDuration,
-        timerLogsDir: TIMER_LOGS_DIR_PATH,
-        errorLogsDir: ERROR_LOGS_DIR_PATH,
         savedTimers: { ...this.#savedTimers },
       };
 
       return deepFreeze(config);
+    }
+
+    get constants() {
+      return this.#constants;
     }
   };
 };

@@ -36,6 +36,6 @@ function off() {
   toggleSpeaker();
 }
 
-const speaker = { on, off };
+const Speaker = { on, off };
 
-module.exports = speaker;
+module.exports = Speaker;
