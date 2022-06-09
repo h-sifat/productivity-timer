@@ -73,6 +73,34 @@ function assertNonNullObject({
     throw new EPP(`${name} must be a non null object.`, errorCode);
 }
 
+async function mkdirIfDoesNotExist(arg) {
+  const dir = arg.dir;
+  const {
+    mkdirFailedMessage = `Couldn't create directory: "${dir}"`,
+    dirInaccessibleMessage = `Directory "${dir}" is inaccessible.`,
+  } = arg;
+
+  if (await exists(dir)) {
+    const hasReadWritePermission = await exists(
+      dir,
+      fs.constants.R_OK | fs.constants.W_OK // with read and write permission
+    );
+
+    if (!hasReadWritePermission)
+      throw new EPP(dirInaccessibleMessage, "DIR_INACCESSIBLE", {
+        originalError: ex,
+      });
+  } else {
+    try {
+      await fsp.mkdir(dir, { recursive: true });
+    } catch (ex) {
+      throw new EPP(mkdirFailedMessage, "COULD_NOT_CREATE_DIR", {
+        originalError: ex,
+      });
+    }
+  }
+}
+
 module.exports = {
   EPP,
   exists,
@@ -80,5 +108,6 @@ module.exports = {
   makeEnum,
   deepFreeze,
   isDatesEqual,
+  mkdirIfDoesNotExist,
   assertNonNullObject,
 };

@@ -1,69 +1,63 @@
-module.exports = function makeTimerLogger({
-  fs,
+module.exports = function makeLogger({
   EPP,
   fsp,
   path,
-  exists,
   required,
   deepFreeze,
   isDatesEqual,
+  mkdirIfDoesNotExist,
 }) {
-  return class TimerLogger {
+  return class Logger {
     #logsDir;
+    #cache = [];
     #currentLogFile;
     #currentDate = new Date();
-    #cache = [];
+    #logObjectNormalizer = (logObject) => logObject;
 
     constructor(arg = {}) {
-      const { logsDir = required("logsDir") } = arg;
+      const { logsDir = required("logsDir"), logObjectNormalizer } = arg;
       if (typeof logsDir !== "string" || !logsDir.length)
         throw new EPP(
           `Invalid logs directory: "${logsDir}"`,
           "INVALID_LOGS_DIR"
         );
 
+      if (logObjectNormalizer) {
+        if (typeof logObjectNormalizer !== "function")
+          throw new EPP(
+            `Log object normalizer must be of type function.`,
+            "INVALID_LOG_OBJECT_NORMALIZER"
+          );
+
+        this.#logObjectNormalizer = logObjectNormalizer;
+      }
+
       this.#logsDir = path.resolve(logsDir);
       this.#currentLogFile = this.#getLogFilePath(this.#currentDate);
     }
 
     async init() {
-      if (await exists(this.#logsDir)) {
-        const hasReadWritePermission = await exists(
-          this.#logsDir,
-          fs.constants.R_OK | fs.constants.W_OK // with read and write permission
-        );
-
-        if (!hasReadWritePermission)
-          throw new EPP(
-            `Logs directory "${this.#logsDir}" is not accessible.`,
-            "LOGS_DIR_INACCESSIBLE"
-          );
-      } else {
-        try {
-          await fsp.mkdir(this.#logsDir, { recursive: true });
-        } catch (ex) {
-          throw new EPP(
-            `Couldn't create logs directory: "${this.#logsDir}"`,
-            "MAKE_LOGS_DIR_FAILED"
-          );
-        }
-      }
+      await mkdirIfDoesNotExist({ dir: this.#logsDir });
 
       const logs = await this.#getLogsFromFile(this.#currentLogFile);
-
       this.#cache = logs.map(deepFreeze);
     }
 
-    async getAllLogsOfToday() {
-      this.#refreshDateAndLogFilePath();
-      return await this.#getLogsFromFile(this.#currentLogFile);
+    async getLogs(date) {
+      if (!date) {
+        this.#refreshDateAndLogFilePath();
+        return await this.#getLogsFromFile(this.#currentLogFile);
+      }
+
+      const logFilePath = this.#getLogFilePath(date);
+      return await this.#getLogsFromFile(logFilePath);
     }
 
     async log(logObject) {
       this.#refreshDateAndLogFilePath();
 
+      logObject = this.#logObjectNormalizer(logObject);
       const stringifiedLog = JSON.stringify(logObject) + ",\n";
-      // @TODO error handling and if deleted create the file again
       await fsp.appendFile(this.#currentLogFile, stringifiedLog, "utf8");
 
       this.#cache.push(logObject);

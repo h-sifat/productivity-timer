@@ -2,18 +2,23 @@ const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 
-const { isDatesEqual, required, EPP, exists, deepFreeze } = require("../util");
-const makeTimerLogger = require("./makeTimerLogger");
-
-const TimerLogger = makeTimerLogger({
-  fs,
+const {
   EPP,
-  fsp,
-  path,
-  exists,
   required,
   deepFreeze,
   isDatesEqual,
+  mkdirIfDoesNotExist,
+} = require("../util");
+const makeLogger = require("./makeLogger");
+
+const Logger = makeLogger({
+  EPP,
+  fsp,
+  path,
+  required,
+  deepFreeze,
+  isDatesEqual,
+  mkdirIfDoesNotExist,
 });
 
-module.exports = TimerLogger;
+module.exports = Logger;
