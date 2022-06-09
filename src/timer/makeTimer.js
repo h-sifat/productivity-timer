@@ -4,6 +4,8 @@ module.exports = function makeTimer(arg) {
     required,
     TIMER_STATES,
     TIMER_CONSTANTS,
+    validateTimerInfo,
+    assertNonNullObject,
     INVALID_STATE_MESSAGES,
   } = arg;
 
@@ -12,46 +14,31 @@ module.exports = function makeTimer(arg) {
     #timerId;
     #duration;
     #callback;
+    #description;
     #events = [];
     #remainingTime;
     #elapsedTime = 0;
     #state = TIMER_STATES.NOT_STARTED;
 
     constructor(arg = {}) {
-      if (typeof arg !== "object" || !arg)
-        throw new EPP(
-          "Argument to timer constructor must a non null object.",
-          "ARG_NOT_OBJECT"
-        );
+      assertNonNullObject({
+        object: arg,
+        name: "Argument to Timer constructor",
+        errorCode: "ARG_NOT_OBJECT",
+      });
 
-      const {
-        name = required("name"),
-        duration = required("duration"),
-        callback = required("callback"),
-      } = arg;
-
-      if (
-        typeof name !== "string" ||
-        !name.length ||
-        name.length > TIMER_CONSTANTS.MAX_NAME_LENGTH
-      )
-        throw new EPP(`Invalid name: "${name}".`, "INVALID_NAME");
-
-      if (
-        typeof duration !== "number" ||
-        !Number.isInteger(duration) ||
-        duration < TIMER_CONSTANTS.MIN_DURATION_SECONDS ||
-        duration > TIMER_CONSTANTS.MAX_DURATION_SECONDS
-      )
-        throw new EPP(`Invalid duration: "${duration}".`, "INVALID_DURATION");
+      const { callback = required("callback") } = arg;
 
       if (typeof callback !== "function")
-        throw new EPP("duration must be a function", "INVALID_CALLBACK");
-
-      this.#name = name;
+        throw new EPP("callback must be a function", "INVALID_CALLBACK");
       this.#callback = callback;
+
+      const timerInfo = validateTimerInfo(arg);
+
+      this.#name = timerInfo.name;
+      this.#description = timerInfo.description;
       this.#duration = this.#remainingTime =
-        duration * TIMER_CONSTANTS.MS_IN_ONE_SECOND;
+        timerInfo.duration * TIMER_CONSTANTS.MS_IN_ONE_SECOND;
     }
 
     /**
@@ -205,6 +192,7 @@ module.exports = function makeTimer(arg) {
      *  name: string,
      *  state: string,
      *  duration: number,
+     *  description: string,
      *  events: ({name: "start" | "end" | "time_up" | "pause" | "resume", time: number})[],
      *  elapsedTime: number,
      *  remainingTime: number,
@@ -215,6 +203,7 @@ module.exports = function makeTimer(arg) {
         name: this.#name,
         duration: this.#duration,
         events: [...this.#events],
+        description: this.#description,
         elapsedTime: this.#elapsedTime,
         state: TIMER_STATES[this.#state],
         remainingTime: this.#remainingTime,

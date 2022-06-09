@@ -16,6 +16,7 @@ const VALID_TIMER_ARG = Object.freeze({
   name: TIMER_NAME,
   callback: () => {},
   duration: TIMER_DURATION_SEC,
+  description: "testing",
 });
 
 let globalTestTimer;
@@ -34,6 +35,7 @@ describe("timer.info", () => {
       elapsedTime: 0,
       name: TIMER_NAME,
       events: expect.any(Array),
+      description: expect.any(String),
       state: TIMER_STATES[TIMER_STATES.NOT_STARTED],
       duration: TIMER_DURATION_SEC * MS_IN_ONE_SECOND,
       remainingTime: TIMER_DURATION_SEC * MS_IN_ONE_SECOND,
@@ -153,8 +155,9 @@ describe("Timer.start", () => {
           remainingTime: 0,
           name: expect.any(String),
           events: expect.any(Array),
-          state: TIMER_STATES[TIMER_STATES.TIMED_UP],
           duration: expect.any(Number),
+          description: expect.any(String),
+          state: TIMER_STATES[TIMER_STATES.TIMED_UP],
           elapsedTime: VALID_TIMER_ARG.duration * MS_IN_ONE_SECOND,
         });
 
