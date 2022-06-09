@@ -7,7 +7,7 @@ module.exports = function makeValidateTimerInfo({
     let {
       name = required("name"),
       duration = required("duration"),
-      description = required("description"),
+      description = "",
     } = arg;
 
     if (
@@ -25,7 +25,6 @@ module.exports = function makeValidateTimerInfo({
     )
       throw new EPP(`Invalid duration: "${duration}".`, "INVALID_DURATION");
 
-    if (!description) description = "";
     if (
       typeof description !== "string" ||
       description.length > TIMER_CONSTANTS.MAX_DESCRIPTION_LENGTH
