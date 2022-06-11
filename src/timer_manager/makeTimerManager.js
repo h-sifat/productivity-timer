@@ -9,14 +9,23 @@ module.exports = function makeTimerManager({
    * A singleton that manages CRUD operations on timers
    * */
   return class TimerManager {
+    #speaker;
     #timerLogger;
     #currentTimer;
     #timerLogsDir = configManager.constants.TIMER_LOGS_DIR;
 
     #beepDuration;
     #savedTimers = {};
+    #isBeeping = false;
+    #setIsBeepingToTrue = () => {
+      this.#isBeeping = true;
+    };
+    #setIsBeepingToFalse = () => {
+      this.#isBeeping = false;
+    };
+
     #timerCallback = async (timerInfo) => {
-      Speaker.on(this.#beepDuration);
+      this.#speaker.on(this.#beepDuration);
       await this.#timerLogger.log(timerInfo);
     };
 
@@ -39,6 +48,11 @@ module.exports = function makeTimerManager({
       this.#timerLogger = new Logger({ logsDir: this.#timerLogsDir });
       await this.#timerLogger.init();
 
+      this.#speaker = new Speaker({
+        onCallback: this.#setIsBeepingToTrue,
+        offCallback: this.#setIsBeepingToFalse,
+      });
+
       this.#isInitiated = true;
     }
 
@@ -58,6 +72,12 @@ module.exports = function makeTimerManager({
 
     async #execute(commandObject) {
       const { command, arg } = commandObject;
+
+      if (this.#isBeeping) {
+        this.#stopBeeping();
+
+        if (command === "STOP_BEEPING") return;
+      }
 
       const isTimerCommandWithoutArg =
         // if commandName is a timer command AND
@@ -93,6 +113,10 @@ module.exports = function makeTimerManager({
             message: `Invalid command: "${command}"`,
           };
       }
+    }
+
+    #stopBeeping() {
+      this.#speaker.off();
     }
 
     async #saveTimer(timerInfo) {

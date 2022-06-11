@@ -28,6 +28,7 @@ const commandAliases = Object.freeze({
   p: "PAUSE",
   c: "CREATE",
   st: "START",
+  sb: "STOP_BEEPING",
   uc: "UPDATE_CONFIG",
   lst: "LIST_SAVED_TIMERS",
   dst: "DELETE_SAVED_TIMER",
