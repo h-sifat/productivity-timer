@@ -10,11 +10,13 @@ const {
 
 const makeConfigManager = require("./makeConfigManager");
 const { TIMER_CONSTANTS, validateTimerInfo } = require("../timer");
+const notify = require("../notifier");
 
 const ConfigManager = makeConfigManager({
   EPP,
   fsp,
   path,
+  notify,
   exists,
   deepFreeze,
   validateTimerInfo,
