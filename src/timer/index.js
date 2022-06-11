@@ -1,14 +1,28 @@
 const makeTimer = require("./makeTimer");
 const makeValidateTimerInfo = require("./makeValidateTimerInfo");
-const { makeEnum, EPP, required, assertNonNullObject } = require("../util");
+const {
+  EPP,
+  makeEnum,
+  required,
+  convertToMilliSeconds,
+  assertNonNullObject,
+} = require("../util");
 
 const TIMER_CONSTANTS = Object.freeze({
   MAX_NAME_LENGTH: 30,
   MS_IN_ONE_SECOND: 1000,
-  MIN_DURATION_SECONDS: 2,
-  MAX_DURATION_SECONDS: 24 * 60 * 60, // 24 hours
+  MIN_DURATION_MS: 2 * 1000,
   MAX_DESCRIPTION_LENGTH: 100,
+  MAX_DURATION_MS: 24 * 60 * 60 * 1000, // 24 hours
   SUCCESS_RESULT: Object.freeze({ success: true }),
+  VALID_DURATION_UNITS: Object.freeze([
+    "s",
+    "m",
+    "h",
+    "hour",
+    "second",
+    "minute",
+  ]),
 });
 
 const TIMER_STATES = makeEnum({
@@ -27,6 +41,7 @@ const validateTimerInfo = makeValidateTimerInfo({
   EPP,
   required,
   TIMER_CONSTANTS,
+  convertToMilliSeconds,
 });
 
 const Timer = makeTimer({

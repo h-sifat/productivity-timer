@@ -11,13 +11,15 @@ module.exports = function makeTimer(arg) {
 
   return class Timer {
     #name;
+    #unit;
     #timerId;
     #duration;
     #callback;
+    #durationMS;
     #description;
     #events = [];
-    #remainingTime;
-    #elapsedTime = 0;
+    #remainingTimeMS;
+    #elapsedTimeMS = 0;
     #state = TIMER_STATES.NOT_STARTED;
 
     constructor(arg = {}) {
@@ -33,12 +35,14 @@ module.exports = function makeTimer(arg) {
         throw new EPP("callback must be a function", "INVALID_CALLBACK");
       this.#callback = callback;
 
-      const timerInfo = validateTimerInfo(arg);
+      const { name, unit, duration, durationMS, description } =
+        validateTimerInfo(arg);
 
-      this.#name = timerInfo.name;
-      this.#description = timerInfo.description;
-      this.#duration = this.#remainingTime =
-        timerInfo.duration * TIMER_CONSTANTS.MS_IN_ONE_SECOND;
+      this.#unit = unit;
+      this.#name = name;
+      this.#duration = duration;
+      this.#durationMS = this.#remainingTimeMS = durationMS;
+      this.#description = description;
     }
 
     /**
@@ -138,9 +142,9 @@ module.exports = function makeTimer(arg) {
       clearInterval(this.#timerId);
 
       this.#events = [];
-      this.#elapsedTime = 0;
+      this.#elapsedTimeMS = 0;
       this.#timerId = undefined;
-      this.#remainingTime = this.#duration;
+      this.#remainingTimeMS = this.#durationMS;
       this.#state = TIMER_STATES.NOT_STARTED;
 
       return TIMER_CONSTANTS.SUCCESS_RESULT;
@@ -152,14 +156,14 @@ module.exports = function makeTimer(arg) {
      * increment and decrement) if `remainingTime <= 0`.
      */
     #tick() {
-      this.#remainingTime -= TIMER_CONSTANTS.MS_IN_ONE_SECOND;
-      this.#elapsedTime += TIMER_CONSTANTS.MS_IN_ONE_SECOND;
+      this.#remainingTimeMS -= TIMER_CONSTANTS.MS_IN_ONE_SECOND;
+      this.#elapsedTimeMS += TIMER_CONSTANTS.MS_IN_ONE_SECOND;
 
-      if (this.#remainingTime <= 0) this.#timeUp();
+      if (this.#remainingTimeMS <= 0) this.#timeUp();
     }
 
     /**
-     * Should only be called by the `Timer.#tick()` method and performs the
+     * Should only be called by the `Timer.#tick()` method. It performs the
      * following tasks.
      * 1. Clears the tick interval
      * 1. Pushes the `"time_up"` event in `Timer.#events` array
@@ -192,21 +196,31 @@ module.exports = function makeTimer(arg) {
      *  name: string,
      *  state: string,
      *  duration: number,
+     *  durationMS: number,
+     *  unit: "s" | "m" | "h" | "hour" | "second" | "minute"
      *  description: string,
      *  events: ({name: "start" | "end" | "time_up" | "pause" | "resume", time: number})[],
-     *  elapsedTime: number,
-     *  remainingTime: number,
+     *  elapsedTimeMS: number,
+     *  remainingTimeMS: number,
      * }}
      * */
-    info() {
-      return {
+    info({ brief = false } = {}) {
+      const briefInfo = {
         name: this.#name,
+        unit: this.#unit,
         duration: this.#duration,
-        events: [...this.#events],
         description: this.#description,
-        elapsedTime: this.#elapsedTime,
+      };
+
+      if (brief) return briefInfo;
+
+      return {
+        ...briefInfo,
+        events: [...this.#events],
+        durationMS: this.#durationMS,
         state: TIMER_STATES[this.#state],
-        remainingTime: this.#remainingTime,
+        elapsedTimeMS: this.#elapsedTimeMS,
+        remainingTimeMS: this.#remainingTimeMS,
       };
     }
   };

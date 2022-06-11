@@ -101,6 +101,20 @@ async function mkdirIfDoesNotExist(arg) {
   }
 }
 
+function convertToMilliSeconds({ duration, unit }) {
+  const msPerUnit = Object.freeze({
+    s: 1000,
+    m: 60000,
+    h: 3600000,
+    second: 1000,
+    minute: 60000,
+    hour: 3600000,
+  });
+
+  if (unit in msPerUnit) return duration * msPerUnit[unit];
+  throw new EPP(`Unknown time unit "${unit}"`, "INVALID_TIME_UNIT");
+}
+
 module.exports = {
   EPP,
   exists,
@@ -108,6 +122,7 @@ module.exports = {
   makeEnum,
   deepFreeze,
   isDatesEqual,
+  convertToMilliSeconds,
   mkdirIfDoesNotExist,
   assertNonNullObject,
 };

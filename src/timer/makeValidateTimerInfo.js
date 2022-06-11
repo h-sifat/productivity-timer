@@ -1,12 +1,14 @@
 module.exports = function makeValidateTimerInfo({
-  TIMER_CONSTANTS,
   EPP,
   required,
+  TIMER_CONSTANTS,
+  convertToMilliSeconds,
 }) {
   return function validateTimerInfo(arg) {
     let {
       name = required("name"),
       duration = required("duration"),
+      unit = required("unit"),
       description = "",
     } = arg;
 
@@ -18,11 +20,12 @@ module.exports = function makeValidateTimerInfo({
       throw new EPP(`Invalid name: "${name}".`, "INVALID_NAME");
 
     if (
-      typeof duration !== "number" ||
-      !Number.isInteger(duration) ||
-      duration < TIMER_CONSTANTS.MIN_DURATION_SECONDS ||
-      duration > TIMER_CONSTANTS.MAX_DURATION_SECONDS
+      typeof unit !== "string" ||
+      !TIMER_CONSTANTS.VALID_DURATION_UNITS.includes(unit.toLowerCase())
     )
+      throw new EPP(`Invalid duration unit: "${unit}"`, "INVALID_TIME_UNIT");
+
+    if (typeof duration !== "number" || !Number.isInteger(duration))
       throw new EPP(`Invalid duration: "${duration}".`, "INVALID_DURATION");
 
     if (
@@ -34,6 +37,24 @@ module.exports = function makeValidateTimerInfo({
         "INVALID_DESCRIPTION"
       );
 
-    return { name, duration, description };
+    unit = unit.toLowerCase();
+    const durationMS = convertToMilliSeconds({ duration, unit });
+
+    if (
+      durationMS < TIMER_CONSTANTS.MIN_DURATION_MS ||
+      durationMS > TIMER_CONSTANTS.MAX_DURATION_MS
+    )
+      throw new EPP(
+        `duration must be within range: ${TIMER_CONSTANTS.MIN_DURATION_MS}ms to ${TIMER_CONSTANTS.MAX_DURATION_MS}ms`,
+        "INVALID_DURATION"
+      );
+
+    return {
+      name,
+      unit,
+      duration,
+      durationMS,
+      description,
+    };
   };
 };

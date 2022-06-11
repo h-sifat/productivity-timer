@@ -1,22 +1,19 @@
 const { TIMER_STATES, TIMER_CONSTANTS, Timer } = require("../../../src/timer");
+const { SUCCESS_RESULT, MIN_DURATION_MS, MS_IN_ONE_SECOND } = TIMER_CONSTANTS;
 
-const {
-  SUCCESS_RESULT,
-  MAX_NAME_LENGTH,
-  MS_IN_ONE_SECOND,
-  MIN_DURATION_SECONDS,
-  MAX_DURATION_SECONDS,
-} = TIMER_CONSTANTS;
-
-const TIMER_NAME = "coding";
-const TIMER_DURATION_SEC = MIN_DURATION_SECONDS;
+const TIMER_NAME = "name";
+const DURATION_UNIT = "s";
+const TIMER_DESCRIPTION = "desc";
+const TIMER_DURATION_SEC = MIN_DURATION_MS / MS_IN_ONE_SECOND;
+const TIMER_DURATION_MS = MIN_DURATION_MS;
 const FAILED_RESULT = Object.freeze({ success: false });
 
 const VALID_TIMER_ARG = Object.freeze({
   name: TIMER_NAME,
   callback: () => {},
+  unit: DURATION_UNIT,
   duration: TIMER_DURATION_SEC,
-  description: "testing",
+  description: TIMER_DESCRIPTION,
 });
 
 let globalTestTimer;
@@ -32,13 +29,24 @@ afterEach(() => {
 describe("timer.info", () => {
   it('returns state "NOT_STARTED" for new timers', () => {
     expect(globalTestTimer.info()).toEqual({
-      elapsedTime: 0,
+      elapsedTimeMS: 0,
       name: TIMER_NAME,
+      unit: DURATION_UNIT,
       events: expect.any(Array),
-      description: expect.any(String),
+      duration: TIMER_DURATION_SEC,
+      durationMS: TIMER_DURATION_MS,
+      description: TIMER_DESCRIPTION,
+      remainingTimeMS: TIMER_DURATION_MS,
       state: TIMER_STATES[TIMER_STATES.NOT_STARTED],
-      duration: TIMER_DURATION_SEC * MS_IN_ONE_SECOND,
-      remainingTime: TIMER_DURATION_SEC * MS_IN_ONE_SECOND,
+    });
+  });
+
+  it("returns brief timerInfo if the brief option is true", () => {
+    expect(globalTestTimer.info({ brief: true })).toEqual({
+      name: TIMER_NAME,
+      unit: DURATION_UNIT,
+      duration: TIMER_DURATION_SEC,
+      description: TIMER_DESCRIPTION,
     });
   });
 });
@@ -59,54 +67,6 @@ describe("Timer Constructor", () => {
       arg: {},
       errorCode: "MISSING_PROPERTY",
       case: "required property is missing",
-    },
-    {
-      arg: { ...VALID_TIMER_ARG, name: undefined },
-      errorCode: "MISSING_PROPERTY",
-      case: "required property is missing",
-    },
-    {
-      arg: { ...VALID_TIMER_ARG, duration: undefined },
-      errorCode: "MISSING_PROPERTY",
-      case: "required property is missing",
-    },
-    {
-      arg: { ...VALID_TIMER_ARG, callback: undefined },
-      errorCode: "MISSING_PROPERTY",
-      case: "required property is missing",
-    },
-    {
-      errorCode: "INVALID_NAME",
-      arg: { ...VALID_TIMER_ARG, name: "" },
-      case: `name is not a non-empty-string that is less then ${MAX_NAME_LENGTH} chars`,
-    },
-    {
-      errorCode: "INVALID_NAME",
-      arg: {
-        ...VALID_TIMER_ARG,
-        name: "a".repeat(MAX_NAME_LENGTH + 1),
-      },
-      case: `name is not a non-empty-string that is less then ${MAX_NAME_LENGTH} chars`,
-    },
-    {
-      errorCode: "INVALID_DURATION",
-      arg: { ...VALID_TIMER_ARG, duration: "hello" },
-      case: `duration is not an integer and not within range: {${MIN_DURATION_SECONDS},${MAX_DURATION_SECONDS}}`,
-    },
-    {
-      errorCode: "INVALID_DURATION",
-      arg: { ...VALID_TIMER_ARG, duration: 23.23 },
-      case: `duration is not an integer and not within range: {${MIN_DURATION_SECONDS},${MAX_DURATION_SECONDS}}`,
-    },
-    {
-      errorCode: "INVALID_DURATION",
-      arg: { ...VALID_TIMER_ARG, duration: MIN_DURATION_SECONDS - 1 },
-      case: `duration is not an integer and not within range: {${MIN_DURATION_SECONDS},${MAX_DURATION_SECONDS}}`,
-    },
-    {
-      errorCode: "INVALID_DURATION",
-      arg: { ...VALID_TIMER_ARG, duration: MAX_DURATION_SECONDS + 1 },
-      case: `duration is not an integer and not within range: {${MIN_DURATION_SECONDS},${MAX_DURATION_SECONDS}}`,
     },
     {
       arg: { ...VALID_TIMER_ARG, callback: "not a function" },
@@ -148,17 +108,19 @@ describe("Timer.start", () => {
     });
   });
 
-  it("calls the callback when the time is up", (done) => {
+  it("calls the callback with timerInfo when the time is up", (done) => {
     const callback = (data) => {
       try {
         expect(data).toEqual({
-          remainingTime: 0,
-          name: expect.any(String),
+          name: TIMER_NAME,
+          remainingTimeMS: 0,
+          unit: DURATION_UNIT,
           events: expect.any(Array),
-          duration: expect.any(Number),
-          description: expect.any(String),
+          duration: TIMER_DURATION_SEC,
+          durationMS: TIMER_DURATION_MS,
+          description: TIMER_DESCRIPTION,
+          elapsedTimeMS: TIMER_DURATION_MS,
           state: TIMER_STATES[TIMER_STATES.TIMED_UP],
-          elapsedTime: VALID_TIMER_ARG.duration * MS_IN_ONE_SECOND,
         });
 
         expect(data.events).toHaveLength(2); // start, time_up
@@ -291,17 +253,20 @@ describe("Timer.end()", () => {
     });
   });
 
-  it("calls the callback after ending a timer", (done) => {
+  it("calls the callback with timerInfo after ending a timer", (done) => {
     let localTestTimer;
 
     const callback = (data) => {
       try {
         expect(data).toMatchObject({
-          name: expect.any(String),
+          name: TIMER_NAME,
+          unit: DURATION_UNIT,
           events: expect.any(Array),
-          duration: expect.any(Number),
-          elapsedTime: expect.any(Number),
-          remainingTime: expect.any(Number),
+          duration: TIMER_DURATION_SEC,
+          durationMS: TIMER_DURATION_MS,
+          description: TIMER_DESCRIPTION,
+          elapsedTimeMS: expect.any(Number),
+          remainingTimeMS: expect.any(Number),
           state: TIMER_STATES[TIMER_STATES.ENDED],
         });
 
