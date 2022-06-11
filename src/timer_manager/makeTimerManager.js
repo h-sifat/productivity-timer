@@ -34,7 +34,7 @@ module.exports = function makeTimerManager({
       if (this.#isInitiated) return;
 
       await configManager.init();
-      await this.#updateConfig();
+      await this.#retrieveAndSetConfig();
 
       this.#timerLogger = new Logger({ logsDir: this.#timerLogsDir });
       await this.#timerLogger.init();
@@ -76,16 +76,16 @@ module.exports = function makeTimerManager({
         case "START":
           return this.#startTimer(arg);
         case "SAVE":
-          await this.#saveTimer();
+          await this.#saveTimer(arg);
           break;
         case "UPDATE_CONFIG":
-          await this.#updateConfig();
+          await this.#retrieveAndSetConfig();
           break;
         case "LIST_SAVED_TIMERS":
           return this.#listSavedTimers();
         case "DELETE_SAVED_TIMER":
           await configManager.deleteSavedTimer(arg);
-          await this.#updateConfig();
+          await this.#retrieveAndSetConfig();
           break;
         default:
           return {
@@ -95,23 +95,28 @@ module.exports = function makeTimerManager({
       }
     }
 
-    async #saveTimer() {
-      if (this.#currentTimer)
-        await configManager.saveTimer(
-          this.#getBasicTimerInfo(this.#currentTimer)
-        );
-      else return { success: false, message: "No timer exists." };
+    async #saveTimer(timerInfo) {
+      if (timerInfo) {
+        await configManager.saveTimer({ timerInfo });
+        return;
+      }
+
+      if (!this.#currentTimer)
+        return { success: false, message: "No timer exists." };
+
+      const currentTimerInfo = this.#currentTimer.info({ brief: true });
+      await configManager.saveTimer({
+        isTrusted: true,
+        timerInfo: currentTimerInfo,
+      });
+      this.#savedTimers[currentTimerInfo.name] = this.#currentTimer;
     }
 
     #listSavedTimers() {
-      return Object.values(this.#savedTimers).map(this.#getBasicTimerInfo);
+      return Object.values(this.#savedTimers).map((timer) =>
+        timer.info({ brief: true })
+      );
     }
-
-    #getBasicTimerInfo = (timer) => {
-      const { name, duration, description } = timer.info();
-      return { name, duration, description };
-    };
-
     #startTimer(timerName) {
       if (timerName in this.#savedTimers)
         this.#currentTimer = this.#savedTimers[timerName];
@@ -127,10 +132,12 @@ module.exports = function makeTimerManager({
       });
     }
 
-    async #updateConfig() {
+    async #retrieveAndSetConfig() {
+      await configManager.updateConfig();
       const { beepDuration, savedTimers } = await configManager.getConfig();
       this.#beepDuration = beepDuration;
 
+      this.#savedTimers = {};
       for (const [timerName, timerInfo] of Object.entries(savedTimers))
         this.#savedTimers[timerName] = new Timer({
           ...timerInfo,
