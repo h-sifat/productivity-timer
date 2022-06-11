@@ -3,6 +3,7 @@ module.exports = function makeConfigManager({
   EPP,
   path,
   exists,
+  notify,
   deepFreeze,
   MS_IN_ONE_SECOND,
   validateTimerInfo,
@@ -10,6 +11,7 @@ module.exports = function makeConfigManager({
   mkdirIfDoesNotExist,
 }) {
   const MIN_BEEP_DURATION = MS_IN_ONE_SECOND;
+  const DEFAULT_BEEP_DURATION = 10 * MS_IN_ONE_SECOND;
   const MAX_BEEP_DURATION = 2 * 60 * MS_IN_ONE_SECOND; // 2 minutes
   const LOGS_DIR_NAME = "logs";
   const ERRORS_DIR_NAME = "errors";
@@ -26,7 +28,8 @@ module.exports = function makeConfigManager({
    * */
   return class ConfigManager {
     #savedTimers = {};
-    #beepDuration = 10_000;
+    #invalidSavedTimers = {};
+    #beepDuration = DEFAULT_BEEP_DURATION;
 
     /**
      * @type {{
@@ -52,7 +55,11 @@ module.exports = function makeConfigManager({
     async init() {
       if (this.#isInitiated) return;
 
-      await mkdirIfDoesNotExist({ dir: TIMER_DIR_PATH });
+      try {
+        await mkdirIfDoesNotExist({ dir: TIMER_DIR_PATH });
+      } catch (ex) {
+        await notify(ex.message);
+      }
 
       if (await exists(CONFIG_FILE_PATH)) this.#readConfigFile();
       else this.#writeConfigFile();
@@ -61,15 +68,7 @@ module.exports = function makeConfigManager({
     }
 
     async setBeepDuration(durationMS) {
-      if (
-        !Number.isInteger(durationMS) ||
-        durationMS < MIN_BEEP_DURATION ||
-        durationMS > MAX_BEEP_DURATION
-      )
-        throw new EPP(
-          `Invalid beep duration: ${durationMS}. It must be an integer >= ${MIN_BEEP_DURATION}ms and <= ${MAX_BEEP_DURATION}ms`,
-          "INVALID_BEEP_DURATION"
-        );
+      this.#validateBeepDuration(durationMS);
       this.#beepDuration = durationMS;
 
       this.#writeConfigFile();
@@ -77,59 +76,101 @@ module.exports = function makeConfigManager({
 
     async #writeConfigFile() {
       const serializedConfig = JSON.stringify({
-        savedTimers: this.#savedTimers,
+        savedTimers: { ...this.#savedTimers, ...this.#invalidSavedTimers },
         beepDuration: this.#beepDuration,
       });
 
       try {
         await fsp.writeFile(CONFIG_FILE_PATH, serializedConfig, "utf8");
       } catch (ex) {
-        // @TODO notify
-        throw ex;
+        // @TODO do error logging
+        await notify("Couldn't write config file.");
       }
     }
 
     async #readConfigFile() {
+      let serializedConfig;
+
       try {
-        const serializedConfig = await fsp.readFile(CONFIG_FILE_PATH, "utf8");
+        serializedConfig = await fsp.readFile(CONFIG_FILE_PATH, "utf8");
+      } catch (ex) {
+        // error logging
+        await notify("Error while reading config file.");
+      }
 
-        // @TODO validate configObject
-        const { beepDuration, savedTimers } = JSON.parse(serializedConfig);
+      let configObject;
+      try {
+        configObject = JSON.parse(serializedConfig);
+      } catch (ex) {
+        await notify("Invalid config file.");
+      }
 
+      const { beepDuration, savedTimers } = configObject;
+
+      try {
+        this.#validateBeepDuration(beepDuration);
         this.#beepDuration = beepDuration;
+      } catch (ex) {
+        await notify(
+          `Invalid beep duration: ${beepDuration}. Using the default value!`
+        );
+        this.#beepDuration = DEFAULT_BEEP_DURATION;
+      }
 
-        for (const timerName in savedTimers)
-          this.#savedTimers[timerName] = deepFreeze(savedTimers[timerName]);
-      } catch (ex) {}
+      for (const [timerName, timerInfo] of Object.entries(savedTimers)) {
+        try {
+          validateTimerInfo(timerInfo);
+          this.#savedTimers[timerName] = deepFreeze(timerInfo);
+
+          if (timerName in this.#invalidSavedTimers)
+            delete this.#invalidSavedTimers[timerName];
+        } catch (ex) {
+          this.#invalidSavedTimers[timerName] = deepFreeze(timerInfo);
+
+          if (timerName in this.#savedTimers)
+            delete this.#savedTimers[timerName];
+
+          await notify(`Invalid saved timer "${timerName}". ${ex.message}`);
+        }
+      }
     }
 
-    async saveTimer(arg) {
-      assertNonNullObject({
-        object: arg,
-        name: "timerInfo",
-        errorCode: "INVALID_TIMER_INFO",
-      });
-
-      const { name, description, duration } = validateTimerInfo(arg);
-
-      if (name in this.#savedTimers)
+    async saveTimer({ timerInfo, isTrusted = false }) {
+      if (timerInfo.name in this.#savedTimers)
         throw new EPP(
-          `A timer with name "${name}" already exists in saved timers.`,
+          `Timer with name "${timerInfo.name}" already exists in saved timers.`,
           "TIMER_EXISTS"
         );
-      this.#savedTimers[name] = { name, description, duration };
+      if (timerInfo.name in this.#invalidSavedTimers)
+        throw new EPP(
+          `An invalid timer with name "${timerInfo.name}" already exists, delete it first.`,
+          "INVALID_TIMER_EXISTS"
+        );
+
+      if (!isTrusted) {
+        assertNonNullObject({
+          object: timerInfo,
+          name: "timerInfo",
+          errorCode: "INVALID_TIMER_INFO",
+        });
+
+        timerInfo = validateTimerInfo(timerInfo);
+      }
+
+      this.#savedTimers[timerInfo.name] = timerInfo;
 
       await this.#writeConfigFile();
     }
 
-    async deleteSavedTimer(name) {
-      if (!(name in this.#savedTimers))
+    async deleteSavedTimer(timerName) {
+      if (timerName in this.#savedTimers) delete this.#savedTimers[timerName];
+      else if (timerName in this.#invalidSavedTimers)
+        delete this.#invalidSavedTimers[timerName];
+      else
         throw new EPP(
-          `No saved timer exist with the name: "${name}"`,
+          `No saved timer exists for: "${timerName}"`,
           "TIMER_DOES_NOT_EXISTS"
         );
-
-      delete this.#savedTimers[name];
 
       await this.#writeConfigFile();
     }
@@ -141,8 +182,6 @@ module.exports = function makeConfigManager({
      * }}
      * */
     async getConfig() {
-      await this.#readConfigFile();
-
       const config = {
         beepDuration: this.#beepDuration,
         savedTimers: { ...this.#savedTimers },
@@ -151,8 +190,25 @@ module.exports = function makeConfigManager({
       return deepFreeze(config);
     }
 
+    async updateConfig() {
+      await this.#readConfigFile();
+    }
+
     get constants() {
       return this.#constants;
+    }
+
+    #validateBeepDuration(duration) {
+      if (
+        typeof duration !== "number" ||
+        !Number.isInteger(duration) ||
+        duration < MIN_BEEP_DURATION ||
+        duration > MAX_BEEP_DURATION
+      )
+        throw new EPP(
+          `Beep duration must be an integer within range ${MIN_BEEP_DURATION}ms to ${MAX_BEEP_DURATION}ms`,
+          "INVALID_BEEP_DURATION"
+        );
     }
   };
 };
