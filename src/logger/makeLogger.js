@@ -2,6 +2,7 @@ module.exports = function makeLogger({
   EPP,
   fsp,
   path,
+  notify,
   required,
   deepFreeze,
   isDatesEqual,
@@ -13,9 +14,15 @@ module.exports = function makeLogger({
     #currentLogFile;
     #currentDate = new Date();
     #logObjectNormalizer = (logObject) => logObject;
+    #ignoreLoggingFailure;
 
     constructor(arg = {}) {
-      const { logsDir = required("logsDir"), logObjectNormalizer } = arg;
+      const {
+        logObjectNormalizer,
+        ignoreLoggingFailure = false,
+        logsDir = required("logsDir"),
+      } = arg;
+
       if (typeof logsDir !== "string" || !logsDir.length)
         throw new EPP(
           `Invalid logs directory: "${logsDir}"`,
@@ -34,10 +41,16 @@ module.exports = function makeLogger({
 
       this.#logsDir = path.resolve(logsDir);
       this.#currentLogFile = this.#getLogFilePath(this.#currentDate);
+      this.#ignoreLoggingFailure = ignoreLoggingFailure;
     }
 
     async init() {
-      await mkdirIfDoesNotExist({ dir: this.#logsDir });
+      try {
+        await mkdirIfDoesNotExist({ dir: this.#logsDir });
+      } catch (ex) {
+        await notify(`Couldn't create logs dir: "${this.#logsDir}"`);
+        throw ex;
+      }
 
       const logs = await this.#getLogsFromFile(this.#currentLogFile);
       this.#cache = logs.map(deepFreeze);
@@ -57,8 +70,34 @@ module.exports = function makeLogger({
       this.#refreshDateAndLogFilePath();
 
       logObject = this.#logObjectNormalizer(logObject);
+
+      /*
+       * adding ",\n" will let us parse the log file as a JSON array
+       * Example:
+       *
+       * log_file:
+       * +--------+
+       * |{"a":1},|
+       * |{"b":2},|
+       * +--------+
+       *
+       * then if we remove the trailing ",\n" and add "[" and "]" respectively
+       * before and after the file, we'll get:
+       *
+       * +---------+
+       * |[{"a":1},|
+       * |{"b":2}] |
+       * +---------+
+       * Now we can use JSON.parse() on the file.
+       * */
       const stringifiedLog = JSON.stringify(logObject) + ",\n";
-      await fsp.appendFile(this.#currentLogFile, stringifiedLog, "utf8");
+
+      try {
+        await fsp.appendFile(this.#currentLogFile, stringifiedLog, "utf8");
+      } catch (ex) {
+        await notify(ex.message);
+        if (!this.#ignoreLoggingFailure) throw ex;
+      }
 
       this.#cache.push(logObject);
     }

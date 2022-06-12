@@ -4,6 +4,7 @@ module.exports = function makeConfigManager({
   path,
   exists,
   notify,
+  Logger,
   deepFreeze,
   MS_IN_ONE_SECOND,
   validateTimerInfo,
@@ -44,7 +45,7 @@ module.exports = function makeConfigManager({
       ERROR_LOGS_DIR: ERROR_LOGS_DIR_PATH,
     });
 
-    #isInitiated = false;
+    #errorLogger;
 
     static #instance = null;
     constructor() {
@@ -52,8 +53,25 @@ module.exports = function makeConfigManager({
       ConfigManager.#instance = this;
     }
 
+    #isInitiated = false;
     async init() {
       if (this.#isInitiated) return;
+
+      this.#errorLogger = new Logger({
+        ignoreLoggingFailure: true,
+        logsDir: ERROR_LOGS_DIR_PATH,
+        logObjectNormalizer: (error) => {
+          const normalizedErrorObject = {
+            timestamp: Date.now(),
+            errorMessage: error.message,
+            stack: error.stack,
+          };
+
+          if (error.code) normalizedErrorObject.code = error.code;
+          return normalizedErrorObject;
+        },
+      });
+      await this.#errorLogger.init();
 
       try {
         await mkdirIfDoesNotExist({ dir: TIMER_DIR_PATH });
@@ -83,7 +101,7 @@ module.exports = function makeConfigManager({
       try {
         await fsp.writeFile(CONFIG_FILE_PATH, serializedConfig, "utf8");
       } catch (ex) {
-        // @TODO do error logging
+        await this.#errorLogger.log(ex);
         await notify("Couldn't write config file.");
       }
     }
@@ -94,7 +112,7 @@ module.exports = function makeConfigManager({
       try {
         serializedConfig = await fsp.readFile(CONFIG_FILE_PATH, "utf8");
       } catch (ex) {
-        // error logging
+        await this.#errorLogger.log(ex);
         await notify("Error while reading config file.");
       }
 
@@ -102,6 +120,7 @@ module.exports = function makeConfigManager({
       try {
         configObject = JSON.parse(serializedConfig);
       } catch (ex) {
+        await this.#errorLogger.log(ex);
         await notify("Invalid config file.");
       }
 
@@ -111,8 +130,9 @@ module.exports = function makeConfigManager({
         this.#validateBeepDuration(beepDuration);
         this.#beepDuration = beepDuration;
       } catch (ex) {
+        await this.#errorLogger.log(ex);
         await notify(
-          `Invalid beep duration: ${beepDuration}. Using the default value!`
+          `Invalid beep duration in config: ${beepDuration}. Using the default value!`
         );
         this.#beepDuration = DEFAULT_BEEP_DURATION;
       }
@@ -130,6 +150,7 @@ module.exports = function makeConfigManager({
           if (timerName in this.#savedTimers)
             delete this.#savedTimers[timerName];
 
+          await this.#errorLogger.log(ex);
           await notify(`Invalid saved timer "${timerName}". ${ex.message}`);
         }
       }
