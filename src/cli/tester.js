@@ -23,11 +23,12 @@ vm.createContext(context);
 const commandAliases = Object.freeze({
   e: "END",
   i: "INFO",
-  sa: "SAVE",
+  se: "SAVE",
   r: "RESET",
   p: "PAUSE",
   c: "CREATE",
   st: "START",
+  ss: "STATS",
   sb: "STOP_BEEPING",
   uc: "UPDATE_CONFIG",
   lst: "LIST_SAVED_TIMERS",

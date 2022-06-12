@@ -4,7 +4,9 @@ module.exports = function makeTimerManager({
   Logger,
   Speaker,
   configManager,
+  MS_IN_ONE_SECOND,
 }) {
+  const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
   /**
    * A singleton that manages CRUD operations on timers
    * */
@@ -31,14 +33,13 @@ module.exports = function makeTimerManager({
 
     #timerCommands = Object.freeze(["END", "INFO", "RESET", "START", "PAUSE"]);
 
-    #isInitiated = false;
-
     static #instance = null;
     constructor() {
       if (TimerManager.#instance) return TimerManager.#instance;
       TimerManager.#instance = this;
     }
 
+    #isInitiated = false;
     async init() {
       if (this.#isInitiated) return;
 
@@ -107,12 +108,70 @@ module.exports = function makeTimerManager({
           await configManager.deleteSavedTimer(arg);
           await this.#retrieveAndSetConfig();
           break;
+        case "STATS":
+          return this.#getStats(arg);
         default:
           return {
             success: false,
             message: `Invalid command: "${command}"`,
           };
       }
+    }
+
+    async #getStats(dateString) {
+      const VALID_DATE_PATTERN = /^\d{2}-\d{2}-\d{4}$/; // mm-dd-yyyy
+      let date;
+
+      if (typeof dateString === "number") {
+        const numOfDaysBeforeToday = dateString;
+        if (
+          !Number.isInteger(numOfDaysBeforeToday) ||
+          numOfDaysBeforeToday <= 0
+        )
+          throw new Error(
+            `Cannot go "${numOfDaysBeforeToday}" days back from today.`
+          );
+
+        date = new Date(Date.now() - MS_IN_ONE_DAY * numOfDaysBeforeToday);
+      } else if (typeof dateString === "string") {
+        const isInvalidDate =
+          !VALID_DATE_PATTERN.test(dateString) ||
+          (date = new Date(dateString)).toString() === "Invalid Date";
+
+        if (isInvalidDate)
+          throw new Error(
+            `Invalid date string: "${dateString}". Use format: "mm-dd-yyyy".`
+          );
+      }
+
+      const logs = await this.#timerLogger.getLogs(date);
+      return this.#aggregateLogs(logs);
+    }
+
+    #aggregateLogs(logs) {
+      const aggregatedResult = { timerCount: 0, totalDurationMs: 0 };
+      const timers = {};
+
+      for (const { name: timerName, description, elapsedTimeMS } of logs) {
+        aggregatedResult.totalDurationMs += elapsedTimeMS;
+        aggregatedResult.timerCount++;
+
+        if (timerName in timers) {
+          timers[timerName].totalDurationMs += elapsedTimeMS;
+          timers[timerName].count++;
+          continue;
+        }
+
+        timers[timerName] = {
+          count: 1,
+          description,
+          totalDurationMs: elapsedTimeMS,
+        };
+      }
+
+      aggregatedResult.timers = timers;
+
+      return aggregatedResult;
     }
 
     #stopBeeping() {
