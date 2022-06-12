@@ -1,28 +1,21 @@
 module.exports = function makeConfigManager({
   fsp,
   EPP,
-  path,
   exists,
   notify,
   Logger,
   deepFreeze,
+  TIMER_DIR_PATH,
   MS_IN_ONE_SECOND,
+  CONFIG_FILE_PATH,
   validateTimerInfo,
+  ERROR_LOGS_DIR_PATH,
   assertNonNullObject,
   mkdirIfDoesNotExist,
 }) {
-  const MIN_BEEP_DURATION = MS_IN_ONE_SECOND;
+  const MIN_BEEP_DURATION = 5 * MS_IN_ONE_SECOND;
   const DEFAULT_BEEP_DURATION = 10 * MS_IN_ONE_SECOND;
   const MAX_BEEP_DURATION = 2 * 60 * MS_IN_ONE_SECOND; // 2 minutes
-  const LOGS_DIR_NAME = "logs";
-  const ERRORS_DIR_NAME = "errors";
-  const TIMER_DIR_NAME = ".p_timer";
-  const CONFIG_FILE_NAME = "config.json";
-
-  const TIMER_DIR_PATH = path.join(process.env.HOME, TIMER_DIR_NAME);
-  const TIMER_LOGS_DIR_PATH = path.join(TIMER_DIR_PATH, LOGS_DIR_NAME);
-  const ERROR_LOGS_DIR_PATH = path.join(TIMER_DIR_PATH, ERRORS_DIR_NAME);
-  const CONFIG_FILE_PATH = path.join(TIMER_DIR_PATH, CONFIG_FILE_NAME);
 
   /**
    * A singleton that manages all configurations
@@ -31,20 +24,6 @@ module.exports = function makeConfigManager({
     #savedTimers = {};
     #invalidSavedTimers = {};
     #beepDuration = DEFAULT_BEEP_DURATION;
-
-    /**
-     * @type {{
-     *    ROOT_DIR: string;
-     *    TIMER_LOGS_DIR: string;
-     *    ERROR_LOGS_DIR: string;
-     * }}
-     */
-    #constants = Object.freeze({
-      ROOT_DIR: TIMER_DIR_PATH,
-      TIMER_LOGS_DIR: TIMER_LOGS_DIR_PATH,
-      ERROR_LOGS_DIR: ERROR_LOGS_DIR_PATH,
-    });
-
     #errorLogger;
 
     static #instance = null;
@@ -213,10 +192,6 @@ module.exports = function makeConfigManager({
 
     async updateConfig() {
       await this.#readConfigFile();
-    }
-
-    get constants() {
-      return this.#constants;
     }
 
     #validateBeepDuration(duration) {

@@ -5,6 +5,7 @@ module.exports = function makeTimerManager({
   Speaker,
   configManager,
   MS_IN_ONE_SECOND,
+  TIMER_LOGS_DIR_PATH,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
   /**
@@ -14,7 +15,6 @@ module.exports = function makeTimerManager({
     #speaker;
     #timerLogger;
     #currentTimer;
-    #timerLogsDir = configManager.constants.TIMER_LOGS_DIR;
 
     #beepDuration;
     #savedTimers = {};
@@ -46,7 +46,7 @@ module.exports = function makeTimerManager({
       await configManager.init();
       await this.#retrieveAndSetConfig();
 
-      this.#timerLogger = new Logger({ logsDir: this.#timerLogsDir });
+      this.#timerLogger = new Logger({ logsDir: TIMER_LOGS_DIR_PATH });
       await this.#timerLogger.init();
 
       this.#speaker = new Speaker({
