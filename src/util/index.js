@@ -73,6 +73,15 @@ function assertNonNullObject({
     throw new EPP(`${name} must be a non null object.`, errorCode);
 }
 
+function assertPlainObject({
+  object,
+  name = "object",
+  errorCode = "NOT_PLAIN_OBJECT",
+}) {
+  if (typeof object !== "object" || object === null || Array.isArray(object))
+    throw new EPP(`${name} must be a plain object.`, errorCode);
+}
+
 async function mkdirIfDoesNotExist(arg) {
   const dir = arg.dir;
   const {
@@ -122,7 +131,8 @@ module.exports = {
   makeEnum,
   deepFreeze,
   isDatesEqual,
-  convertToMilliSeconds,
+  assertPlainObject,
   mkdirIfDoesNotExist,
   assertNonNullObject,
+  convertToMilliSeconds,
 };
