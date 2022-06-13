@@ -8,6 +8,22 @@ module.exports = function makeTimerManager({
   TIMER_LOGS_DIR_PATH,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
+  const TIMER_SPECIFIC_COMMANDS = Object.freeze([
+    "END",
+    "INFO",
+    "RESET",
+    "START",
+    "PAUSE",
+  ]);
+  const ALL_COMMANDS = Object.freeze([
+    "SAVE",
+    "STATS",
+    "CREATE",
+    "UPDATE_CONFIG",
+    "LIST_SAVED_TIMERS",
+    "DELETE_SAVED_TIMER",
+    ...TIMER_SPECIFIC_COMMANDS,
+  ]);
   /**
    * A singleton that manages CRUD operations on timers
    * */
@@ -18,6 +34,8 @@ module.exports = function makeTimerManager({
 
     #beepDuration;
     #savedTimers = {};
+    #commandAliases = {};
+
     #isBeeping = false;
     #setIsBeepingToTrue = () => {
       this.#isBeeping = true;
@@ -31,8 +49,6 @@ module.exports = function makeTimerManager({
       await this.#timerLogger.log(timerInfo);
     };
 
-    #timerCommands = Object.freeze(["END", "INFO", "RESET", "START", "PAUSE"]);
-
     static #instance = null;
     constructor() {
       if (TimerManager.#instance) return TimerManager.#instance;
@@ -43,8 +59,10 @@ module.exports = function makeTimerManager({
     async init() {
       if (this.#isInitiated) return;
 
-      await configManager.init();
-      await this.#retrieveAndSetConfig();
+      await configManager.init({ allTimerManagerCommands: ALL_COMMANDS });
+      // as the configManager has just initiated, we don't need to read the
+      // config file again
+      await this.#retrieveAndSetConfig({ updateConfig: false });
 
       this.#timerLogger = new Logger({ logsDir: TIMER_LOGS_DIR_PATH });
       await this.#timerLogger.init();
@@ -65,14 +83,18 @@ module.exports = function makeTimerManager({
         const result = await this.#execute(commandObject);
         return result ? result : { success: true };
       } catch (ex) {
-        // @TODO handle error
-        // console.error(ex);
         return { success: false, message: ex.message };
       }
     }
 
     async #execute(commandObject) {
-      const { command, arg } = commandObject;
+      const arg = commandObject.arg;
+      let command = commandObject.command;
+
+      if (command in this.#commandAliases)
+        // now command represents an alias and this.#commandAliases[command]
+        // is the actual command
+        command = this.#commandAliases[command];
 
       if (this.#isBeeping) {
         this.#stopBeeping();
@@ -83,7 +105,8 @@ module.exports = function makeTimerManager({
       const isTimerCommandWithoutArg =
         // if commandName is a timer command AND
         // (if commandName is not "START" with a timer name)
-        this.#timerCommands.includes(command) && !(command === "START" && arg);
+        TIMER_SPECIFIC_COMMANDS.includes(command) &&
+        !(command === "START" && arg);
 
       if (isTimerCommandWithoutArg) {
         return this.#currentTimer
@@ -215,10 +238,14 @@ module.exports = function makeTimerManager({
       });
     }
 
-    async #retrieveAndSetConfig() {
-      await configManager.updateConfig();
-      const { beepDuration, savedTimers } = await configManager.getConfig();
+    async #retrieveAndSetConfig({ updateConfig = true }) {
+      if (updateConfig) await configManager.updateConfig();
+
+      const { beepDuration, savedTimers, commandAliases } =
+        await configManager.getConfig();
+
       this.#beepDuration = beepDuration;
+      this.#commandAliases = commandAliases;
 
       this.#savedTimers = {};
       for (const [timerName, timerInfo] of Object.entries(savedTimers))

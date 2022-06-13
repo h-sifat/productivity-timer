@@ -9,8 +9,8 @@ module.exports = function makeConfigManager({
   MS_IN_ONE_SECOND,
   CONFIG_FILE_PATH,
   validateTimerInfo,
+  assertPlainObject,
   ERROR_LOGS_DIR_PATH,
-  assertNonNullObject,
   mkdirIfDoesNotExist,
 }) {
   const MIN_BEEP_DURATION = 5 * MS_IN_ONE_SECOND;
@@ -21,10 +21,12 @@ module.exports = function makeConfigManager({
    * A singleton that manages all configurations
    * */
   return class ConfigManager {
-    #savedTimers = {};
-    #invalidSavedTimers = {};
-    #beepDuration = DEFAULT_BEEP_DURATION;
     #errorLogger;
+    #savedTimers = {};
+    #commandAliases = {};
+    #invalidSavedTimers = {};
+    #allTimerManagerCommands;
+    #beepDuration = DEFAULT_BEEP_DURATION;
 
     static #instance = null;
     constructor() {
@@ -33,8 +35,10 @@ module.exports = function makeConfigManager({
     }
 
     #isInitiated = false;
-    async init() {
+    async init({ allTimerManagerCommands } = {}) {
       if (this.#isInitiated) return;
+
+      this.#allTimerManagerCommands = allTimerManagerCommands;
 
       this.#errorLogger = new Logger({
         ignoreLoggingFailure: true,
@@ -58,8 +62,8 @@ module.exports = function makeConfigManager({
         await notify(ex.message);
       }
 
-      if (await exists(CONFIG_FILE_PATH)) this.#readConfigFile();
-      else this.#writeConfigFile();
+      if (await exists(CONFIG_FILE_PATH)) await this.#readConfigFile();
+      else await this.#writeConfigFile();
 
       this.#isInitiated = true;
     }
@@ -73,8 +77,9 @@ module.exports = function makeConfigManager({
 
     async #writeConfigFile() {
       const serializedConfig = JSON.stringify({
-        savedTimers: { ...this.#savedTimers, ...this.#invalidSavedTimers },
         beepDuration: this.#beepDuration,
+        commandAliases: this.#commandAliases,
+        savedTimers: { ...this.#savedTimers, ...this.#invalidSavedTimers },
       });
 
       try {
@@ -103,7 +108,16 @@ module.exports = function makeConfigManager({
         await notify("Invalid config file.");
       }
 
-      const { beepDuration, savedTimers } = configObject;
+      const { beepDuration, savedTimers, commandAliases } = configObject;
+
+      try {
+        this.#validateCommandAliases(commandAliases);
+        this.#commandAliases = Object.freeze(commandAliases);
+      } catch (ex) {
+        this.#commandAliases = {};
+        await this.#errorLogger.log(ex);
+        await notify(ex.message);
+      }
 
       try {
         this.#validateBeepDuration(beepDuration);
@@ -148,7 +162,7 @@ module.exports = function makeConfigManager({
         );
 
       if (!isTrusted) {
-        assertNonNullObject({
+        assertPlainObject({
           object: timerInfo,
           name: "timerInfo",
           errorCode: "INVALID_TIMER_INFO",
@@ -181,9 +195,10 @@ module.exports = function makeConfigManager({
      *  savedTimers: { [key: string]: {name: string, duration: number, description: string} },
      * }}
      * */
-    async getConfig() {
+    getConfig() {
       const config = {
         beepDuration: this.#beepDuration,
+        commandAliases: { ...this.#commandAliases },
         savedTimers: { ...this.#savedTimers },
       };
 
@@ -205,6 +220,18 @@ module.exports = function makeConfigManager({
           `Beep duration must be an integer within range ${MIN_BEEP_DURATION}ms to ${MAX_BEEP_DURATION}ms`,
           "INVALID_BEEP_DURATION"
         );
+    }
+
+    #validateCommandAliases(commandAliases) {
+      assertPlainObject({
+        object: commandAliases,
+        name: "commandAliases",
+        errorCode: "INVALID_COMMAND_ALIAS_OBJECT",
+      });
+
+      for (const [alias, command] of Object.entries(commandAliases))
+        if (!this.#allTimerManagerCommands.includes(command))
+          throw new EPP(`Invalid command: "${command}" for alias: "${alias}"`);
     }
   };
 };

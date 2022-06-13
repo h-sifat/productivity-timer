@@ -4,7 +4,7 @@ const {
   EPP,
   exists,
   deepFreeze,
-  assertNonNullObject,
+  assertPlainObject,
   mkdirIfDoesNotExist,
 } = require("../util");
 
@@ -36,8 +36,8 @@ const ConfigManager = makeConfigManager({
   TIMER_DIR_PATH,
   CONFIG_FILE_PATH,
   validateTimerInfo,
+  assertPlainObject,
   ERROR_LOGS_DIR_PATH,
-  assertNonNullObject,
   mkdirIfDoesNotExist,
   MS_IN_ONE_SECOND: TIMER_CONSTANTS.MS_IN_ONE_SECOND,
 });
