@@ -6,9 +6,12 @@ module.exports = function makeIPCServer({
 }) {
   return class IPCServer {
     static #usedSocketPaths = new Set();
+
     #server;
     #handlers = {};
     #currentConnection = null;
+
+    #onHandlerException = async () => {};
 
     constructor() {
       this.#server = net.createServer(this.#connectionHandler);
@@ -26,57 +29,67 @@ module.exports = function makeIPCServer({
 
     #connectionHandler = (connection) => {
       if (this.#currentConnection) {
-        connection.write(makeStringifiedResponse({ error: "Server busy." }));
-        connection.destroy();
+        try {
+          connection.write(makeStringifiedResponse({ error: "Server busy." }));
+        } catch (ex) {}
+        this.#destroyAndDeleteCurrentConnection();
       }
 
       this.#currentConnection = connection;
 
-      connection.on("data", (data) => {
+      connection.on("data", async (data) => {
         data = data.toString();
 
-        let requestObject;
-        try {
-          requestObject = parseAndValidateRequestData(data);
-        } catch (ex) {
-          connection.write(makeStringifiedResponse({ error: ex.message }));
-          connection.destroy();
-        }
+        const { path, body } = await this.#errorHandler({
+          funcToExecute: () => parseAndValidateRequestData(data),
+          onError: (ex) =>
+            connection.write(makeStringifiedResponse({ error: ex.message })),
+        });
 
-        const { path, body } = requestObject;
-
-        if (path in this.#handlers)
-          this.#handlers[path]({
-            body,
-            send: ({ error, body }) => {
-              try {
-                connection.write(makeStringifiedResponse({ error, body }));
-              } catch (ex) {
-                throw ex;
-              } finally {
-                connection.destroy();
-                this.#currentConnection = null;
-              }
+        if (!(path in this.#handlers))
+          await this.#errorHandler({
+            funcToExecute: () => {
+              const message = `Invalid path: "${path}"`;
+              const response = makeStringifiedResponse({ error: { message } });
+              connection.write(response);
             },
           });
-        else {
-          connection.write(
-            makeStringifiedResponse({ error: `Invalid path: "${path}"` })
-          );
-          connection.destroy();
-          this.#currentConnection = null;
-        }
 
-        // pass data to request handler
+        // the handler could be async. that's why the await
+
+        const sendMethod = ({ error, body } = {}) => {
+          try {
+            connection.write(makeStringifiedResponse({ error, body }));
+          } catch {
+          } finally {
+            this.#destroyAndDeleteCurrentConnection();
+          }
+        };
+
+        const executeHandler = async () => {
+          await this.#handlers[path]({ body, send: sendMethod });
+        };
+
+        await this.#errorHandler({
+          funcToExecute: executeHandler,
+          onError: async (ex) => {
+            await this.#onHandlerException({ error: ex, path, body });
+            const errorResponse = makeStringifiedResponse({
+              error: { message: "Internal server error." },
+            });
+
+            try {
+              connection.write(errorResponse);
+            } catch {}
+          },
+        });
       });
 
       connection.on("error", (error) => {
-        try {
-          connection.write(makeStringifiedResponse({ error }));
-        } catch {}
-        connection.destroy();
-        this.#server.close();
-        this.#currentConnection = null;
+        this.#errorHandler({
+          funcToExecute: () =>
+            connection.write(makeStringifiedResponse({ error })),
+        });
       });
     };
 
@@ -91,6 +104,40 @@ module.exports = function makeIPCServer({
 
     close() {
       this.#server.close();
+    }
+
+    #errorHandler = async ({
+      funcToExecute,
+      throwError = false,
+      onError = async () => {},
+    }) => {
+      try {
+        return await funcToExecute();
+      } catch (ex) {
+        try {
+          await onError(ex);
+        } catch (ex) {}
+
+        this.#destroyAndDeleteCurrentConnection();
+        if (throwError) throw ex;
+      }
+    };
+
+    #destroyAndDeleteCurrentConnection = () => {
+      if (!this.#currentConnection) return;
+
+      this.#currentConnection.destroy();
+      this.#currentConnection = null;
+    };
+
+    set onHandlerException(func) {
+      if (typeof func !== "function")
+        throw new EPP(
+          `IPCServer.onHandlerException must be a function.`,
+          "INVALID_ARGUMENT"
+        );
+
+      this.#onHandlerException = func;
     }
   };
 
