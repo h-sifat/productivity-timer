@@ -1,11 +1,11 @@
 module.exports = function makeTimerManager({
   EPP,
   Timer,
-  Logger,
   Speaker,
+  timerLogger,
+  TIMER_STATES,
   configManager,
   MS_IN_ONE_SECOND,
-  TIMER_LOGS_DIR_PATH,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
   const TIMER_SPECIFIC_COMMANDS = Object.freeze([
@@ -29,7 +29,6 @@ module.exports = function makeTimerManager({
    * */
   return class TimerManager {
     #speaker;
-    #timerLogger;
     #currentTimer;
 
     #beepDuration;
@@ -45,8 +44,10 @@ module.exports = function makeTimerManager({
     };
 
     #timerCallback = async (timerInfo) => {
-      this.#speaker.on(this.#beepDuration);
-      await this.#timerLogger.log(timerInfo);
+      if (TIMER_STATES[timerInfo.state] !== TIMER_STATES.ENDED)
+        this.#speaker.on(this.#beepDuration);
+
+      await timerLogger.log(timerInfo);
     };
 
     static #instance = null;
@@ -64,8 +65,7 @@ module.exports = function makeTimerManager({
       // config file again
       await this.#retrieveAndSetConfig({ updateConfig: false });
 
-      this.#timerLogger = new Logger({ logsDir: TIMER_LOGS_DIR_PATH });
-      await this.#timerLogger.init();
+      await timerLogger.init();
 
       this.#speaker = new Speaker({
         onCallback: this.#setIsBeepingToTrue,
@@ -167,7 +167,7 @@ module.exports = function makeTimerManager({
           );
       }
 
-      const logs = await this.#timerLogger.getLogs(date);
+      const logs = await timerLogger.getLogs(date);
       return this.#aggregateLogs(logs);
     }
 
@@ -224,9 +224,25 @@ module.exports = function makeTimerManager({
       );
     }
     #startTimer(timerName) {
-      if (timerName in this.#savedTimers)
+      if (this.#currentTimer) {
+        const { state, name } = this.#currentTimer.info();
+
+        const isActiveTimer = ![
+          TIMER_STATES.ENDED,
+          TIMER_STATES.TIMED_UP,
+        ].includes(TIMER_STATES[state]);
+
+        if (isActiveTimer)
+          throw new EPP(
+            `An unfinished timer (${name}) already exists. Please End or Reset it first.`,
+            "TIMER_ALREADY_EXISTS"
+          );
+      }
+
+      if (timerName in this.#savedTimers) {
         this.#currentTimer = this.#savedTimers[timerName];
-      else throw new EPP(`No saved timer with name: "${timerName}"`);
+        this.#currentTimer.reset();
+      } else throw new EPP(`No saved timer with name: "${timerName}"`);
 
       return this.#currentTimer.start();
     }
