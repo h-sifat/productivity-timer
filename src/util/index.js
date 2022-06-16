@@ -1,6 +1,8 @@
 const fs = require("fs");
+const net = require("net");
 const fsp = fs.promises;
 const deepFreeze = require("./deepFreeze");
+const buildRequestToIPCServer = require("./request");
 
 async function exists(filepath, mode) {
   try {
@@ -134,6 +136,13 @@ function convertToMilliSeconds({ duration, unit }) {
   throw new EPP(`Unknown time unit "${unit}"`, "INVALID_TIME_UNIT");
 }
 
+const requestToIPCServer = buildRequestToIPCServer({
+  net,
+  EPP,
+  assertString,
+  assertPlainObject,
+});
+
 module.exports = {
   EPP,
   exists,
@@ -144,6 +153,7 @@ module.exports = {
   assertString,
   assertFunction,
   assertPlainObject,
+  requestToIPCServer,
   mkdirIfDoesNotExist,
   assertNonNullObject,
   convertToMilliSeconds,
