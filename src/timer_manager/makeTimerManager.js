@@ -6,6 +6,7 @@ module.exports = function makeTimerManager({
   TIMER_STATES,
   configManager,
   MS_IN_ONE_SECOND,
+  assertPlainObject,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
   const TIMER_SPECIFIC_COMMANDS = Object.freeze([
@@ -79,9 +80,14 @@ module.exports = function makeTimerManager({
      * @returns {{ success: true } | {success: false, message: string}}
      * */
     async execute(commandObject) {
+      assertPlainObject({
+        object: commandObject,
+        name: "Argument of TimerManager.execute()",
+      });
+
       try {
         const result = await this.#execute(commandObject);
-        return result ? result : { success: true };
+        return { success: true, data: result || null };
       } catch (ex) {
         return { success: false, message: ex.message };
       }
