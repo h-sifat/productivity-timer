@@ -238,7 +238,7 @@ module.exports = function makeTimerManager({
       });
     }
 
-    async #retrieveAndSetConfig({ updateConfig = true }) {
+    async #retrieveAndSetConfig({ updateConfig = true } = {}) {
       if (updateConfig) await configManager.updateConfig();
 
       const { beepDuration, savedTimers, commandAliases } =
