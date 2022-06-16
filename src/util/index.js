@@ -73,6 +73,16 @@ function assertNonNullObject({
     throw new EPP(`${name} must be a non null object.`, errorCode);
 }
 
+function assertString({ value, name = "Value" } = {}) {
+  if (typeof value !== "string")
+    throw new Error(`${name} must be of type string.`);
+}
+
+function assertFunction({ value, name = "Value" } = {}) {
+  if (typeof value !== "function")
+    throw new Error(`${name} must be of type function.`);
+}
+
 function assertPlainObject({
   object,
   name = "object",
@@ -131,6 +141,8 @@ module.exports = {
   makeEnum,
   deepFreeze,
   isDatesEqual,
+  assertString,
+  assertFunction,
   assertPlainObject,
   mkdirIfDoesNotExist,
   assertNonNullObject,
