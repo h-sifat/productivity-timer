@@ -5,6 +5,7 @@
  * Note: if the arg is a string then we need to surround it with quotes.
  *
  * To clear the console use the "clear" command. e.g. `> clear`
+ * To list all the aliases use the "pa" (print_aliases) command
  *
  * Examples:
  * 1. For `timerManager.execute({command: "START", arg: "coding"})`
@@ -60,6 +61,8 @@ async function parse(line) {
   } else commandAlias = line;
 
   if (commandAlias === "clear") return console.clear();
+  // pa = "print aliases"
+  if (commandAlias === "pa") return console.log(commandAliases);
 
   const command = commandAliases[commandAlias];
   if (!command) return console.error(`Invalid command: ${commandAlias}`);
