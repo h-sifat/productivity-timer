@@ -1,6 +1,7 @@
 const fs = require("fs");
 const fsp = fs.promises;
 const deepFreeze = require("./deepFreeze");
+const EPP = require("./epp");
 
 async function exists(filepath, mode) {
   try {
@@ -8,14 +9,6 @@ async function exists(filepath, mode) {
     return true;
   } catch (ex) {
     return false;
-  }
-}
-
-class EPP extends Error {
-  constructor(message, code, otherInfo = {}) {
-    super(message);
-    this.code = code;
-    Object.assign(this, otherInfo);
   }
 }
 
