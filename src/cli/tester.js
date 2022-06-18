@@ -82,5 +82,5 @@ async function parse(line) {
   if (context.error) return console.error(context.error);
 
   const result = await timerManager.execute({ command, arg: context.arg });
-  console.log(result);
+  console.dir(result, { depth: null });
 }

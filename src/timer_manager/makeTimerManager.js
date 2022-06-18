@@ -86,8 +86,11 @@ module.exports = function makeTimerManager({
       });
 
       try {
-        const result = await this.#execute(commandObject);
-        return { success: true, data: result || null };
+        const result = (await this.#execute(commandObject)) || {
+          data: null,
+          success: true,
+        };
+        return result;
       } catch (ex) {
         return { success: false, message: ex.message };
       }
@@ -132,13 +135,13 @@ module.exports = function makeTimerManager({
           await this.#retrieveAndSetConfig();
           break;
         case "LIST_SAVED_TIMERS":
-          return this.#listSavedTimers();
+          return { success: true, data: this.#listSavedTimers() };
         case "DELETE_SAVED_TIMER":
           await configManager.deleteSavedTimer(arg);
           await this.#retrieveAndSetConfig();
           break;
         case "STATS":
-          return this.#getStats(arg);
+          return { success: true, data: await this.#getStats(arg) };
         default:
           return {
             success: false,
