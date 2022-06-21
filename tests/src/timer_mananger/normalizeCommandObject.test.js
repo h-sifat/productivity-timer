@@ -35,9 +35,8 @@ const allCommandSchemas = Object.freeze({
       unit: { type: "string", default: "minute" },
       duration: {
         type: "string",
-        apply: (durationString) => {
+        $exec: (durationString) => {
           const duration = Number(durationString);
-          console.log("here");
           if (Number.isNaN(duration))
             throw new EPP(
               `Invalid duration "${durationString}"`,
@@ -49,7 +48,7 @@ const allCommandSchemas = Object.freeze({
       description: { type: "string", optional: true },
       tags: { type: "array" },
     },
-    optionAbbreviations: {
+    optionAliases: {
       n: "name",
       u: "unit",
       d: "duration",
@@ -63,37 +62,34 @@ const allCommandSchemas = Object.freeze({
 describe("Error Handling", () => {
   it.each([
     {
-      case: "if commandObject is not a plain object",
       commandObject: null,
-      errorCode: "NOT_PLAIN_OBJECT",
+      errorCode: "INVALID_COMMAND_OBJECT",
+      case: "if commandObject is not a plain object",
     },
     {
-      case: "if command property is absent",
+      errorCode: "MISSING_PROPERTY",
       commandObject: { options: {} },
-      errorCode: "MISSING_PROPERTY",
+      case: "if command property is absent",
     },
     {
-      case: "if options property is absent",
+      errorCode: "MISSING_PROPERTY",
       commandObject: { command: "start" },
-      errorCode: "MISSING_PROPERTY",
+      case: "if options property is absent",
     },
     {
-      case: "if command is not a non empty string",
-      commandObject: { command: "", options: {} },
       errorCode: "INVALID_COMMAND",
+      commandObject: { command: "", options: {} },
+      case: "if command is not a non empty string",
     },
     {
+      errorCode: "INVALID_OPTIONS_OBJECT",
       case: "if options is not a plain object",
-      commandObject: {
-        command: "start",
-        options: ["not_plain_object"],
-      },
-      errorCode: "INVALID_ARGUMENTS",
+      commandObject: { command: "start", options: ["not_plain_object"] },
     },
     {
+      errorCode: "UNKNOWN_COMMAND",
       case: "if command is not found",
       commandObject: { command: "duck", options: { a: 1 } },
-      errorCode: "UNKNOWN_COMMAND",
     },
     {
       case: "if arguments is not an array of string",
@@ -107,8 +103,8 @@ describe("Error Handling", () => {
     {
       case: "if arguments is not an array of string",
       commandObject: {
-        command: "start",
         options: {},
+        command: "start",
         arguments: ["A", "b", 3],
       },
       errorCode: "INVALID_MAIN_ARGUMENTS",
@@ -148,17 +144,17 @@ describe("Error Handling", () => {
 describe("Functionality", () => {
   const teatData = Object.freeze([
     {
-      commandObject: { command: "LIST_SAVED_TIMERS", options: {} },
       expectedOutput: { command: "LIST_SAVED_TIMERS" },
+      commandObject: { command: "LIST_SAVED_TIMERS", options: {} },
     },
     {
-      commandObject: { command: "START", options: {} },
       expectedOutput: { command: "START" },
+      commandObject: { command: "START", options: {} },
     },
     {
       commandObject: {
-        command: "START",
         options: {},
+        command: "START",
         arguments: ["coding"],
       },
       expectedOutput: { command: "START", argument: "coding" },
@@ -166,8 +162,8 @@ describe("Functionality", () => {
 
     {
       commandObject: {
-        command: "tt",
         options: {},
+        command: "tt",
         arguments: ["arg_a", "arg_b"],
       },
       expectedOutput: { command: "TEST", argument: ["arg_a", "arg_b"] },
@@ -180,8 +176,8 @@ describe("Functionality", () => {
       commandObject: {
         command: "SAVE",
         options: {
-          name: ["coding"],
           d: ["20"],
+          name: ["coding"],
           D: ["Crazy activity"],
           t: ["work", "coding"],
         },
@@ -189,11 +185,11 @@ describe("Functionality", () => {
       expectedOutput: {
         command: "SAVE",
         argument: {
-          name: "coding",
           duration: 20,
-          description: "Crazy activity",
-          unit: "minute", // default
+          name: "coding",
           tags: ["work", "coding"],
+          unit: "minute", // default
+          description: "Crazy activity",
         },
       },
     },
