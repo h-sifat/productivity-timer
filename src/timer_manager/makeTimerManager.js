@@ -6,7 +6,8 @@ module.exports = function makeTimerManager({
   TIMER_STATES,
   configManager,
   MS_IN_ONE_SECOND,
-  assertPlainObject,
+  allCommandSchemas,
+  normalizeCommandObject,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
   const TIMER_SPECIFIC_COMMANDS = Object.freeze([
@@ -20,6 +21,7 @@ module.exports = function makeTimerManager({
     "SAVE",
     "STATS",
     "CREATE",
+    "STOP_BEEPING",
     "UPDATE_CONFIG",
     "LIST_SAVED_TIMERS",
     "DELETE_SAVED_TIMER",
@@ -80,9 +82,11 @@ module.exports = function makeTimerManager({
      * @returns {{ success: true } | {success: false, message: string}}
      * */
     async execute(commandObject) {
-      assertPlainObject({
-        object: commandObject,
-        name: "Argument of TimerManager.execute()",
+      commandObject = normalizeCommandObject({
+        commandObject,
+        allCommandSchemas,
+        allCommands: ALL_COMMANDS,
+        commandAliases: this.#commandAliases,
       });
 
       try {
@@ -97,13 +101,7 @@ module.exports = function makeTimerManager({
     }
 
     async #execute(commandObject) {
-      const arg = commandObject.arg;
-      let command = commandObject.command;
-
-      if (command in this.#commandAliases)
-        // now command represents an alias and this.#commandAliases[command]
-        // is the actual command
-        command = this.#commandAliases[command];
+      const { command, argument } = commandObject;
 
       if (this.#isBeeping) {
         this.#stopBeeping();
@@ -112,10 +110,8 @@ module.exports = function makeTimerManager({
       }
 
       const isTimerCommandWithoutArg =
-        // if commandName is a timer command AND
-        // (if commandName is not "START" with a timer name)
         TIMER_SPECIFIC_COMMANDS.includes(command) &&
-        !(command === "START" && arg);
+        !(command === "START" && argument);
 
       if (isTimerCommandWithoutArg) {
         return this.#currentTimer
@@ -125,11 +121,11 @@ module.exports = function makeTimerManager({
 
       switch (command) {
         case "CREATE":
-          return this.#createTimer(arg);
+          return this.#createTimer(argument);
         case "START":
-          return this.#startTimer(arg);
+          return this.#startTimer(argument);
         case "SAVE":
-          await this.#saveTimer(arg);
+          await this.#saveTimer(argument);
           break;
         case "UPDATE_CONFIG":
           await this.#retrieveAndSetConfig();
@@ -137,11 +133,11 @@ module.exports = function makeTimerManager({
         case "LIST_SAVED_TIMERS":
           return { success: true, data: this.#listSavedTimers() };
         case "DELETE_SAVED_TIMER":
-          await configManager.deleteSavedTimer(arg);
+          await configManager.deleteSavedTimer(argument);
           await this.#retrieveAndSetConfig();
           break;
         case "STATS":
-          return { success: true, data: await this.#getStats(arg) };
+          return { success: true, data: await this.#getStats(argument) };
         default:
           return {
             success: false,
@@ -210,6 +206,7 @@ module.exports = function makeTimerManager({
       this.#speaker.off();
     }
 
+    // @TODO when saving new timer add it to the current saved timers list.
     async #saveTimer(timerInfo) {
       if (timerInfo) {
         await configManager.saveTimer({ timerInfo });

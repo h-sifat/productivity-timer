@@ -1,8 +1,10 @@
+const { EPP } = require("../util");
 const Logger = require("../logger");
 const Speaker = require("../speaker");
 const notify = require("../notifier");
-const { EPP, assertPlainObject } = require("../util");
 const makeTimerManager = require("./makeTimerManager");
+const ALL_COMMAND_SCHEMAS = require("./command-schemas");
+const normalizeCommandObject = require("./normalizeCommandObject");
 const { configManager, TIMER_LOGS_DIR_PATH } = require("../config");
 const { Timer, TIMER_CONSTANTS, TIMER_STATES } = require("../timer");
 
@@ -16,7 +18,8 @@ const TimerManager = makeTimerManager({
   timerLogger,
   TIMER_STATES,
   configManager,
-  assertPlainObject,
+  normalizeCommandObject,
+  allCommandSchemas: ALL_COMMAND_SCHEMAS,
   MS_IN_ONE_SECOND: TIMER_CONSTANTS.MS_IN_ONE_SECOND,
 });
 
