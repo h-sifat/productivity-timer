@@ -16,6 +16,8 @@ module.exports = normalizeCommandObject;
  * method defined in the schema of "duration" option.
  *
  * See all the command schemas in the commandSchema.js module.
+ *
+ * @param arg - {{commandAliases: object, allCommands: object, commandObject: object, allCommandSchemas: object}}
  * */
 function normalizeCommandObject(arg) {
   const {
@@ -161,6 +163,8 @@ function buildCommandObjectWithMainArguments({
 
   // in case there are excess number of arguments
   commandArguments = commandArguments.slice(0, totalArgumentsCount);
+
+  if (!commandArguments.length) return { command };
 
   // e.g., if commandArguments is like: ["coding"] for the command: "START" then
   // the commandObject should be like: {command: "START", argument: "coding"}
