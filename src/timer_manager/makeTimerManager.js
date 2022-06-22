@@ -109,11 +109,11 @@ module.exports = function makeTimerManager({
         if (command === "STOP_BEEPING") return;
       }
 
-      const isTimerCommandWithoutArg =
+      const isTimerCommandWithoutArgument =
         TIMER_SPECIFIC_COMMANDS.includes(command) &&
         !(command === "START" && argument);
 
-      if (isTimerCommandWithoutArg) {
+      if (isTimerCommandWithoutArgument) {
         return this.#currentTimer
           ? this.#currentTimer[command.toLowerCase()]()
           : { success: false, message: "No timer exists." };
@@ -206,10 +206,16 @@ module.exports = function makeTimerManager({
       this.#speaker.off();
     }
 
-    // @TODO when saving new timer add it to the current saved timers list.
     async #saveTimer(timerInfo) {
       if (timerInfo) {
         await configManager.saveTimer({ timerInfo });
+
+        const newTimer = new Timer({
+          ...timerInfo,
+          callback: this.#timerCallback,
+        });
+
+        this.#savedTimers[timerInfo.name] = newTimer;
         return;
       }
 
