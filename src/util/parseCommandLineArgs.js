@@ -14,7 +14,7 @@ module.exports = function parseCommandLineArgs(argumentsArray) {
     throw new EPP(`Argument must be an array.`, "NON_ARRAY_ARGS");
 
   const options = {};
-  const mainArguments = [];
+  const _arguments = [];
 
   let previousArgumentType;
   let currentOption;
@@ -46,7 +46,7 @@ module.exports = function parseCommandLineArgs(argumentsArray) {
       options[option] = true;
     } else if (currentArgument === MAIN_ARGS_SEPARATOR) {
       if (previousArgumentType === argumentTypes.MAIN_ARGS_SEPARATOR)
-        mainArguments.push(MAIN_ARGS_SEPARATOR);
+        _arguments.push(MAIN_ARGS_SEPARATOR);
       else previousArgumentType = argumentTypes.MAIN_ARGS_SEPARATOR;
     } else {
       // change here
@@ -54,12 +54,12 @@ module.exports = function parseCommandLineArgs(argumentsArray) {
         !previousArgumentType ||
         previousArgumentType === argumentTypes.MAIN_ARGS_SEPARATOR;
 
-      if (isMainArgument) mainArguments.push(currentArgument);
+      if (isMainArgument) _arguments.push(currentArgument);
       else if (Array.isArray(options[currentOption]))
         options[currentOption].push(currentArgument);
       else options[currentOption] = [currentArgument];
     }
   }
 
-  return { options, mainArguments };
+  return { options, arguments: _arguments };
 };

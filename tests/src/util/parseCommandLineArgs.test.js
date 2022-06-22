@@ -60,34 +60,34 @@ describe("parseCommandLineArgs", () => {
     },
     {
       args: ["--", "1", "--", "2"],
-      output: { options: {}, mainArguments: ["1", "--", "2"] },
+      output: { options: {}, arguments: ["1", "--", "2"] },
     },
 
     {
       args: ["-a", "1", "--opt", "2", "hi", "--", "3", "4"],
       output: {
         options: { a: ["1"], opt: ["2", "hi"] },
-        mainArguments: ["3", "4"],
+        arguments: ["3", "4"],
       },
     },
     {
       args: ["sub", "1"],
-      output: { options: {}, mainArguments: ["sub", "1"] },
+      output: { options: {}, arguments: ["sub", "1"] },
     },
     {
       args: ["sub", "-a", "1"],
-      output: { options: { a: ["1"] }, mainArguments: ["sub"] },
+      output: { options: { a: ["1"] }, arguments: ["sub"] },
     },
     {
       args: ["sub", "--opt", "1", "--", "2"],
-      output: { options: { opt: ["1"] }, mainArguments: ["sub", "2"] },
+      output: { options: { opt: ["1"] }, arguments: ["sub", "2"] },
     },
     {
       args: ["--opt", "--a", "1"],
       output: { options: { opt: ["--a", "1"] } },
     },
   ].map((item) => {
-    if (!item.output.mainArguments) item.output.mainArguments = [];
+    if (!item.output.arguments) item.output.arguments = [];
     return item;
   });
 
