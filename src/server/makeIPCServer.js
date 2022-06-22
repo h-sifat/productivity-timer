@@ -75,7 +75,7 @@ module.exports = function makeIPCServer({
           onError: async (ex) => {
             await this.#onHandlerException({ error: ex, path, body });
             const errorResponse = makeStringifiedResponse({
-              error: { message: "Internal server error." },
+              error: { message: ex.message },
             });
 
             try {
