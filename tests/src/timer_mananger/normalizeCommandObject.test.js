@@ -8,11 +8,12 @@ const commandAliases = Object.freeze({
 });
 
 const allCommands = Object.freeze([
-  "START",
-  "LIST_SAVED_TIMERS",
-  "STATS",
   "TEST",
   "SAVE",
+  "DUCK",
+  "START",
+  "STATS",
+  "LIST_SAVED_TIMERS",
 ]);
 
 const allCommandSchemas = Object.freeze({
@@ -27,6 +28,21 @@ const allCommandSchemas = Object.freeze({
     arguments: {
       count: 2,
       optional: 1,
+    },
+  },
+  STATS: {
+    arguments: {
+      count: 1,
+      optional: 1,
+      $exec: (argument) =>
+        /^\d+$/.test(argument) ? Number(argument) : argument,
+    },
+  },
+  DUCK: {
+    arguments: {
+      count: 1,
+      optional: 1,
+      default: "quack",
     },
   },
   SAVE: {
@@ -89,7 +105,7 @@ describe("Error Handling", () => {
     {
       errorCode: "UNKNOWN_COMMAND",
       case: "if command is not found",
-      commandObject: { command: "duck", options: { a: 1 } },
+      commandObject: { command: Math.random().toString(), options: { a: 1 } },
     },
     {
       case: "if arguments is not an array of string",
@@ -171,6 +187,25 @@ describe("Functionality", () => {
     {
       commandObject: { command: "SAVE", options: {} },
       expectedOutput: { command: "SAVE" },
+    },
+    {
+      commandObject: { command: "STATS", arguments: ["12"], options: {} },
+      // the conversion from "12" to 12 is done by the $exec method in the
+      // schema of "STATS" command.
+      expectedOutput: { command: "STATS", argument: 12 },
+    },
+    {
+      commandObject: { command: "DUCK", options: {}, arguments: [] },
+      // the "quack" is a default value coming from the schema.
+      expectedOutput: { command: "DUCK", argument: "quack" },
+    },
+    {
+      commandObject: {
+        command: "STATS",
+        arguments: ["non_numeric_string"],
+        options: {},
+      },
+      expectedOutput: { command: "STATS", argument: "non_numeric_string" },
     },
     {
       commandObject: {

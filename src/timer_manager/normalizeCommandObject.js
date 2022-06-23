@@ -141,8 +141,12 @@ function buildCommandObjectWithMainArguments({
   commandArguments,
   commandArgumentsSchema,
 } = {}) {
-  const { count: totalArgumentsCount, optional: optionalArgumentsCount = 0 } =
-    commandArgumentsSchema;
+  const {
+    $exec = (v) => v,
+    default: defaultArgument,
+    count: totalArgumentsCount,
+    optional: optionalArgumentsCount = 0,
+  } = commandArgumentsSchema;
 
   {
     const requiredArgumentsCount = totalArgumentsCount - optionalArgumentsCount;
@@ -164,12 +168,16 @@ function buildCommandObjectWithMainArguments({
   // in case there are excess number of arguments
   commandArguments = commandArguments.slice(0, totalArgumentsCount);
 
-  if (!commandArguments.length) return { command };
+  if (!commandArguments.length)
+    return defaultArgument
+      ? { command, argument: defaultArgument }
+      : { command };
 
   // e.g., if commandArguments is like: ["coding"] for the command: "START" then
   // the commandObject should be like: {command: "START", argument: "coding"}
-  const argument =
+  let argument =
     commandArguments.length === 1 ? commandArguments.pop() : commandArguments;
+  argument = $exec(argument);
 
   return { command, argument };
 }

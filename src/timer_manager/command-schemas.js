@@ -42,6 +42,8 @@ const schema = {
     arguments: {
       count: 1,
       optional: 1,
+      $exec: (argument) =>
+        /^\d+$/.test(argument) ? Number(argument) : argument,
     },
   },
   DELETE_SAVED_TIMER: {
