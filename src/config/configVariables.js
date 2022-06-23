@@ -12,7 +12,12 @@ const ERROR_LOGS_DIR_PATH = path.join(TIMER_DIR_PATH, ERRORS_DIR_NAME);
 const CONFIG_FILE_PATH = path.join(TIMER_DIR_PATH, CONFIG_FILE_NAME);
 const SOCKET_PIPE_PATH = path.join(TIMER_DIR_PATH, SOCKET_PIPE_NAME);
 
+const serverRoutes = Object.freeze({
+  TIMER_MANAGER: "/timer-manager",
+});
+
 module.exports = {
+  serverRoutes,
   TIMER_DIR_PATH,
   CONFIG_FILE_PATH,
   SOCKET_PIPE_PATH,

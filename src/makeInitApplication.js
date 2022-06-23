@@ -2,10 +2,11 @@ module.exports = function makeInitApplication({
   fs,
   server,
   timerManager,
+  serverRoutes,
   SOCKET_PIPE_PATH,
 }) {
   server.handle({
-    path: "/timer",
+    path: serverRoutes.TIMER_MANAGER,
     handler: async ({ body, send }) => {
       const result = await timerManager.execute(body);
       send({ body: result });

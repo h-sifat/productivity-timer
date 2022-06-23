@@ -4,7 +4,7 @@ const requestToIPCServer = require("../util/request");
 const printErrorAndExit = require("../util/printErrorAndExit");
 const parseCommandLineArgs = require("../util/parseCommandLineArgs");
 
-const { SOCKET_PIPE_PATH } = require("../config/configVariables");
+const { SOCKET_PIPE_PATH, serverRoutes } = require("../config/configVariables");
 
 main();
 
@@ -14,13 +14,19 @@ async function main() {
   const parsedArguments = parseCommandLineArgs(commandLineArguments);
   const commandObject = buildCommandObject(parsedArguments);
 
-  const response = await requestToIPCServer({
-    body: commandObject,
-    requestPath: "/timer",
-    socketPath: SOCKET_PIPE_PATH,
-  });
+  try {
+    const response = await requestToIPCServer({
+      body: commandObject,
+      socketPath: SOCKET_PIPE_PATH,
+      requestPath: serverRoutes.TIMER_MANAGER,
+    });
 
-  console.dir(response, { depth: null });
+    console.dir(response, { depth: null });
+  } catch (ex) {
+    printErrorAndExit(
+      `Couldn't make request to server. [Error: ${ex.message}]`
+    );
+  }
 }
 
 function buildCommandObject(parsedCommandLineArgs) {
