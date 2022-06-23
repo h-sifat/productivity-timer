@@ -103,11 +103,10 @@ module.exports = function makeTimerManager({
     async #execute(commandObject) {
       const { command, argument } = commandObject;
 
-      if (this.#isBeeping) {
-        this.#stopBeeping();
-
-        if (command === "STOP_BEEPING") return;
-      }
+      // if any command issued while the timer is beeping
+      // then turn off the beeping.
+      if (this.#isBeeping) this.#stopBeeping();
+      if (command === "STOP_BEEPING") return;
 
       const isTimerCommandWithoutArgument =
         TIMER_SPECIFIC_COMMANDS.includes(command) &&

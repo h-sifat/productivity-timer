@@ -30,6 +30,7 @@ const schema = {
   INFO: {},
   RESET: {},
   PAUSE: {},
+  STOP_BEEPING: {},
   UPDATE_CONFIG: {},
   LIST_SAVED_TIMERS: {},
   START: {
