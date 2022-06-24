@@ -17,14 +17,13 @@ module.exports = normalizeCommandObject;
  *
  * See all the command schemas in the commandSchema.js module.
  *
- * @param arg - {{commandAliases: object, allCommands: object, commandObject: object, allCommandSchemas: object}}
+ * @param arg - {{commandAliases: object, commandObject: object, commandSchemas: object}}
  * */
 function normalizeCommandObject(arg) {
   const {
     commandAliases = required("aliases"),
-    allCommands = required("allCommands"),
     commandObject = required("commandObject"),
-    allCommandSchemas = required("commandSchema"),
+    commandSchemas = required("commandSchema"),
   } = arg;
 
   assertValidCommandObject({ commandObject });
@@ -36,7 +35,7 @@ function normalizeCommandObject(arg) {
   } = commandObject;
 
   if (command in commandAliases) command = commandAliases[command];
-  else if (allCommands.includes(command.toUpperCase()))
+  else if (command.toUpperCase() in commandSchemas)
     command = command.toUpperCase();
   else throw new EPP(`Unknown command "${command}".`, "UNKNOWN_COMMAND");
 
@@ -44,7 +43,7 @@ function normalizeCommandObject(arg) {
     options: commandOptionsSchema,
     arguments: commandArgumentsSchema,
     optionAliases: commandOptionsAliases,
-  } = allCommandSchemas[command];
+  } = commandSchemas[command];
 
   // work with options
   if (commandOptionsSchema && Object.keys(commandOptions).length)
@@ -73,67 +72,67 @@ function buildCommandObjectWithCommandOptions({
 }) {
   const normalizedCommandArgument = {};
 
-  // substitute command option aliases with their respective options
+  // substitute command option aliases with their respective long option names
   for (let [optionName, value] of Object.entries(commandOptions))
     if (optionName in commandOptionsAliases)
       normalizedCommandArgument[commandOptionsAliases[optionName]] = value;
     else normalizedCommandArgument[optionName] = value;
 
   for (const optionName of Object.keys(commandOptionsSchema)) {
+    const optionSchema = commandOptionsSchema[optionName];
     const optionValue = normalizedCommandArgument[optionName];
-    const {
-      $exec,
-      type: optionValueType,
-      default: defaultValue,
-      optional: isOptionOptional,
-    } = commandOptionsSchema[optionName];
+
+    if (!(optionName in normalizedCommandArgument)) {
+      if (optionSchema.optional || "default" in optionSchema) {
+        if ("default" in optionSchema)
+          normalizedCommandArgument[optionName] = optionSchema.default;
+      } else
+        throw new EPP({
+          code: "MISSING_REQUIRED_PROPERTY",
+          message: `The property "${optionName}" is required.`,
+        });
+
+      continue;
+    }
 
     normalizedCommandArgument[optionName] =
-      normalizeOptionAsCommandArgumentProperty({
-        $exec,
+      normalizeOptionValueAsCommandObjectProperty({
         optionName,
         optionValue,
-        defaultValue,
-        optionValueType,
-        normalizedCommandArgument,
-        isOptionRequired: !isOptionOptional,
+        optionValueType: optionSchema.type,
+        $exec: optionSchema.$exec || ((v) => v),
       });
   }
 
   return { command, argument: normalizedCommandArgument };
+}
 
-  function normalizeOptionAsCommandArgumentProperty({
-    optionName,
-    optionValue,
-    defaultValue,
-    optionValueType,
-    isOptionRequired,
-    $exec = (v) => v,
-    normalizedCommandArgument,
-  } = {}) {
-    if (!(optionName in normalizedCommandArgument)) {
-      if (defaultValue) return defaultValue;
-
-      if (isOptionRequired)
-        throw new EPP(`The property "${optionName}" is required.`);
-    }
-
-    if (optionValueType === "array") {
-      if (!Array.isArray(optionValue))
-        throw new EPP(`The value of "${optionName}" must be an array.`);
-    } else {
-      // e.g., if optionValueType is not an array then {name: ["coding"]} should
-      // be normalized as {name: "coding"}
-      if (Array.isArray(optionValue)) optionValue = optionValue[0];
-
-      if (typeof optionValue !== optionValueType)
-        throw new EPP(
-          `The property "${optionName}" must be of type: "${optionValueType}"`
-        );
-    }
-
+function normalizeOptionValueAsCommandObjectProperty({
+  $exec,
+  optionName,
+  optionValue,
+  optionValueType,
+} = {}) {
+  if (optionValueType === "array") {
+    if (!Array.isArray(optionValue))
+      throw new EPP({
+        code: "INVALID_PROPERTY_TYPE",
+        message: `The value of "${optionName}" must be an array.`,
+      });
     return $exec(optionValue);
   }
+
+  // e.g., if optionValueType is not an array then {name: ["coding"]} should
+  // be normalized as {name: "coding"}
+  if (Array.isArray(optionValue)) optionValue = optionValue[0];
+
+  if (typeof optionValue !== optionValueType)
+    throw new EPP({
+      code: "INVALID_PROPERTY_TYPE",
+      message: `The property "${optionName}" must be of type: "${optionValueType}"`,
+    });
+
+  return $exec(optionValue);
 }
 
 function buildCommandObjectWithMainArguments({

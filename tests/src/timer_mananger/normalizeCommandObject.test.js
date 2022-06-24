@@ -7,16 +7,7 @@ const commandAliases = Object.freeze({
   tt: "TEST",
 });
 
-const allCommands = Object.freeze([
-  "TEST",
-  "SAVE",
-  "DUCK",
-  "START",
-  "STATS",
-  "LIST_SAVED_TIMERS",
-]);
-
-const allCommandSchemas = Object.freeze({
+const commandSchemas = Object.freeze({
   LIST_SAVED_TIMERS: {},
   START: {
     arguments: {
@@ -126,6 +117,33 @@ describe("Error Handling", () => {
       errorCode: "INVALID_MAIN_ARGUMENTS",
     },
     {
+      case: "if required options is missing",
+      commandObject: {
+        // missing property "duration"
+        options: { name: ["test"] },
+        command: "save",
+      },
+      errorCode: "MISSING_REQUIRED_PROPERTY",
+    },
+    {
+      case: "if property type is invalid",
+      commandObject: {
+        // tags should be an array
+        options: { name: ["test"], duration: ["20"], tags: "non_an_array" },
+        command: "save",
+      },
+      errorCode: "INVALID_PROPERTY_TYPE",
+    },
+    {
+      case: "if property type is invalid",
+      commandObject: {
+        // name should be [string]
+        options: { name: [20], duration: ["20"], tags: ["a"] },
+        command: "save",
+      },
+      errorCode: "INVALID_PROPERTY_TYPE",
+    },
+    {
       case: "if arguments required but absent",
       commandObject: {
         command: "TEST", // the test command requires at least 1 main argument. see the schema
@@ -146,10 +164,9 @@ describe("Error Handling", () => {
     expect.assertions(1);
     try {
       normalizeCommandObject({
-        allCommands,
         commandObject,
         commandAliases,
-        allCommandSchemas,
+        commandSchemas,
       });
     } catch (ex) {
       expect(ex.code).toBe(errorCode);
@@ -235,10 +252,9 @@ describe("Functionality", () => {
       commandObject
     )}. idx: ${index}`, () => {
       const normalizedCommandObject = normalizeCommandObject({
-        allCommands,
         commandObject,
         commandAliases,
-        allCommandSchemas,
+        commandSchemas,
       });
 
       expect(normalizedCommandObject).toEqual(expectedOutput);

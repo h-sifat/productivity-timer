@@ -5,8 +5,8 @@ module.exports = function makeTimerManager({
   timerLogger,
   TIMER_STATES,
   configManager,
+  commandSchemas,
   MS_IN_ONE_SECOND,
-  allCommandSchemas,
   normalizeCommandObject,
 }) {
   const MS_IN_ONE_DAY = 24 * 60 * 60 * MS_IN_ONE_SECOND;
@@ -84,8 +84,7 @@ module.exports = function makeTimerManager({
     async execute(commandObject) {
       commandObject = normalizeCommandObject({
         commandObject,
-        allCommandSchemas,
-        allCommands: ALL_COMMANDS,
+        commandSchemas,
         commandAliases: this.#commandAliases,
       });
 

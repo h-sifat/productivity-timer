@@ -15,10 +15,10 @@ const CREATE_COMMAND_OPTIONS = deepFreeze({
     $exec: (durationString) => {
       const duration = Number(durationString);
       if (Number.isNaN(duration))
-        throw new EPP(
-          `Invalid duration "${durationString}"`,
-          "INVALID_DURATION"
-        );
+        throw new EPP({
+          code: "INVALID_DURATION",
+          message: `Invalid duration "${durationString}"`,
+        });
       return duration;
     },
   },

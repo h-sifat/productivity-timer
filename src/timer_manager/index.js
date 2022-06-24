@@ -3,7 +3,7 @@ const Logger = require("../logger");
 const Speaker = require("../speaker");
 const notify = require("../notifier");
 const makeTimerManager = require("./makeTimerManager");
-const ALL_COMMAND_SCHEMAS = require("./command-schemas");
+const COMMAND_SCHEMAS = require("./commandSchemas");
 const normalizeCommandObject = require("./normalizeCommandObject");
 const { configManager, TIMER_LOGS_DIR_PATH } = require("../config");
 const { Timer, TIMER_CONSTANTS, TIMER_STATES } = require("../timer");
@@ -19,7 +19,7 @@ const TimerManager = makeTimerManager({
   TIMER_STATES,
   configManager,
   normalizeCommandObject,
-  allCommandSchemas: ALL_COMMAND_SCHEMAS,
+  commandSchemas: COMMAND_SCHEMAS,
   MS_IN_ONE_SECOND: TIMER_CONSTANTS.MS_IN_ONE_SECOND,
 });
 
