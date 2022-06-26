@@ -14,7 +14,6 @@ const TIMER_CONSTANTS = Object.freeze({
   MIN_DURATION_MS: 2 * 1000,
   MAX_DESCRIPTION_LENGTH: 100,
   MAX_DURATION_MS: 24 * 60 * 60 * 1000, // 24 hours
-  SUCCESS_RESULT: Object.freeze({ success: true }),
   VALID_DURATION_UNITS: Object.freeze([
     "s",
     "m",

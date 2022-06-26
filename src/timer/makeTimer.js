@@ -25,8 +25,8 @@ module.exports = function makeTimer(arg) {
     constructor(arg = {}) {
       assertNonNullObject({
         object: arg,
-        name: "Argument to Timer constructor",
         errorCode: "ARG_NOT_OBJECT",
+        name: "Argument to Timer constructor",
       });
 
       const { callback = required("callback") } = arg;
@@ -55,12 +55,14 @@ module.exports = function makeTimer(arg) {
       // get the startTime ASAP
       const METHOD_CALL_TIMESTAMP = Date.now();
 
+      let message;
       switch (this.#state) {
         case TIMER_STATES.PAUSED:
           this.#events.push(
             Object.freeze({ name: "resume", time: METHOD_CALL_TIMESTAMP })
           );
           this.#state = TIMER_STATES.RUNNING;
+          message = `Resumed timer "${this.#name}"`;
           break;
 
         case TIMER_STATES.NOT_STARTED:
@@ -68,6 +70,7 @@ module.exports = function makeTimer(arg) {
             Object.freeze({ name: "start", time: METHOD_CALL_TIMESTAMP })
           );
           this.#state = TIMER_STATES.RUNNING;
+          message = `Started timer "${this.#name}"`;
           break;
 
         default:
@@ -81,7 +84,7 @@ module.exports = function makeTimer(arg) {
         () => this.#tick(),
         TIMER_CONSTANTS.MS_IN_ONE_SECOND
       );
-      return TIMER_CONSTANTS.SUCCESS_RESULT;
+      return { success: true, message };
     }
 
     /**
@@ -104,7 +107,7 @@ module.exports = function makeTimer(arg) {
       );
       this.#state = TIMER_STATES.PAUSED;
 
-      return TIMER_CONSTANTS.SUCCESS_RESULT;
+      return { success: true, message: `Paused timer "${this.#name}"` };
     }
 
     /**
@@ -124,7 +127,7 @@ module.exports = function makeTimer(arg) {
           );
 
           this.#callback(this.info());
-          return TIMER_CONSTANTS.SUCCESS_RESULT;
+          return { success: true, message: `Ended timer "${this.#name}"` };
 
         default:
           return {
@@ -147,7 +150,7 @@ module.exports = function makeTimer(arg) {
       this.#remainingTimeMS = this.#durationMS;
       this.#state = TIMER_STATES.NOT_STARTED;
 
-      return TIMER_CONSTANTS.SUCCESS_RESULT;
+      return { success: true, message: `Reset timer "${this.#name}"` };
     }
 
     /**

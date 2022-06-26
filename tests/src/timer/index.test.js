@@ -1,5 +1,5 @@
 const { TIMER_STATES, TIMER_CONSTANTS, Timer } = require("../../../src/timer");
-const { SUCCESS_RESULT, MIN_DURATION_MS, MS_IN_ONE_SECOND } = TIMER_CONSTANTS;
+const { MIN_DURATION_MS, MS_IN_ONE_SECOND } = TIMER_CONSTANTS;
 
 const TIMER_NAME = "name";
 const DURATION_UNIT = "s";
@@ -84,10 +84,12 @@ describe("Timer Constructor", () => {
 });
 
 describe("Timer.start", () => {
-  it(`returns ${JSON.stringify(
-    SUCCESS_RESULT
-  )} if called on a new timer`, () => {
-    expect(globalTestTimer.start()).toEqual(SUCCESS_RESULT);
+  it(`returns {success: true, message: string} if called on a new timer`, () => {
+    {
+      const { success, message } = globalTestTimer.start();
+      expect(success).toBeTruthy();
+      expect(message).toMatch(/started/i);
+    }
 
     const timerInfo = globalTestTimer.info();
     expect(timerInfo).toMatchObject({
@@ -162,7 +164,11 @@ describe("Timer.start", () => {
       expect(timerInfo.events.pop()).toMatchObject({ name: "pause" });
     }
 
-    expect(globalTestTimer.start()).toEqual(SUCCESS_RESULT);
+    {
+      const { success, message } = globalTestTimer.start();
+      expect(success).toBeTruthy();
+      expect(message).toMatch(/resumed/i);
+    }
 
     // resume after pause
     {
@@ -184,9 +190,7 @@ describe("Timer.pause", () => {
     });
   });
 
-  it(`returns ${JSON.stringify(
-    SUCCESS_RESULT
-  )} if the timer is running`, () => {
+  it(`returns "{success: true, message: string}" if the timer is running`, () => {
     globalTestTimer.start();
 
     // before
@@ -198,7 +202,10 @@ describe("Timer.pause", () => {
       expect(timerInfo.events).toHaveLength(1); // start
     }
 
-    expect(globalTestTimer.pause()).toEqual(SUCCESS_RESULT);
+    expect(globalTestTimer.pause()).toEqual({
+      success: true,
+      message: expect.any(String),
+    });
 
     // after
     {
@@ -244,7 +251,11 @@ describe("Timer.end()", () => {
   it("cannot be called on ENDED state", () => {
     globalTestTimer.start();
 
-    expect(globalTestTimer.end()).toEqual(SUCCESS_RESULT);
+    {
+      const { success, message } = globalTestTimer.end();
+      expect(success).toBeTruthy();
+      expect(message).toMatch(/ended/i);
+    }
 
     // now the timer is in ENDED sate
     expect(globalTestTimer.end()).toEqual({
