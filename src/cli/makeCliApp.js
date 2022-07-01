@@ -6,11 +6,19 @@ module.exports = function makeCliApp(arg) {
     buildCommandObject,
     requestToIPCServer,
     parseCommandLineArgs,
+    getServerCommandHandler,
   } = arg;
 
   return async function cliApp({ cliArguments }) {
     const parsedArguments = parseCommandLineArgs(cliArguments);
     const commandObject = buildCommandObject(parsedArguments);
+
+    if (commandObject.command === "server") {
+      // lazy load this module to improve performance
+      const serverCommandHandler = getServerCommandHandler();
+      await serverCommandHandler(commandObject);
+      return;
+    }
 
     try {
       const response = await requestToIPCServer({

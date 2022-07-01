@@ -13,7 +13,17 @@ const cliApp = makeCliApp({
   buildCommandObject,
   requestToIPCServer,
   parseCommandLineArgs,
+  getServerCommandHandler,
 });
 
 const cliArguments = process.argv.slice(2);
 cliApp({ cliArguments });
+
+function getServerCommandHandler() {
+  return require("./makeServerCommandHandler")({
+    serverRoutes,
+    SOCKET_PIPE_PATH,
+    printErrorAndExit,
+    requestToIPCServer,
+  });
+}
