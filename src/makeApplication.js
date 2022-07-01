@@ -1,4 +1,4 @@
-module.exports = function makeInitApplication({
+module.exports = function makeApplication({
   fs,
   server,
   timerManager,
