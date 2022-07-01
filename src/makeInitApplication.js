@@ -14,9 +14,18 @@ module.exports = function makeInitApplication({
   });
 
   server.handle({
-    path: "/close_server",
-    handler: ({ send }) => {
+    path: serverRoutes.KILL_SERVER,
+    handler: async ({ send }) => {
       send({ body: { message: "Closing Server." } });
+
+      try {
+        // end any active timer
+        await timerManager.execute({
+          options: {},
+          command: "END",
+        });
+      } catch {}
+
       server.close();
       process.exit(0);
     },

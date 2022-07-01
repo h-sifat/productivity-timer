@@ -13,6 +13,8 @@ const CONFIG_FILE_PATH = path.join(TIMER_DIR_PATH, CONFIG_FILE_NAME);
 const SOCKET_PIPE_PATH = path.join(TIMER_DIR_PATH, SOCKET_PIPE_NAME);
 
 const serverRoutes = Object.freeze({
+  PING: "/ping",
+  KILL_SERVER: "/kill-server",
   TIMER_MANAGER: "/timer-manager",
 });
 
