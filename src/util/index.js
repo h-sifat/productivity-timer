@@ -1,7 +1,9 @@
 const fs = require("fs");
-const fsp = fs.promises;
-const deepFreeze = require("./deepFreeze");
 const EPP = require("./epp");
+const required = require("./required");
+const deepFreeze = require("./deepFreeze");
+
+const fsp = fs.promises;
 
 async function exists(filepath, mode) {
   try {
@@ -10,19 +12,6 @@ async function exists(filepath, mode) {
   } catch (ex) {
     return false;
   }
-}
-
-/**
- * Used in object destructuring to make sure that a required property is not
- * missing. If a required property is missing it throws an error.
- *
- * Example:
- * ```js
- * const {name = required("name")} = person;
- * ```
- * */
-function required(name) {
-  throw new EPP(`Property "${name}" is missing.`, "MISSING_PROPERTY");
 }
 
 /**
