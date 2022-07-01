@@ -23,7 +23,17 @@ module.exports = function makeServerCommandHandler(arg) {
         return await startServer();
       case "KILL":
         return await killServer();
-      // @TODO add "PING" command
+      case "PING":
+        {
+          try {
+            const { body } = await pingServer();
+            console.log(body.message);
+          } catch (ex) {
+            printErrorAndExit(`Error: ${ex.message}`);
+          }
+        }
+        break;
+
       default:
         printErrorAndExit(`Invalid server action "${serverAction}"`);
     }
@@ -36,7 +46,7 @@ module.exports = function makeServerCommandHandler(arg) {
     const spawnDetachedProcess = getSpawnDetachedProcess();
     spawnDetachedProcess({ modulePath: SERVER_APPLICATION_MODULE_PATH });
 
-    console.log("Started Server.");
+    console.log("Started Server. Now ping to verify!");
   }
 
   async function killServer() {
@@ -49,12 +59,16 @@ module.exports = function makeServerCommandHandler(arg) {
     } else printErrorAndExit("Server is not running.");
   }
 
+  async function pingServer() {
+    return await requestToIPCServer({
+      socketPath: SOCKET_PIPE_PATH,
+      requestPath: serverRoutes.PING,
+    });
+  }
+
   async function isServerAlive() {
     try {
-      await requestToIPCServer({
-        socketPath: SOCKET_PIPE_PATH,
-        requestPath: serverRoutes.PING,
-      });
+      await pingServer();
       return true;
     } catch (ex) {
       return false;
