@@ -18,4 +18,19 @@ function printErrorAndExit(arg) {
   process.exit(exitCode);
 }
 
-module.exports = printErrorAndExit;
+function buildCommandObject(parsedCommandLineArgs) {
+  const { arguments: _arguments, options } = parsedCommandLineArgs;
+
+  if (!_arguments.length)
+    printErrorAndExit(
+      `At least one sub command (create, start, etc.) is required.`
+    );
+
+  const command = _arguments.shift();
+  return { options, command, arguments: _arguments };
+}
+
+module.exports = {
+  printErrorAndExit,
+  buildCommandObject,
+};

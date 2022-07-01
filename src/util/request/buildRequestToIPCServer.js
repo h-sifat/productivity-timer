@@ -1,5 +1,5 @@
 module.exports = function buildRequestToIPCServer({ net }) {
-  return function requestToIPCServer({ socketPath, requestPath, body }) {
+  return function requestToIPCServer({ socketPath, requestPath, body = {} }) {
     // ugly validation
     if (typeof socketPath !== "string" || socketPath === "")
       throw new Error(`Invalid socket path: "${socketPath}".`);
