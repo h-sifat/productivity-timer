@@ -4,6 +4,8 @@ module.exports = function makeServerCommandHandler(arg) {
     SOCKET_PIPE_PATH,
     printErrorAndExit,
     requestToIPCServer,
+    getSpawnDetachedProcess,
+    SERVER_APPLICATION_MODULE_PATH,
   } = arg;
 
   return async function serverCommandHandler(commandObject) {
@@ -18,18 +20,24 @@ module.exports = function makeServerCommandHandler(arg) {
 
     switch (serverAction) {
       case "START":
-        // @TODO add later
-        break;
+        return await startServer();
       case "KILL":
         return await killServer();
-      case "REBOOT":
-        // @TODO add later
-        break;
-
+      // @TODO add "PING" command
       default:
         printErrorAndExit(`Invalid server action "${serverAction}"`);
     }
   };
+
+  async function startServer() {
+    if (await isServerAlive())
+      return void printErrorAndExit("Server already running.");
+
+    const spawnDetachedProcess = getSpawnDetachedProcess();
+    spawnDetachedProcess({ modulePath: SERVER_APPLICATION_MODULE_PATH });
+
+    console.log("Started Server.");
+  }
 
   async function killServer() {
     if (await isServerAlive()) {

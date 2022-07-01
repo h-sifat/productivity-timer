@@ -17,13 +17,19 @@ const cliApp = makeCliApp({
 });
 
 const cliArguments = process.argv.slice(2);
+// start the cli app with the given arguments
 cliApp({ cliArguments });
 
 function getServerCommandHandler() {
+  const path = require("path");
+  const SERVER_APPLICATION_MODULE_PATH = path.resolve(__dirname, "../index.js");
+
   return require("./makeServerCommandHandler")({
     serverRoutes,
     SOCKET_PIPE_PATH,
     printErrorAndExit,
     requestToIPCServer,
+    SERVER_APPLICATION_MODULE_PATH,
+    getSpawnDetachedProcess: () => require("./spawnDetachedProcess"),
   });
 }
