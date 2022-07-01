@@ -31,6 +31,13 @@ module.exports = function makeInitApplication({
     },
   });
 
+  server.handle({
+    path: serverRoutes.PING,
+    handler: ({ send }) => {
+      send({ body: { message: "I'm alive." } });
+    },
+  });
+
   server.onHandlerException = function onHandlerException({ error, path }) {
     console.error(`The handler for path: "${path}" threw an error.`, error);
   };
