@@ -3,4 +3,5 @@ node_modules/
 trash/
 trash.js
 tags
+tags.lock
 

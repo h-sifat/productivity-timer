@@ -113,7 +113,7 @@ module.exports = function makeTimerManager({
 
       if (isTimerCommandWithoutArgument) {
         return this.#currentTimer
-          ? this.#currentTimer[command.toLowerCase()]()
+          ? await this.#currentTimer[command.toLowerCase()]()
           : { success: false, message: "No timer exists." };
       }
 

@@ -112,9 +112,11 @@ module.exports = function makeTimer(arg) {
 
     /**
      * Ends the timer if it is in RUNNING or PAUSED state and calls the callback.
+     * __Note:__ This function is async because the timer callback may be async!
      * @returns {{success: true} | {success: false, message: string}}
+     *
      * */
-    end() {
+    async end() {
       const METHOD_CALL_TIMESTAMP = Date.now();
 
       switch (this.#state) {
@@ -126,7 +128,9 @@ module.exports = function makeTimer(arg) {
             Object.freeze({ name: "end", time: METHOD_CALL_TIMESTAMP })
           );
 
-          this.#callback(this.info());
+          try {
+            await this.#callback(this.info());
+          } catch {}
           return { success: true, message: `Ended timer "${this.#name}"` };
 
         default:
