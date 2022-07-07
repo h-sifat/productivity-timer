@@ -112,9 +112,11 @@ module.exports = function makeTimerManager({
         !(command === "START" && argument);
 
       if (isTimerCommandWithoutArgument) {
-        return this.#currentTimer
-          ? await this.#currentTimer[command.toLowerCase()]()
-          : { success: false, message: "No timer exists." };
+        if (!this.#currentTimer)
+          return { success: false, message: "No timer exists." };
+
+        const result = await this.#currentTimer[command.toLowerCase()]();
+        return command === "INFO" ? { success: true, data: result } : result;
       }
 
       switch (command) {
