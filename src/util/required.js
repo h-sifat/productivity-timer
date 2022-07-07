@@ -8,5 +8,8 @@
  * ```
  * */
 module.exports = function required(name) {
-  throw new EPP(`Property "${name}" is missing.`, "MISSING_PROPERTY");
+  const error = new Error(`Property "${name}" is missing.`);
+  error.code = "MISSING_PROPERTY";
+
+  throw error;
 };
