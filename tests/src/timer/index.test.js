@@ -221,10 +221,10 @@ describe("Timer.pause", () => {
 });
 
 describe("Timer.end()", () => {
-  it("cannot be called on NOT_STARTED state", () => {
+  it("cannot be called on NOT_STARTED state", async () => {
     // the globalTestTimer currently in NOT_STARTED state
 
-    expect(globalTestTimer.end()).toEqual({
+    expect(await globalTestTimer.end()).toEqual({
       success: false,
       message: expect.any(String),
     });
@@ -232,9 +232,9 @@ describe("Timer.end()", () => {
   it("cannot be called on TIMED_UP state", (done) => {
     let localTestTimer;
 
-    const callback = () => {
+    const callback = async () => {
       try {
-        expect(localTestTimer.end()).toEqual({
+        expect(await localTestTimer.end()).toEqual({
           success: false,
           message: expect.any(String),
         });
@@ -248,17 +248,17 @@ describe("Timer.end()", () => {
     localTestTimer.start();
   });
 
-  it("cannot be called on ENDED state", () => {
+  it("cannot be called on ENDED state", async () => {
     globalTestTimer.start();
 
     {
-      const { success, message } = globalTestTimer.end();
+      const { success, message } = await globalTestTimer.end();
       expect(success).toBeTruthy();
       expect(message).toMatch(/ended/i);
     }
 
     // now the timer is in ENDED sate
-    expect(globalTestTimer.end()).toEqual({
+    expect(await globalTestTimer.end()).toEqual({
       success: false,
       message: expect.any(String),
     });
