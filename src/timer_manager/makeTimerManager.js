@@ -235,20 +235,25 @@ module.exports = function makeTimerManager({
         timer.info({ brief: true })
       );
     }
+
     #startTimer(timerName) {
       if (this.#currentTimer) {
-        const { state, name } = this.#currentTimer.info();
+        const { state: currentTimerState, name: currentTimerName } =
+          this.#currentTimer.info();
 
-        const isActiveTimer = ![
+        const isCurrentTimerActive = ![
           TIMER_STATES.ENDED,
           TIMER_STATES.TIMED_UP,
-        ].includes(TIMER_STATES[state]);
+        ].includes(TIMER_STATES[currentTimerState]);
 
-        if (isActiveTimer)
+        if (isCurrentTimerActive) {
+          if (timerName === currentTimerName) return this.#currentTimer.start();
+
           throw new EPP(
-            `An unfinished timer (${name}) already exists. Please End or Reset it first.`,
+            `An unfinished timer (${currentTimerName}) already exists. Please End or Reset it first.`,
             "TIMER_ALREADY_EXISTS"
           );
+        }
       }
 
       if (timerName in this.#savedTimers) {
