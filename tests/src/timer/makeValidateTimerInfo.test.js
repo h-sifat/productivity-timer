@@ -1,15 +1,20 @@
-const {
-  TIMER_CONSTANTS: TIMER_CONSTANTS_ORIGINAL,
-} = require("../../../src/timer");
 const makeValidateTimerInfo = require("../../../src/timer/makeValidateTimerInfo");
-const { convertToMilliSeconds } = require("../../../src/util");
+
+const convertToMilliSeconds = ({ duration, unit }) => {
+  if (unit !== "second")
+    throw Error(
+      `No duration unit ("${unit}") other than "second" should be passed to the mock convertToMilliSeconds function.`
+    );
+  return duration * 1000;
+};
 
 const TIMER_CONSTANTS = {
-  ...TIMER_CONSTANTS_ORIGINAL,
   MAX_NAME_LENGTH: 5,
   MIN_DURATION_MS: 2 * 1000,
   MAX_DURATION_MS: 10 * 1000,
   MAX_DESCRIPTION_LENGTH: 10,
+  VALID_DURATION_UNITS: Object.freeze(["hour", "second", "minute"]),
+  DURATION_UNIT_ALIASES: Object.freeze({ h: "hour", s: "second", m: "minute" }),
 };
 
 const {
@@ -20,28 +25,18 @@ const {
 } = TIMER_CONSTANTS;
 
 const VALID_TIMER_ARG = Object.freeze({
-  unit: "s",
+  unit: "s", // don't change the unit value otherwise the mock convertToMilliSeconds function will break
   duration: MAX_DURATION_MS / 1000 - 1, // 9s
   name: "a".repeat(MAX_NAME_LENGTH - 1),
   description: "a".repeat(MAX_DESCRIPTION_LENGTH - 1),
 });
 
-const required = () => {
-  throw { code: "MISSING_PROPERTY" };
-};
-const EPP = function (message, code) {
-  this.message = message;
-  this.code = code;
-};
-
 const validateTimerInfo = makeValidateTimerInfo({
-  EPP,
-  required,
   TIMER_CONSTANTS,
   convertToMilliSeconds,
 });
 
-describe("Timer Constructor", () => {
+describe("Validation", () => {
   it.each([
     {
       timerInfo: {},
@@ -121,15 +116,17 @@ describe("Timer Constructor", () => {
       }
     }
   );
+});
 
+describe("Functionality", () => {
   it("returns timer info if everything is valid", () => {
-    const { name, unit, duration, description } = VALID_TIMER_ARG;
+    const { name, duration, description } = VALID_TIMER_ARG;
     expect(validateTimerInfo(VALID_TIMER_ARG)).toEqual({
       name,
-      unit,
       duration,
       description,
-      durationMS: convertToMilliSeconds({ duration, unit }),
+      unit: "second", // VALID_TIMER_ARG.unit = "s"
+      durationMS: convertToMilliSeconds({ duration, unit: "second" }),
     });
   });
 });

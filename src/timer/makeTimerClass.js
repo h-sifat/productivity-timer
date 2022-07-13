@@ -1,13 +1,31 @@
-module.exports = function makeTimer(arg) {
-  const {
-    EPP,
-    required,
-    TIMER_STATES,
-    TIMER_CONSTANTS,
-    validateTimerInfo,
-    assertNonNullObject,
-    INVALID_STATE_MESSAGES,
-  } = arg;
+const EPP = require("../util/epp");
+const { makeEnum } = require("../util");
+const required = require("../util/required");
+
+const TIMER_CONSTANTS = Object.freeze({
+  MAX_NAME_LENGTH: 30,
+  MS_IN_ONE_SECOND: 1000,
+  MIN_DURATION_MS: 2 * 1000,
+  MAX_DESCRIPTION_LENGTH: 100,
+  MAX_DURATION_MS: 24 * 60 * 60 * 1000, // 24 hours
+  VALID_DURATION_UNITS: Object.freeze(["hour", "second", "minute"]),
+  DURATION_UNIT_ALIASES: Object.freeze({ h: "hour", s: "second", m: "minute" }),
+});
+
+const TIMER_STATES = makeEnum({
+  keys: ["PAUSED", "RUNNING", "TIMED_UP", "NOT_STARTED", "ENDED"],
+});
+
+const INVALID_STATE_MESSAGES = Object.freeze({
+  NOT_RUNNING: "Timer is not running.",
+  [TIMER_STATES.TIMED_UP]: "Timer has timed up.",
+  [TIMER_STATES.RUNNING]: "Timer is already running.",
+  [TIMER_STATES.ENDED]: "Timer has been ended manually.",
+  [TIMER_STATES.NOT_STARTED]: "Timer has not started yet.",
+});
+
+function makeTimerClass(arg) {
+  const { validateTimerInfo, assertNonNullObject } = arg;
 
   return class Timer {
     #name;
@@ -231,4 +249,11 @@ module.exports = function makeTimer(arg) {
       };
     }
   };
+}
+
+module.exports = {
+  TIMER_STATES,
+  makeTimerClass,
+  TIMER_CONSTANTS,
+  INVALID_STATE_MESSAGES,
 };

@@ -1,15 +1,16 @@
+const required = require("../util/required");
+const EPP = require("../util/epp");
+
 module.exports = function makeValidateTimerInfo({
-  EPP,
-  required,
   TIMER_CONSTANTS,
   convertToMilliSeconds,
 }) {
   return function validateTimerInfo(arg) {
     let {
-      name = required("name"),
-      duration = required("duration"),
-      unit = required("unit"),
       description = "",
+      name = required("name"),
+      unit = required("unit"),
+      duration = required("duration"),
     } = arg;
 
     if (
@@ -18,6 +19,9 @@ module.exports = function makeValidateTimerInfo({
       name.length > TIMER_CONSTANTS.MAX_NAME_LENGTH
     )
       throw new EPP(`Invalid name: "${name}".`, "INVALID_NAME");
+
+    if (unit in TIMER_CONSTANTS.DURATION_UNIT_ALIASES)
+      unit = TIMER_CONSTANTS.DURATION_UNIT_ALIASES[unit];
 
     if (
       typeof unit !== "string" ||

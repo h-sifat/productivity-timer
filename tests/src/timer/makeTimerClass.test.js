@@ -1,8 +1,13 @@
-const { TIMER_STATES, TIMER_CONSTANTS, Timer } = require("../../../src/timer");
-const { MIN_DURATION_MS, MS_IN_ONE_SECOND } = TIMER_CONSTANTS;
+const { assertNonNullObject } = require("../../../src/util");
+const {
+  TIMER_STATES,
+  makeTimerClass,
+  TIMER_CONSTANTS,
+} = require("../../../src/timer/makeTimerClass");
 
+const { MIN_DURATION_MS, MS_IN_ONE_SECOND } = TIMER_CONSTANTS;
 const TIMER_NAME = "name";
-const DURATION_UNIT = "s";
+const DURATION_UNIT = "second";
 const TIMER_DESCRIPTION = "desc";
 const TIMER_DURATION_SEC = MIN_DURATION_MS / MS_IN_ONE_SECOND;
 const TIMER_DURATION_MS = MIN_DURATION_MS;
@@ -14,6 +19,23 @@ const VALID_TIMER_ARG = Object.freeze({
   unit: DURATION_UNIT,
   duration: TIMER_DURATION_SEC,
   description: TIMER_DESCRIPTION,
+});
+
+const mockValidateTimerInfo = (timerInfo) => {
+  if (timerInfo.unit !== "second")
+    throw new EPP(
+      `For the mock validateTimerInfo function the timerInfo.unit must be "second".`
+    );
+
+  return {
+    ...timerInfo,
+    durationMS: timerInfo.duration * MS_IN_ONE_SECOND,
+  };
+};
+
+const Timer = makeTimerClass({
+  validateTimerInfo: mockValidateTimerInfo,
+  assertNonNullObject,
 });
 
 let globalTestTimer;

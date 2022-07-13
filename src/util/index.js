@@ -2,6 +2,7 @@ const fs = require("fs");
 const EPP = require("./epp");
 const required = require("./required");
 const deepFreeze = require("./deepFreeze");
+const convertDuration = require("./convertDuration");
 
 const fsp = fs.promises;
 
@@ -102,18 +103,9 @@ async function mkdirIfDoesNotExist(arg) {
   }
 }
 
-function convertToMilliSeconds({ duration, unit }) {
-  const msPerUnit = Object.freeze({
-    s: 1000,
-    m: 60000,
-    h: 3600000,
-    second: 1000,
-    minute: 60000,
-    hour: 3600000,
-  });
-
-  if (unit in msPerUnit) return duration * msPerUnit[unit];
-  throw new EPP(`Unknown time unit "${unit}"`, "INVALID_TIME_UNIT");
+function convertToMilliSeconds(arg = {}) {
+  const { duration = required("duration"), unit = required("unit") } = arg;
+  return convertDuration({ duration, fromUnit: unit, toUnit: "millisecond" });
 }
 
 module.exports = {
