@@ -11,12 +11,13 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
-    "baseUrl": "src",
+    "baseUrl": "./",
     "paths": {
-      "util/*": ["util/*"],
-      "entities/*": ["entities/*"],
-      "use-cases/*": ["use-cases/*"],
-      "data-access/*": ["data-access/*"]
+      "fixtures/*": ["tests/fixtures/*"],
+      "entities/*": ["src/entities/*"],
+      "common/*": ["src/common/*"],
+      "use-cases/*": ["src/use-cases/*"],
+      "data-access/*": ["src/data-access/*"]
     },
 
     "skipLibCheck": true,
