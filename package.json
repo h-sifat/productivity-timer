@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "test:watch": "jest --watch",
+    "test": "jest --passWithNoTests",
+    "test:coverage": "jest --passWithNoTests --coverage",
+    "test:watch": "jest --passWithNoTests --watch",
+    "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\"",
     "prepare": "husky install"
   },
   "keywords": [],
@@ -14,11 +15,14 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jest": "^27.0.3",
-    "jest": "^27.4.5",
-    "mem-fs": "^2.2.1",
-    "husky": "^8.0.0"
+    "@types/node": "^18.7.14",
+    "husky": "^8.0.0",
+    "prettier": "^2.7.1",
+    "ts-jest": "^28.0.8",
+    "tsconfig-paths": "^4.1.0"
   },
   "dependencies": {
+    "handy-types": "^2.0.0",
     "node-notifier": "^10.0.1"
   }
 }

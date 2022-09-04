@@ -1,4 +1,11 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run prettier on every file
+npm run format
+
+# Run tests
 npm test
+
+# If prettier formats any file, then restage it.
+git diff --name-only --cached --diff-filter=d | xargs -l git add
