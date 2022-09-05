@@ -9,6 +9,6 @@ export const currentTimeMs: CurrentTimeMs = function _currentTimeMs() {
 };
 
 export const isValidUnixMsTimestamp: IsValidUnixMsTimestamp =
-  function _isValidUnixMsTimestamp(timestamp) {
+  function _isValidUnixMsTimestamp(timestamp): timestamp is number {
     return is<number>("non_negative_integer", timestamp);
   };

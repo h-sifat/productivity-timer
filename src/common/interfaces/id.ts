@@ -1,4 +1,4 @@
 export type ID = Readonly<{
-  isValid(id: string): boolean;
+  isValid(id: any): id is string;
   makeId(): string;
 }>;

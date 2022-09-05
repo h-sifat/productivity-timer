@@ -3,5 +3,5 @@ export interface CurrentTimeMs {
 }
 
 export interface IsValidUnixMsTimestamp {
-  (timestamp: number): boolean;
+  (timestamp: number): timestamp is number;
 }
