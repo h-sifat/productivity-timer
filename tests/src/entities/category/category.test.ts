@@ -1,8 +1,9 @@
-import { ID } from "common/interfaces/id";
 import { isValid } from "common/util/id";
-import { isValidUnixMsTimestamp } from "common/util/date-time";
-import buildCategoryClass from "entities/category/category";
+import { ID } from "common/interfaces/id";
 import categoryFixture from "fixtures/category";
+import buildCategoryClass from "entities/category/category";
+import makeTimestampsValidator from "common/util/timestamp-validator";
+import { isValidUnixMsTimestamp } from "common/util/date-time";
 
 let makeId: ID["makeId"];
 
@@ -19,8 +20,6 @@ let makeId: ID["makeId"];
 
 const Id: ID = Object.freeze({ isValid, makeId });
 
-const currentTimeMs = jest.fn().mockReturnValue(12312423);
-
 const { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH } = (() => {
   const category = categoryFixture();
 
@@ -34,12 +33,16 @@ const { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH } = (() => {
   };
 })();
 
+const creationAndModificationTimestampsValidator = makeTimestampsValidator({
+  getNewTimestamp: () => 200,
+  isValidTimestamp: isValidUnixMsTimestamp,
+});
+
 const Category = buildCategoryClass({
   Id,
-  currentTimeMs,
   MAX_NAME_LENGTH,
-  isValidUnixMsTimestamp,
   MAX_DESCRIPTION_LENGTH,
+  creationAndModificationTimestampsValidator,
 });
 
 describe("Constructor Validation", () => {
@@ -134,68 +137,6 @@ describe("Constructor Validation", () => {
       expect(() => {
         new Category(arg);
       }).not.toThrow();
-    });
-  });
-
-  describe("field:createdOn and modifiedOn", () => {
-    it.each([
-      { property: "createdOn", errorCode: "INVALID_CREATED_ON" },
-      { property: "modifiedOn", errorCode: "INVALID_MODIFIED_ON" },
-    ])(
-      `throws error with code "$errorCode" if "$property" is invalid`,
-      ({ property, errorCode }) => {
-        const invalidTimestamp = -2323;
-
-        expect(isValidUnixMsTimestamp(invalidTimestamp)).toBeFalsy();
-
-        const argWithInvalidId = categoryFixture({
-          [property]: invalidTimestamp,
-        });
-        expect(() => {
-          new Category(argWithInvalidId);
-        }).toThrowErrorWithCode(errorCode);
-      }
-    );
-
-    it("throws error if the modifiedOn timestamp is less than createdOn timestamp", () => {
-      const categoryArg = categoryFixture({ createdOn: 2, modifiedOn: 1 });
-
-      expect(() => {
-        new Category(categoryArg);
-      }).toThrowErrorWithCode("MODIFIED_BEFORE_CREATED");
-    });
-
-    {
-      const argMissingModificationTimestamp = categoryFixture();
-      // @ts-expect-error
-      delete argMissingModificationTimestamp.modifiedOn;
-
-      const argMissingCreationTimestamp = categoryFixture();
-      // @ts-expect-error
-      delete argMissingCreationTimestamp.createdOn;
-
-      it.each([argMissingCreationTimestamp, argMissingModificationTimestamp])(
-        `throws error with code "MISSING_ANOTHER_TIMESTAMP" if only one timestamp is provided`,
-        (arg) => {
-          expect(() => {
-            new Category(arg);
-          }).toThrowErrorWithCode("MISSING_ANOTHER_TIMESTAMP");
-        }
-      );
-    }
-
-    it("creation and modifiedOn should be same if they are not provided", () => {
-      const arg = categoryFixture();
-
-      // @ts-expect-error
-      delete arg.createdOn;
-      // @ts-expect-error
-      delete arg.modifiedOn;
-
-      const category = new Category(arg);
-
-      expect(category.createdOn).toBe(category.modifiedOn);
-      expect(isValidUnixMsTimestamp(category.createdOn)).toBeTruthy();
     });
   });
 

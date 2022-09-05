@@ -1,8 +1,5 @@
 import type { ID } from "common/interfaces/id";
-import type {
-  CurrentTimeMs,
-  IsValidUnixMsTimestamp,
-} from "common/interfaces/date-time";
+import type CreationAndModificationTimestampsValidator from "common/interfaces/timestamp-validator";
 
 // violation of clean architecture
 import { assert } from "handy-types";
@@ -32,18 +29,16 @@ type CategoryConstructor_Argument = {
 interface BuildCategoryClass_Argument {
   Id: ID;
   MAX_NAME_LENGTH: number;
-  currentTimeMs: CurrentTimeMs;
   MAX_DESCRIPTION_LENGTH: number;
-  isValidUnixMsTimestamp: IsValidUnixMsTimestamp;
+  creationAndModificationTimestampsValidator: CreationAndModificationTimestampsValidator;
 }
 
 export default function buildCategoryClass(arg: BuildCategoryClass_Argument) {
   const {
     Id,
-    currentTimeMs,
     MAX_NAME_LENGTH,
-    isValidUnixMsTimestamp,
     MAX_DESCRIPTION_LENGTH,
+    creationAndModificationTimestampsValidator,
   } = arg;
 
   return class Category implements CategoryInterface {
@@ -125,51 +120,16 @@ export default function buildCategoryClass(arg: BuildCategoryClass_Argument) {
           message: `"id" and "parentId" cannot be the same.`,
         });
 
-      // timestamps must be provided together
       {
-        const onlyOneTimestampIsPresent =
-          +("createdOn" in arg) ^ +("modifiedOn" in arg);
-
-        if (onlyOneTimestampIsPresent)
-          throw new EPP({
-            code: "MISSING_ANOTHER_TIMESTAMP",
-            message:
-              "Creation and Modification timestamps must be provided together.",
-          });
-      }
-
-      // ------ createdOn ----
-      if ("createdOn" in arg) {
-        const createdOn = arg.createdOn;
-
-        if (!isValidUnixMsTimestamp(createdOn))
-          throw new EPP({
-            code: "INVALID_CREATED_ON",
-            message: `Invalid timestamp createdOn: ${createdOn}`,
-          });
-
-        this.#createdOn = createdOn;
-      } else this.#createdOn = currentTimeMs();
-
-      // ------ modifiedOn ------
-      if ("modifiedOn" in arg) {
-        const modifiedOn = arg.modifiedOn;
-
-        if (!isValidUnixMsTimestamp(modifiedOn))
-          throw new EPP({
-            code: "INVALID_MODIFIED_ON",
-            message: `Invalid timestamp modifiedOn: ${modifiedOn}`,
-          });
-
-        this.#modifiedOn = modifiedOn;
-      } else this.#modifiedOn = this.#createdOn;
-
-      if (this.#modifiedOn < this.#createdOn)
-        throw new EPP({
-          code: "MODIFIED_BEFORE_CREATED",
-          message:
-            "Category is modified be creation! Huh? Error: modifiedOn < createdOn.",
+        const timestamps = creationAndModificationTimestampsValidator({
+          creationTimestampPropName: "createdOn",
+          modificationTimestampPropName: "modifiedOn",
+          objectContainingTimestamps: arg,
         });
+
+        this.#createdOn = timestamps.createdOn;
+        this.#modifiedOn = timestamps.modifiedOn;
+      }
     }
 
     #toPlainObject() {
