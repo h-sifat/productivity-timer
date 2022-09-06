@@ -1,9 +1,10 @@
 import required from "common/util/required";
 
 it('throws an error with the error code "MISSING_PROPERTY"', () => {
+  const propName = "age";
   expect(() => {
-    required("propName");
-  }).toThrowErrorWithCode("MISSING_PROPERTY");
+    required(propName);
+  }).toThrowErrorWithCode("MISSING_" + propName.toUpperCase());
 });
 
 it("throws error with the provided error code", () => {
