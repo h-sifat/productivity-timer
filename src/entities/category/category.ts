@@ -1,5 +1,5 @@
 import type { ID } from "common/interfaces/id";
-import type CreationAndModificationTimestampsValidator from "common/interfaces/timestamp-validator";
+import type { CreationAndModificationTimestampsValidator } from "common/interfaces/date-time";
 
 // violation of clean architecture
 import { assert } from "handy-types";
@@ -33,7 +33,7 @@ interface BuildCategoryClass_Argument {
   creationAndModificationTimestampsValidator: CreationAndModificationTimestampsValidator;
 }
 
-export default function buildCategoryClass(arg: BuildCategoryClass_Argument) {
+export default function makeCategoryClass(arg: BuildCategoryClass_Argument) {
   const {
     Id,
     MAX_NAME_LENGTH,

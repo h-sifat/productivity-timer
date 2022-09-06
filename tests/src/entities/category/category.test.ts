@@ -1,8 +1,8 @@
 import { isValid } from "common/util/id";
 import { ID } from "common/interfaces/id";
 import categoryFixture from "fixtures/category";
-import buildCategoryClass from "entities/category/category";
-import makeTimestampsValidator from "common/util/timestamp-validator";
+import makeCategoryClass from "entities/category/category";
+import { makeTimestampsValidator } from "common/util/date-time";
 import { isValidUnixMsTimestamp } from "common/util/date-time";
 
 let makeId: ID["makeId"];
@@ -38,7 +38,7 @@ const creationAndModificationTimestampsValidator = makeTimestampsValidator({
   isValidTimestamp: isValidUnixMsTimestamp,
 });
 
-const Category = buildCategoryClass({
+const Category = makeCategoryClass({
   Id,
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
