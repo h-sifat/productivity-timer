@@ -1,9 +1,9 @@
-import { ProjectCategoryInterface } from "entities/project/project-category";
+import { ProjectCategoryFields } from "entities/project/project-category";
 
 export default function projectCategoryFixture(
-  override: Partial<ProjectCategoryInterface> = {}
-): ProjectCategoryInterface {
-  const defaults: ProjectCategoryInterface = Object.freeze({
+  override: Partial<ProjectCategoryFields> = {}
+): ProjectCategoryFields {
+  const defaults: ProjectCategoryFields = Object.freeze({
     id: "100",
     fullName: "study/programming",
   });

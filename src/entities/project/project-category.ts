@@ -1,48 +1,50 @@
 import type { ID } from "common/interfaces/id";
+import type { ToPlainObject } from "common/interfaces/other";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import required from "common/util/required";
 
-export interface ProjectCategoryInterface {
-  readonly id: string;
-  readonly fullName: string;
-}
-
-interface ProjectCategoryConstructorArgument {
+export interface ProjectCategoryFields {
   id: string;
   fullName: string;
+}
+
+export interface ProjectCategoryMethods {
+  toPlainObject: ToPlainObject<ProjectCategoryFields>;
+}
+
+export type ProjectCategoryInterface = ProjectCategoryFields &
+  ProjectCategoryMethods;
+
+export interface ProjectCategoryClass {
+  new (arg: ProjectCategoryFields): {
+    get id(): string;
+    get fullName(): string;
+    toPlainObject(): Readonly<ProjectCategoryFields>;
+  };
 }
 
 interface MakeProjectCategoryArgument {
   isValidId: ID["isValid"];
 }
-
-export interface ProjectCategory {
-  new (arg: ProjectCategoryConstructorArgument): {
-    get id(): string;
-    get fullName(): string;
-    toPlainObject(): ProjectCategoryInterface;
-  };
-}
-
 export default function makeProjectCategoryClass(
   arg: MakeProjectCategoryArgument
-): ProjectCategory {
+): ProjectCategoryClass {
   const { isValidId } = arg;
 
   return class ProjectCategory {
     readonly #id: string;
     readonly #fullName: string;
 
-    constructor(arg: ProjectCategoryConstructorArgument) {
+    constructor(arg: ProjectCategoryFields) {
       assert("plain_object", arg, {
         code: "INVALID_MAIN_ARG",
         name: "The ProjectCategory constructor argument",
       });
 
       {
-        const { id = required("id", "MISSING_ID") } = arg;
+        const { id = required("id") } = arg;
 
         if (!isValidId(id))
           throw new EPP({
@@ -54,8 +56,7 @@ export default function makeProjectCategoryClass(
       }
 
       {
-        // @ts-ignore
-        const { fullName = required("fullName", "MISSING_FULLNAME") } = arg;
+        const { fullName = required("fullName") } = arg;
 
         assert<string>("non_empty_string", fullName, {
           name: "fullName",
@@ -73,7 +74,7 @@ export default function makeProjectCategoryClass(
       return this.#fullName;
     }
 
-    #toPlainObject(): ProjectCategoryInterface {
+    #toPlainObject(): ProjectCategoryFields {
       return {
         id: this.#id,
         fullName: this.#fullName,

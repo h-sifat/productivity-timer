@@ -1,6 +1,6 @@
 import { isValid as isValidId } from "common/util/id";
-import makeProjectCategoryClass from "entities/project/project-category";
 import projectCategoryFixture from "fixtures/project-category";
+import makeProjectCategoryClass from "entities/project/project-category";
 
 const ProjectCategory = makeProjectCategoryClass({
   isValidId,
@@ -60,7 +60,6 @@ describe("Constructor", () => {
     it('throws error with code "INVALID_FULLNAME" if fullName is not a non_empty_string', () => {
       const arg = projectCategoryFixture();
 
-      // @ts-expect-error
       arg.fullName = "";
 
       expect(() => {
