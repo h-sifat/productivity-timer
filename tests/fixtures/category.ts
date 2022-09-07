@@ -1,9 +1,9 @@
-import { CategoryInterface } from "entities/category/category";
+import { CategoryConstructor_Argument } from "entities/category/category";
 
 export default function categoryFixture(
-  props: Partial<CategoryInterface> = {}
-): CategoryInterface {
-  const defaults: CategoryInterface = {
+  props: Partial<CategoryConstructor_Argument> = {}
+): CategoryConstructor_Argument {
+  const defaults: CategoryConstructor_Argument = {
     id: "2",
     parentId: "1",
     name: "study",

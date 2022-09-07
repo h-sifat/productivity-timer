@@ -1,4 +1,5 @@
 import type { ID } from "common/interfaces/id";
+import type { ToPlainObject } from "common/interfaces/other";
 import type { CreationAndModificationTimestampsValidator } from "common/interfaces/date-time";
 
 // violation of clean architecture
@@ -7,35 +8,50 @@ import EPP from "common/util/epp";
 import required from "common/util/required";
 // end of violation; LOL :')
 
-// description is optional ic CategoryInterface
-export type CategoryInterface = Readonly<{
+export interface CategoryFields {
   id: string;
   name: string;
+  hash: string;
   createdOn: number;
   modifiedOn: number;
   parentId: string | null;
   description: string | null;
+}
+
+export type CategoryInterface = Readonly<{
+  get id(): string;
+  get name(): string;
+  get hash(): string;
+  get createdOn(): number;
+  get modifiedOn(): number;
+  get parentId(): string | null;
+  get description(): string | null;
+  toPlainObject: ToPlainObject<CategoryFields>;
 }>;
 
-type CategoryConstructor_Argument = {
-  id?: string;
-  name: string;
-  createdOn?: number;
-  modifiedOn?: number;
-  parentId?: string | null;
-  description?: string | null;
-};
+export type CategoryConstructor_Argument = Partial<
+  Omit<CategoryFields, "name" | "hash">
+> &
+  Pick<CategoryFields, "name">;
+
+export interface CategoryClass {
+  new (arg: CategoryConstructor_Argument): CategoryInterface;
+}
 
 interface BuildCategoryClass_Argument {
   Id: ID;
+  createHash(arg: string): string;
   MAX_NAME_LENGTH: number;
   MAX_DESCRIPTION_LENGTH: number;
   creationAndModificationTimestampsValidator: CreationAndModificationTimestampsValidator;
 }
 
-export default function makeCategoryClass(arg: BuildCategoryClass_Argument) {
+export default function makeCategoryClass(
+  arg: BuildCategoryClass_Argument
+): CategoryClass {
   const {
     Id,
+    createHash,
     MAX_NAME_LENGTH,
     MAX_DESCRIPTION_LENGTH,
     creationAndModificationTimestampsValidator,
@@ -43,6 +59,7 @@ export default function makeCategoryClass(arg: BuildCategoryClass_Argument) {
 
   return class Category implements CategoryInterface {
     readonly #id: string;
+    readonly #hash: string;
     readonly #name: string;
     readonly #createdOn: number;
     readonly #modifiedOn: number;
@@ -130,20 +147,26 @@ export default function makeCategoryClass(arg: BuildCategoryClass_Argument) {
         this.#createdOn = timestamps.createdOn;
         this.#modifiedOn = timestamps.modifiedOn;
       }
+
+      {
+        const hashingText = `${this.#parentId || ""}${this.#name}`;
+        this.#hash = createHash(hashingText);
+      }
     }
 
     #toPlainObject() {
       return {
         id: this.#id,
+        hash: this.#hash,
         name: this.#name,
+        parentId: this.#parentId,
         createdOn: this.#createdOn,
         modifiedOn: this.#modifiedOn,
-        parentId: this.#parentId,
         description: this.#description,
       };
     }
 
-    toPlainObject(): CategoryInterface {
+    toPlainObject(): Readonly<CategoryFields> {
       return Object.freeze(this.#toPlainObject());
     }
 
@@ -169,6 +192,9 @@ export default function makeCategoryClass(arg: BuildCategoryClass_Argument) {
     }
     get description() {
       return this.#description;
+    }
+    get hash() {
+      return this.#hash;
     }
   };
 }

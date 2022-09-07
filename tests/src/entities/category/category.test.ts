@@ -15,7 +15,7 @@ let makeId: ID["makeId"];
   // parentId.
   // In that case the Category class will throw an error with code
   // "SELF_ID_EQUAL_PARENT_ID"
-  makeId = jest.fn().mockReturnValue(category.id + category.parentId);
+  makeId = jest.fn().mockReturnValue(category.id! + category.parentId!);
 }
 
 const Id: ID = Object.freeze({ isValid, makeId });
@@ -38,10 +38,13 @@ const creationAndModificationTimestampsValidator = makeTimestampsValidator({
   isValidTimestamp: isValidUnixMsTimestamp,
 });
 
+const FAKE_HASH = "hash";
+
 const Category = makeCategoryClass({
   Id,
   MAX_NAME_LENGTH,
   MAX_DESCRIPTION_LENGTH,
+  createHash: () => FAKE_HASH,
   creationAndModificationTimestampsValidator,
 });
 
@@ -194,6 +197,7 @@ describe("Other", () => {
 
       expect(category.id).toBe(arg.id);
       expect(category.name).toBe(arg.name);
+      expect(category.hash).toBe(FAKE_HASH);
       expect(category.createdOn).toBe(arg.createdOn);
       expect(category.modifiedOn).toBe(arg.modifiedOn);
       expect(category.parentId).toBe(arg.parentId);
@@ -207,7 +211,7 @@ describe("Other", () => {
       const category = new Category(arg).toPlainObject();
 
       expect(Object.isFrozen(category)).toBeTruthy();
-      expect(category).toEqual(arg);
+      expect(category).toEqual({ ...arg, hash: FAKE_HASH });
     });
   });
 
