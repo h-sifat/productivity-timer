@@ -1,5 +1,6 @@
 import type {
   CurrentTimeMs,
+  ConvertDuration,
   IsValidUnixMsTimestamp,
   CreationAndModificationTimestampsValidator,
 } from "common/interfaces/date-time";
@@ -87,3 +88,21 @@ export function makeTimestampsValidator(
     return { createdOn, modifiedOn };
   };
 }
+
+const msPerUnit = Object.freeze({
+  ms: 1,
+  s: 1000,
+  m: 60000,
+  h: 3600000,
+  second: 1000,
+  hour: 3600000,
+  minute: 60000,
+  millisecond: 1,
+});
+
+export const convertDuration: ConvertDuration = function _convertDuration(arg) {
+  const { fromUnit, toUnit, duration } = arg;
+
+  const durationMS = duration * msPerUnit[fromUnit];
+  return durationMS / msPerUnit[toUnit];
+};
