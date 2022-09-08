@@ -58,6 +58,11 @@ describe("Constructor Validation", () => {
         case: "is not a non_empty_string",
       },
       {
+        name: "a/b",
+        code: "INVALID_NAME",
+        case: "contains backslash (/)",
+      },
+      {
         name: "",
         code: "NAME_TOO_SHORT",
         case: "is not a non_empty_string",

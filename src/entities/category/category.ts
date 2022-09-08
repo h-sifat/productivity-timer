@@ -87,6 +87,12 @@ export default function makeCategoryClass(
           trimBeforeLengthValidation: true,
         });
 
+        if (name.includes("/"))
+          throw new EPP({
+            code: "INVALID_NAME",
+            message: `A category name must not contain backslash (/)`,
+          });
+
         this.#name = name.trim();
       }
 
