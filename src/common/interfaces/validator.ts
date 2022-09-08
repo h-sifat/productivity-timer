@@ -3,11 +3,12 @@ interface OtherInfo {
   maxLength?: number;
   minLength?: number;
   typeErrorCode?: string;
-  minLengthErrorCode?: string;
   maxLengthErrorCode?: string;
+  minLengthErrorCode?: string;
+  trimBeforeLengthValidation?: boolean;
 }
 
 export type AssertValidString = (
-  string: unknown,
+  string: any,
   otherInfo: OtherInfo
 ) => asserts string is string;

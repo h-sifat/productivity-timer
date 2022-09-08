@@ -7,7 +7,7 @@ export const assertValidString: AssertValidString = function _assertValidString(
   string,
   otherInfo
 ): asserts string is string {
-  const { name } = otherInfo;
+  const { name, trimBeforeLengthValidation = false } = otherInfo;
 
   {
     const code =
@@ -17,6 +17,8 @@ export const assertValidString: AssertValidString = function _assertValidString(
 
     assert<string>("string", string, { name, code });
   }
+
+  if (trimBeforeLengthValidation) string = string.trim();
 
   {
     const isMinLengthGreaterThanMaxLength =

@@ -100,4 +100,16 @@ describe("Type Validation", () => {
       }).not.toThrow();
     }
   );
+
+  it('trims a string if the "trimBeforeLengthValidation" option is true', () => {
+    const str = " abc   ";
+
+    expect(() => {
+      assertValidString(str, {
+        maxLength: 3,
+        name: "name",
+        trimBeforeLengthValidation: true,
+      });
+    }).not.toThrow();
+  });
 });
