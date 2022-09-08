@@ -6,6 +6,7 @@ import {
   isValidUnixMsTimestamp,
   makeTimestampsValidator,
 } from "common/util/date-time";
+import { assertValidString } from "common/validator/string";
 
 const creationAndModificationTimestampsValidator = makeTimestampsValidator({
   getNewTimestamp: () => Date.now(),
@@ -13,6 +14,7 @@ const creationAndModificationTimestampsValidator = makeTimestampsValidator({
 });
 
 const Category = makeCategoryClass({
+  assertValidString,
   createHash: createMD5Hash,
   Id: getID({ entity: "category" }),
   creationAndModificationTimestampsValidator,

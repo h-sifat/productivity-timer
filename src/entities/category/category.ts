@@ -1,5 +1,6 @@
 import type { ID } from "common/interfaces/id";
 import type { ToPlainObject } from "common/interfaces/other";
+import type { AssertValidString } from "common/interfaces/validator";
 import type { CreationAndModificationTimestampsValidator } from "common/interfaces/date-time";
 
 // violation of clean architecture
@@ -40,9 +41,10 @@ export interface CategoryClass {
 
 interface BuildCategoryClass_Argument {
   Id: ID;
-  createHash(arg: string): string;
   MAX_NAME_LENGTH: number;
   MAX_DESCRIPTION_LENGTH: number;
+  createHash(arg: string): string;
+  assertValidString: AssertValidString;
   creationAndModificationTimestampsValidator: CreationAndModificationTimestampsValidator;
 }
 
@@ -56,6 +58,8 @@ export default function makeCategoryClass(
     MAX_DESCRIPTION_LENGTH,
     creationAndModificationTimestampsValidator,
   } = arg;
+
+  const assertValidString: AssertValidString = arg.assertValidString;
 
   return class Category implements CategoryInterface {
     readonly #id: string;
@@ -74,38 +78,30 @@ export default function makeCategoryClass(
 
       // ----- name ------
       {
-        const { name = required("name", "MISSING_NAME_FIELD") } = arg;
+        const { name = required("name") } = arg;
 
-        assert<string>("non_empty_string", name, {
+        assertValidString(name, {
+          minLength: 1,
           name: "name",
-          code: "INVALID_NAME",
+          maxLength: MAX_NAME_LENGTH,
+          trimBeforeLengthValidation: true,
         });
 
-        if (name.length > MAX_NAME_LENGTH)
-          throw new EPP({
-            code: "NAME_TOO_LONG",
-            message: `"name" cannot be longer than ${MAX_NAME_LENGTH} characters.`,
-          });
-
-        this.#name = name;
+        this.#name = name.trim();
       }
 
       // ----- description -----
       if ("description" in arg && arg.description !== null) {
         const description = arg.description;
 
-        assert<string>("non_empty_string", description, {
+        assertValidString(description, {
+          minLength: 1,
           name: "description",
-          code: "INVALID_DESCRIPTION",
+          trimBeforeLengthValidation: true,
+          maxLength: MAX_DESCRIPTION_LENGTH,
         });
 
-        if (description.length > MAX_DESCRIPTION_LENGTH)
-          throw new EPP({
-            code: "DESCRIPTION_TOO_LONG",
-            message: `"description" cannot be longer than ${MAX_DESCRIPTION_LENGTH} characters.`,
-          });
-
-        this.#description = description;
+        this.#description = description.trim();
       }
 
       // ----- id ------
@@ -149,7 +145,7 @@ export default function makeCategoryClass(
       }
 
       {
-        const hashingText = `${this.#parentId || ""}${this.#name}`;
+        const hashingText = String(this.#parentId) + this.#name.toLowerCase();
         this.#hash = createHash(hashingText);
       }
     }

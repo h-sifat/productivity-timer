@@ -4,10 +4,10 @@ import categoryFixture from "fixtures/category";
 import makeCategoryClass from "entities/category/category";
 import { makeTimestampsValidator } from "common/util/date-time";
 import { isValidUnixMsTimestamp } from "common/util/date-time";
+import { assertValidString } from "common/validator/string";
+import { createMD5Hash } from "common/util/other";
 
-let makeId: ID["makeId"];
-
-{
+let makeId: ID["makeId"] = (() => {
   const category = categoryFixture();
 
   // I'm combining the fixture's id and parentId to eliminate
@@ -15,8 +15,10 @@ let makeId: ID["makeId"];
   // parentId.
   // In that case the Category class will throw an error with code
   // "SELF_ID_EQUAL_PARENT_ID"
-  makeId = jest.fn().mockReturnValue(category.id! + category.parentId!);
-}
+  let id = Number(category.id! + category.parentId!);
+
+  return () => (id++).toString();
+})();
 
 const Id: ID = Object.freeze({ isValid, makeId });
 
@@ -38,13 +40,12 @@ const creationAndModificationTimestampsValidator = makeTimestampsValidator({
   isValidTimestamp: isValidUnixMsTimestamp,
 });
 
-const FAKE_HASH = "hash";
-
 const Category = makeCategoryClass({
   Id,
   MAX_NAME_LENGTH,
+  assertValidString,
   MAX_DESCRIPTION_LENGTH,
-  createHash: () => FAKE_HASH,
+  createHash: createMD5Hash,
   creationAndModificationTimestampsValidator,
 });
 
@@ -58,7 +59,7 @@ describe("Constructor Validation", () => {
       },
       {
         name: "",
-        code: "INVALID_NAME",
+        code: "NAME_TOO_SHORT",
         case: "is not a non_empty_string",
       },
       {
@@ -76,16 +77,19 @@ describe("Constructor Validation", () => {
       }
     );
 
-    it('throws error with code "MISSING_PROPERTY" if "name" is missing', () => {
-      const argWithNoName = categoryFixture();
+    {
+      const errorCode = "MISSING_NAME";
+      it(`throws error with code "${errorCode}" if "name" is missing`, () => {
+        const argWithNoName = categoryFixture();
 
-      // @ts-expect-error
-      delete argWithNoName.name;
+        // @ts-expect-error
+        delete argWithNoName.name;
 
-      expect(() => {
-        new Category(argWithNoName);
-      }).toThrowErrorWithCode("MISSING_NAME_FIELD");
-    });
+        expect(() => {
+          new Category(argWithNoName);
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
   });
 
   describe("Other", () => {
@@ -152,7 +156,7 @@ describe("Constructor Validation", () => {
       },
       {
         description: "",
-        code: "INVALID_DESCRIPTION",
+        code: "DESCRIPTION_TOO_SHORT",
         case: "is not a non_empty_string",
       },
       {
@@ -197,7 +201,7 @@ describe("Other", () => {
 
       expect(category.id).toBe(arg.id);
       expect(category.name).toBe(arg.name);
-      expect(category.hash).toBe(FAKE_HASH);
+      expect(category.hash).toEqual(expect.any(String));
       expect(category.createdOn).toBe(arg.createdOn);
       expect(category.modifiedOn).toBe(arg.modifiedOn);
       expect(category.parentId).toBe(arg.parentId);
@@ -211,7 +215,7 @@ describe("Other", () => {
       const category = new Category(arg).toPlainObject();
 
       expect(Object.isFrozen(category)).toBeTruthy();
-      expect(category).toEqual({ ...arg, hash: FAKE_HASH });
+      expect(category).toEqual({ ...arg, hash: expect.any(String) });
     });
   });
 
@@ -227,5 +231,30 @@ describe("Other", () => {
         expect(category[property]).toBeNull();
       }
     );
+  });
+
+  describe("String Formatting", () => {
+    it.each([
+      { property: "name", value: "    study " },
+      { property: "description", value: "    Description " },
+    ] as const)(
+      `trims whitespace from the $property field`,
+      ({ property, value }) => {
+        const arg = categoryFixture({ [property]: value });
+        const category = new Category(arg);
+
+        expect(category[property]).toBe(value.trim());
+      }
+    );
+  });
+
+  describe("hashing", () => {
+    it("creates the same hash for categories with same name but different casing", () => {
+      const name = "Study";
+      const categoryA = new Category({ name });
+      const categoryB = new Category({ name: `   ${name.toUpperCase()}   ` });
+
+      expect(categoryA.hash).toEqual(categoryB.hash);
+    });
   });
 });

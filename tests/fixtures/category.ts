@@ -2,8 +2,8 @@ import { CategoryConstructor_Argument } from "entities/category/category";
 
 export default function categoryFixture(
   props: Partial<CategoryConstructor_Argument> = {}
-): CategoryConstructor_Argument {
-  const defaults: CategoryConstructor_Argument = {
+): Required<CategoryConstructor_Argument> {
+  const defaults: Required<CategoryConstructor_Argument> = {
     id: "2",
     parentId: "1",
     name: "study",

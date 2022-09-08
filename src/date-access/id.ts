@@ -2,7 +2,7 @@ import type { ID } from "common/interfaces/id";
 import { isValid } from "common/util/id";
 
 const currentIds = {
-  category: 1,
+  category: 0,
 };
 
 interface getID_Argument {
