@@ -3,6 +3,7 @@ import type {
   CategoryConstructor_Argument,
 } from "entities/category/category";
 import type CategoryDatabase from "./interfaces/category-db";
+import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
 // end of type imports
 
 import EPP from "common/util/epp";
@@ -15,9 +16,10 @@ export interface AddCategory_Argument {
 
 interface MakeAddCategory_Argument {
   db: CategoryDatabase;
+  makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 export default function makeAddCategory(arg: MakeAddCategory_Argument) {
-  const { db } = arg;
+  const { db, makeCategoryIfNotCorrupted } = arg;
 
   return async function addCategory(
     arg: AddCategory_Argument
@@ -30,25 +32,11 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
         hash: insertingCategory.hash,
       });
 
-      if (existingRecord) {
-        try {
-          const existingCategory = new Category(existingRecord);
-
-          if (existingCategory.hash !== insertingCategory.hash)
-            throw new EPP({
-              code: "HASH_MISMATCH",
-              message: `The generated hash from the existing category in db doesn't match with the inserting one`,
-            });
-
-          return existingCategory;
-        } catch (ex) {
-          throw new EPP({
-            code: "CATEGORY_CORRUPTED_IN_DB",
-            otherInfo: { originalError: ex, existingRecord },
-            message: `The category with id: "${insertingCategory.id}" and name: "${insertingCategory.name}" is corrupted in db.`,
-          });
-        }
-      }
+      if (existingRecord)
+        return makeCategoryIfNotCorrupted({
+          CategoryClass: Category,
+          categoryRecord: existingRecord,
+        });
     }
 
     if (insertingCategory.parentId) {

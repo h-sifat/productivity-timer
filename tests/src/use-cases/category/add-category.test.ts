@@ -3,11 +3,12 @@ import categoryFixture from "fixtures/category";
 import makeAddCategory from "use-cases/category/add-category";
 import { getCategoryDatabase } from "fixtures/use-case/category-db";
 import { CategoryConstructor_Argument } from "entities/category/category";
+import makeCategoryIfNotCorrupted from "use-cases/category/util";
 
 const Id = getID({ entity: "category" });
 
 const db = getCategoryDatabase();
-const addCategory = makeAddCategory({ db });
+const addCategory = makeAddCategory({ db, makeCategoryIfNotCorrupted });
 
 let categoryInfo: Required<CategoryConstructor_Argument>;
 
