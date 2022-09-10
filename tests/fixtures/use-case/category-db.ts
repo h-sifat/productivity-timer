@@ -1,5 +1,5 @@
-import type CategoryDatabase from "use-cases/category/interfaces/category-db";
 import type { CategoryFields } from "entities/category/category";
+import type CategoryDatabase from "use-cases/category/interfaces/category-db";
 
 interface Store {
   [key: string]: Readonly<CategoryFields>;
@@ -28,6 +28,11 @@ export function getCategoryDatabase(): FakeCategoryDatabase {
   const plannedFailure: PlannedFailure = {};
 
   const db: FakeCategoryDatabase = {
+    async findChildren({ id, recursive = false }) {
+      failDeliberatelyIfPlanned("findChildren");
+      return findChildrenSync({ id, recursive });
+    },
+
     async insert({ categoryInfo }) {
       failDeliberatelyIfPlanned("insert");
 
@@ -46,6 +51,12 @@ export function getCategoryDatabase(): FakeCategoryDatabase {
 
       const category = Object.values(store).find((cat) => cat.hash === hash);
       return category || null;
+    },
+
+    async findAll() {
+      failDeliberatelyIfPlanned("findAll");
+
+      return Object.values(store);
     },
 
     _clearDb_() {
@@ -67,6 +78,26 @@ export function getCategoryDatabase(): FakeCategoryDatabase {
   };
 
   return Object.freeze(db);
+
+  function findChildrenSync(arg: {
+    id: string;
+    recursive: boolean;
+  }): CategoryFields[] {
+    const { id, recursive } = arg;
+
+    const subCategories: CategoryFields[] = [];
+
+    for (const category of Object.values(store)) {
+      if (category.parentId !== id) continue;
+
+      subCategories.push(category);
+
+      if (recursive)
+        subCategories.push(...findChildrenSync({ id: category.id, recursive }));
+    }
+
+    return subCategories;
+  }
 
   function failDeliberatelyIfPlanned(methodName: AllQueryMethods) {
     if (plannedFailure[methodName]) {
