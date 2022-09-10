@@ -33,6 +33,20 @@ export function getCategoryDatabase(): FakeCategoryDatabase {
       return findChildrenSync({ id, recursive });
     },
 
+    async removeCategories({ ids }) {
+      failDeliberatelyIfPlanned("removeCategories");
+
+      const deleted = [];
+
+      for (const id of ids)
+        if (id in store) {
+          deleted.push(store[id]);
+          delete store[id];
+        }
+
+      return deleted;
+    },
+
     async insert({ categoryInfo }) {
       failDeliberatelyIfPlanned("insert");
 

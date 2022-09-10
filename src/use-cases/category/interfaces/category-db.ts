@@ -1,6 +1,6 @@
 import { CategoryFields } from "entities/category/category";
 
-interface FindChildren_Argument {
+export interface FindChildren_Argument {
   id: string;
   recursive?: boolean;
 }
@@ -10,5 +10,6 @@ export default interface CategoryDatabase {
   findById(arg: { id: string }): Promise<CategoryFields | null>;
   findByHash(arg: { hash: string }): Promise<CategoryFields | null>;
   findChildren(arg: FindChildren_Argument): Promise<CategoryFields[]>;
+  removeCategories(arg: { ids: string[] }): Promise<CategoryFields[]>;
   insert(arg: { categoryInfo: CategoryFields }): Promise<CategoryFields>;
 }
