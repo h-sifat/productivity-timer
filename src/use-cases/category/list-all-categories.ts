@@ -6,7 +6,7 @@ import EPP from "common/util/epp";
 import Category from "entities/category";
 
 interface MakeListAllCategories_Argument {
-  db: CategoryDatabase;
+  db: Pick<CategoryDatabase, "findAll">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 

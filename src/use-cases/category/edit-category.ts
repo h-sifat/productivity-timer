@@ -12,8 +12,8 @@ import required from "common/util/required";
 
 export interface MakeEditCategory_Argument {
   Id: ID;
-  db: CategoryDatabase;
   getCurrentTimestamp(): number;
+  db: Pick<CategoryDatabase, "findById" | "insert">;
 }
 
 export interface EditCategory_Argument {

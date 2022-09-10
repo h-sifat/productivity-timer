@@ -8,7 +8,7 @@ import Category from "entities/category";
 
 interface MakeListSubCategories_Argument {
   Id: ID;
-  db: CategoryDatabase;
+  db: Pick<CategoryDatabase, "findChildren">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 

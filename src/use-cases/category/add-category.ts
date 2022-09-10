@@ -15,7 +15,7 @@ export interface AddCategory_Argument {
 }
 
 interface MakeAddCategory_Argument {
-  db: CategoryDatabase;
+  db: Pick<CategoryDatabase, "findByHash" | "findById" | "insert">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 export default function makeAddCategory(arg: MakeAddCategory_Argument) {
