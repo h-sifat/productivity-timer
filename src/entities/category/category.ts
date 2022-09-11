@@ -1,5 +1,4 @@
 import type { ID } from "common/interfaces/id";
-import type { ToPlainObject } from "common/interfaces/other";
 import type { AssertValidString } from "common/interfaces/validator";
 import type { CreationAndModificationTimestampsValidator } from "common/interfaces/date-time";
 
@@ -27,7 +26,7 @@ export type CategoryInterface = Readonly<{
   get modifiedOn(): number;
   get parentId(): string | null;
   get description(): string | null;
-  toPlainObject: ToPlainObject<CategoryFields>;
+  toPlainObject(): Readonly<CategoryFields>;
 }>;
 
 export type CategoryConstructor_Argument = Partial<

@@ -1,5 +1,4 @@
 import type { ID } from "common/interfaces/id";
-import type { ToPlainObject } from "common/interfaces/other";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
@@ -11,7 +10,7 @@ export interface ProjectCategoryFields {
 }
 
 export interface ProjectCategoryMethods {
-  toPlainObject: ToPlainObject<ProjectCategoryFields>;
+  toPlainObject(): Readonly<ProjectCategoryFields>;
 }
 
 export type ProjectCategoryInterface = ProjectCategoryFields &

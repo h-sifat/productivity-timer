@@ -10,7 +10,6 @@ import type {
 } from "common/interfaces/date-time";
 import type { ID } from "common/interfaces/id";
 import type { AssertValidString } from "common/interfaces/validator";
-import type { ToPlainObject } from "common/interfaces/other";
 
 import { assert } from "handy-types";
 import EPP from "common/util/epp";
@@ -34,7 +33,7 @@ export type ProjectFields = {
 export interface ProjectMethods {
   setDeadline(date: number): void;
   setStatus(status: ProjectStatus): void;
-  toPlainObject: ToPlainObject<ProjectFields>;
+  toPlainObject(): Readonly<ProjectFields>;
 }
 
 export interface ProjectObjectInterface {
@@ -47,7 +46,7 @@ export interface ProjectObjectInterface {
   get description(): string | null;
   set deadline(date: number | null);
   set status(status: ProjectStatus);
-  toPlainObject: ToPlainObject<ProjectFields>;
+  toPlainObject(): Readonly<ProjectFields>;
   get category(): Readonly<ProjectCategoryFields> | null;
 }
 
