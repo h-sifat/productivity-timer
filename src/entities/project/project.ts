@@ -84,6 +84,7 @@ const VALID_PROJECT_STATUSES = Object.freeze([
   "completed",
 ]);
 
+const VALID_NAME_PATTERN = /^[\w ]+$/;
 export default function makeProjectClass(
   arg: MakeProjectClassArgument
 ): ProjectClass {
@@ -133,9 +134,17 @@ export default function makeProjectClass(
           name: "name",
           minLength: 1,
           maxLength: MAX_NAME_LENGTH,
+          trimBeforeLengthValidation: true,
         });
 
-        this.#name = name;
+        this.#name = name.trim();
+
+        if (!VALID_NAME_PATTERN.test(this.#name))
+          throw new EPP({
+            code: "INVALID_NAME",
+            message:
+              "A project name cannot contain non alphanumeric character(s) other than '_' and ' '.",
+          });
       }
 
       // ----- description -------

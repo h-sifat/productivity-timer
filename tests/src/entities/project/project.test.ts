@@ -82,6 +82,16 @@ describe("Constructor Arg Validation", () => {
         case: "is not a non_empty_string",
       },
       {
+        name: "   \n\r\n    ", // it will be trimmed
+        code: "NAME_TOO_SHORT",
+        case: "is not a non_empty_string",
+      },
+      {
+        name: "das@#\nasAfa",
+        code: "INVALID_NAME",
+        case: "contains non alphanumeric character",
+      },
+      {
         name: "a".repeat(MAX_NAME_LENGTH + 1),
         code: "NAME_TOO_LONG",
         case: "is longer than MAX_NAME_LENGTH",
@@ -109,6 +119,15 @@ describe("Constructor Arg Validation", () => {
         }).toThrowErrorWithCode(errorCode);
       });
     }
+
+    it(`it trims whitespace from the project name`, () => {
+      const name = "    name  \n ";
+      const trimmedName = "name";
+
+      const project = new Project({ name });
+
+      expect(project.name).toBe(trimmedName);
+    });
   });
 
   describe("field:description", () => {
