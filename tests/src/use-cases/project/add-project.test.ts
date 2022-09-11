@@ -4,13 +4,11 @@ import makeAddProject from "use-cases/project/add-project";
 const insert = jest.fn();
 const findByName = jest.fn();
 
-const addProject = makeAddProject({
-  db: { insert, findByName },
-});
+const db = { insert, findByName };
+const addProject = makeAddProject({ db });
 
 beforeEach(() => {
-  insert.mockClear();
-  findByName.mockClear();
+  Object.values(db).forEach((method) => method.mockClear());
 });
 
 describe("Validation", () => {
@@ -32,17 +30,23 @@ describe("Validation", () => {
 
 describe("Functionality", () => {
   {
-    const errorCode = "PROJECT_CORRUPTED_IN_DB";
-    it(`throws ewc "${errorCode}" if project with id already exists but is corrupted`, async () => {
-      expect.assertions(1);
+    const errorCode = "CORRUPTED";
+    it(`throws ewc "${errorCode}" if project already exists but is corrupted`, async () => {
+      expect.assertions(3);
 
+      const corruptedRecord = { id: 1 };
       // will return empty object
-      findByName.mockResolvedValueOnce({});
+      findByName.mockResolvedValueOnce(corruptedRecord);
 
       try {
         await addProject({ projectInfo: { name: "TodoApp" } });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
+        expect(ex.record).toEqual(corruptedRecord);
+        expect(ex.originalError).toMatchObject({
+          code: expect.any(String),
+          message: expect.any(String),
+        });
       }
     });
   }

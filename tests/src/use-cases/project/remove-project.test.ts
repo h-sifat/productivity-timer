@@ -1,6 +1,6 @@
 import EPP from "common/util/epp";
-import { isValid as isValidId } from "common/util/id";
 import Project from "entities/project";
+import { isValid as isValidId } from "common/util/id";
 import makeRemoveProject from "use-cases/project/remove-project";
 
 const deleteById = jest.fn();
@@ -34,10 +34,14 @@ describe("Validation", () => {
 describe("Functionality", () => {
   it(`return delete and the project record`, async () => {
     const projectRecord = new Project({ name: "todo" }).toPlainObject();
+    const id = projectRecord.id;
 
     deleteById.mockResolvedValueOnce(projectRecord);
 
-    const deleted = await removeProject({ id: projectRecord.id });
+    const deleted = await removeProject({ id });
+
+    expect(deleteById).toHaveBeenLastCalledWith({ id });
+
     expect(deleted).toEqual(projectRecord);
   });
 

@@ -15,6 +15,7 @@ describe("Functionality", () => {
     findAll.mockResolvedValueOnce([]);
 
     const result = await listProjects();
+
     expect(findAll).toHaveBeenCalled();
 
     expect(result).toEqual({
@@ -31,6 +32,8 @@ describe("Functionality", () => {
 
     const { projects, corrupted } = await listProjects();
 
+    expect(findAll).toHaveBeenCalled();
+
     expect(projects).toHaveLength(0);
     expect(corrupted).toHaveLength(1);
 
@@ -46,6 +49,8 @@ describe("Functionality", () => {
     findAll.mockResolvedValueOnce([projectInfo]);
 
     const { projects, corrupted } = await listProjects();
+
+    expect(findAll).toHaveBeenCalled();
 
     expect(projects).toHaveLength(1);
     expect(corrupted).toHaveLength(0);

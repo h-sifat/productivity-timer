@@ -30,23 +30,25 @@ export default function makeEditProject(arg: MakeEditProject_Argument) {
 
     if (!existingProjectRecord)
       throw new EPP({
-        code: "PROJECT_DOES_NOT_EXIST",
+        code: "NOT_FOUND",
         message: `No project exist with id: "${id}"`,
       });
 
     {
       // don't change property order
-      const editedInfo = {
+      const editedProjectInfo = {
         ...existingProjectRecord,
         ...changes,
         modifiedOn: getCurrentTimestamp(),
         id,
       };
 
-      const editedProjectInfo = new Project(editedInfo).toPlainObject();
-      await db.updateById({ id, projectInfo: editedProjectInfo });
+      const validatedProjectInfo = new Project(
+        editedProjectInfo
+      ).toPlainObject();
+      await db.updateById({ id, projectInfo: validatedProjectInfo });
 
-      return editedProjectInfo;
+      return validatedProjectInfo;
     }
   };
 }

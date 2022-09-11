@@ -1,5 +1,5 @@
-import { isValid as isValidId } from "common/util/id";
 import Project from "entities/project";
+import { isValid as isValidId } from "common/util/id";
 import makeGetProject from "use-cases/project/get-project";
 
 const findById = jest.fn();

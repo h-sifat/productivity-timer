@@ -11,8 +11,8 @@ interface MakeListProjects_Argument {
 interface ListProjects_Result {
   projects: Readonly<ProjectFields>[];
   corrupted: {
-    record: Partial<ProjectFields>;
     error: EPP;
+    record: Partial<ProjectFields>;
   }[];
 }
 
@@ -31,10 +31,7 @@ export default function makeListProjects(arg: MakeListProjects_Argument) {
       try {
         result.projects.push(new Project(record).toPlainObject());
       } catch (ex: any) {
-        result.corrupted.push({
-          record,
-          error: ex,
-        });
+        result.corrupted.push({ record, error: ex });
       }
 
     return result;

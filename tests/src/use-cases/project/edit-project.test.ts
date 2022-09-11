@@ -1,14 +1,13 @@
-import { isValid as isValidId } from "common/util/id";
 import Project from "entities/project";
+import { isValid as isValidId } from "common/util/id";
 import makeEditProject from "use-cases/project/edit-project";
 
-const updateById = jest.fn();
 const findById = jest.fn();
-const db = { findById, updateById };
+const updateById = jest.fn();
+const db = Object.freeze({ findById, updateById });
 
 beforeEach(() => {
-  findById.mockClear();
-  updateById.mockClear();
+  Object.values(db).forEach((method) => method.mockClear());
 });
 
 const editProject = makeEditProject({
@@ -36,9 +35,9 @@ describe("Validation", () => {
   }
 
   {
-    const errorCode = "PROJECT_DOES_NOT_EXIST";
+    const errorCode = "NOT_FOUND";
 
-    it(`throws ewc "${errorCode}" if the category with the given id doesn't exist`, async () => {
+    it(`throws ewc "${errorCode}" if the project with the given id doesn't exist`, async () => {
       expect.assertions(2);
 
       const id = "100";

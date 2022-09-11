@@ -30,9 +30,9 @@ export default function makeAddProject(arg: MakeAddProject_Argument) {
       } catch (ex: any) {
         const { name, id } = existingRecord;
         throw new EPP({
-          code: "PROJECT_CORRUPTED_IN_DB",
+          code: "CORRUPTED",
           message: `The project with id: ${id} and name: "${name}" is corrupted in db.`,
-          otherInfo: { projectRecord: existingRecord, reason: "INVALID_FIELD" },
+          otherInfo: { record: existingRecord, originalError: ex },
         });
       }
 
