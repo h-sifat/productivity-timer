@@ -2,11 +2,12 @@ import type { ID } from "common/interfaces/id";
 import { isValid } from "common/util/id";
 
 const currentIds = {
-  category: 0,
+  category: 1,
+  project: 1,
 };
 
 interface getID_Argument {
-  entity: "category";
+  entity: "category" | "project";
 }
 export default function getID(arg: getID_Argument): ID {
   const { entity } = arg;
@@ -14,7 +15,7 @@ export default function getID(arg: getID_Argument): ID {
   return {
     isValid,
     makeId: () => {
-      const nextId = ++currentIds[entity];
+      const nextId = currentIds[entity]++;
       return nextId.toString();
     },
   };
