@@ -111,13 +111,10 @@ describe("Functionality", () => {
 
     expect(corruptionError).toHaveLength(0);
 
-    const subCategoryRecordsFromResult = subCategoryResults.map((subCat) =>
-      subCat.toPlainObject()
-    );
     const insertedSubCategoryRecords = subCategories.map((subCat) =>
       subCat.toPlainObject()
     );
 
-    expect(insertedSubCategoryRecords).toEqual(subCategoryRecordsFromResult);
+    expect(insertedSubCategoryRecords).toEqual(subCategoryResults);
   });
 });

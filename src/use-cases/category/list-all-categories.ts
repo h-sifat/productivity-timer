@@ -1,5 +1,5 @@
 import type CategoryDatabase from "./interfaces/category-db";
-import type { CategoryInterface } from "entities/category/category";
+import type { CategoryFields } from "entities/category/category";
 import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
 
 import EPP from "common/util/epp";
@@ -17,7 +17,7 @@ export default function makeListAllCategories(
 
   interface ListAllCategories_Result {
     corruptionError: EPP[];
-    categories: CategoryInterface[];
+    categories: Readonly<CategoryFields>[];
   }
 
   return async function listAllCategories(): Promise<ListAllCategories_Result> {
@@ -33,7 +33,7 @@ export default function makeListAllCategories(
         const childCategory = makeCategoryIfNotCorrupted({
           CategoryClass: Category,
           categoryRecord: categoryInfo,
-        });
+        }).toPlainObject();
 
         result.categories.push(childCategory);
       } catch (ex: any) {

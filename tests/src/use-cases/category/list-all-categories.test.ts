@@ -36,6 +36,6 @@ describe("Functionality", () => {
     expect(corruptionError).toHaveLength(0);
     expect(categories).toHaveLength(1);
 
-    expect(categories.pop()?.toPlainObject()).toEqual(categoryRecord);
+    expect(categories.pop()).toEqual(categoryRecord);
   });
 });

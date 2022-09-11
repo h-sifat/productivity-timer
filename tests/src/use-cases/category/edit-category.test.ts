@@ -140,7 +140,7 @@ describe("Functionality", () => {
       changes: { description: editedDescription, name: editedName },
     });
 
-    expect(categoryAfterEdit.toPlainObject()).toMatchObject({
+    expect(categoryAfterEdit).toMatchObject({
       id,
       name: editedName,
       description: editedDescription,

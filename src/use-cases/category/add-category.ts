@@ -1,5 +1,5 @@
 import type {
-  CategoryInterface,
+  CategoryFields,
   CategoryConstructor_Argument,
 } from "entities/category/category";
 import type CategoryDatabase from "./interfaces/category-db";
@@ -23,7 +23,7 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
 
   return async function addCategory(
     arg: AddCategory_Argument
-  ): Promise<CategoryInterface> {
+  ): Promise<Readonly<CategoryFields>> {
     const { categoryInfo } = arg;
     const insertingCategory = new Category(categoryInfo);
 
@@ -36,7 +36,7 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
         return makeCategoryIfNotCorrupted({
           CategoryClass: Category,
           categoryRecord: existingRecord,
-        });
+        }).toPlainObject();
     }
 
     if (insertingCategory.parentId) {
@@ -51,6 +51,6 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
 
     await db.insert({ categoryInfo: insertingCategory.toPlainObject() });
 
-    return insertingCategory;
+    return insertingCategory.toPlainObject();
   };
 }

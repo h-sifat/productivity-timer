@@ -1,7 +1,7 @@
 import type { ID } from "common/interfaces/id";
 import type CategoryDatabase from "./interfaces/category-db";
 import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
-import type { CategoryInterface } from "entities/category/category";
+import type { CategoryFields } from "entities/category/category";
 
 import EPP from "common/util/epp";
 import Category from "entities/category";
@@ -19,7 +19,7 @@ interface ListSubCategories_Argument {
 
 interface ListSubCategories_Result {
   corruptionError: EPP[];
-  subCategories: CategoryInterface[];
+  subCategories: Readonly<CategoryFields>[];
 }
 
 export default function makeListSubCategories(
@@ -50,7 +50,7 @@ export default function makeListSubCategories(
         const childCategory = makeCategoryIfNotCorrupted({
           CategoryClass: Category,
           categoryRecord: categoryInfo,
-        });
+        }).toPlainObject();
 
         result.subCategories.push(childCategory);
       } catch (ex: any) {

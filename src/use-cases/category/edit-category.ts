@@ -1,9 +1,6 @@
 import type { ID } from "common/interfaces/id";
 import type CategoryDatabase from "./interfaces/category-db";
-import type {
-  CategoryFields,
-  CategoryInterface,
-} from "entities/category/category";
+import type { CategoryFields } from "entities/category/category";
 
 // @ts-ignore
 import EPP from "common/util/epp";
@@ -26,7 +23,7 @@ export default function makeEditCategory(arg: MakeEditCategory_Argument) {
 
   return async function editCategory(
     arg: EditCategory_Argument
-  ): Promise<CategoryInterface> {
+  ): Promise<Readonly<CategoryFields>> {
     if (!("id" in arg)) required("id");
     if (!("changes" in arg)) required("changes");
 
@@ -65,7 +62,7 @@ export default function makeEditCategory(arg: MakeEditCategory_Argument) {
 
       await db.insert({ categoryInfo: editedCategory.toPlainObject() });
 
-      return editedCategory;
+      return editedCategory.toPlainObject();
     }
   };
 }

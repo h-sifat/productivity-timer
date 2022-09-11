@@ -22,7 +22,7 @@ describe("Insertion", () => {
     const { name, description } = categoryInfo;
     const inserted = await addCategory({ categoryInfo: { name, description } });
 
-    expect(inserted.toPlainObject()).toMatchObject({
+    expect(inserted).toMatchObject({
       name,
       description,
       parentId: null,
@@ -61,9 +61,7 @@ describe("Insertion", () => {
       categoryInfo: { name: `    ${name}  `, description: descriptionAfter },
     });
 
-    expect(insertedBefore.toPlainObject()).toEqual(
-      insertedAfter.toPlainObject()
-    );
+    expect(insertedBefore).toEqual(insertedAfter);
   });
 
   {

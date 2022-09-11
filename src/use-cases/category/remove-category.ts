@@ -1,5 +1,6 @@
 import { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
+import { CategoryFields } from "entities/category/category";
 import type CategoryDatabase from "./interfaces/category-db";
 
 interface MakeRemoveCategory_Argument {
@@ -14,7 +15,9 @@ export interface RemoveCategory_Argument {
 
 export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
   const { db, isValidId } = arg;
-  return async function removeCategory(arg: RemoveCategory_Argument) {
+  return async function removeCategory(
+    arg: RemoveCategory_Argument
+  ): Promise<Readonly<CategoryFields>[]> {
     const { id, removeChildrenRecursively = false } = arg;
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
@@ -39,6 +42,12 @@ export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
       (record) => record.id
     );
 
-    return await db.removeCategories({ ids: categoryIdsToDelete });
+    {
+      const deletedCategories = await db.removeCategories({
+        ids: categoryIdsToDelete,
+      });
+
+      return deletedCategories.map((category) => Object.freeze(category));
+    }
   };
 }
