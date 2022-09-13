@@ -209,6 +209,34 @@ describe("count", () => {
   });
 });
 
+describe("deleteMany", () => {
+  it(`returns an empty array if no match is found`, async () => {
+    const ids = ["1", "2", "3"];
+    const result = await db.deleteMany({ ids });
+    expect(result).toHaveLength(0);
+  });
+
+  it(`deletes all the documents`, async () => {
+    const documents = Array.from({ length: 2 }, (_, i) => ({
+      id: i + 1,
+      a: "s_" + i,
+    }));
+
+    await db.insertMany(documents);
+
+    const [docA, docB] = documents;
+
+    const deleted = await db.deleteMany({
+      ids: [docA.id, docB.id, "non_existent_id"],
+    });
+
+    expect(deleted).toEqual(documents);
+
+    expect(await db.findById({ id: docA.id })).toBeNull();
+    expect(await db.findById({ id: docB.id })).toBeNull();
+  });
+});
+
 describe("clearDb", () => {
   it(`deletes all the documents stored in the db`, async () => {
     expect(await db.count()).toBe(0);

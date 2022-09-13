@@ -98,6 +98,13 @@ export default class MockDb<Key extends string | number, Type extends object> {
     return this.enqueueQuery<Type>({ arg, method: "deleteById" });
   }
 
+  async deleteMany(arg: { ids: Key[] }): Promise<Type[]> {
+    const { ids = required("ids") } = arg;
+    for (const id of ids!) this.assertValidId({ id });
+
+    return this.enqueueQuery<Type[]>({ arg, method: "deleteMany" });
+  }
+
   /**
    * corruptById, __Lol__ :')
    * Set any value as a document to the given id. The document won't be
@@ -146,6 +153,20 @@ export default class MockDb<Key extends string | number, Type extends object> {
     this.__deleteDocument__(id);
 
     resolve(document);
+  }
+
+  protected __deleteMany__(query: QueryExecutorMethodArg) {
+    const { arg, resolve } = query;
+
+    const result: Type[] = [];
+
+    for (const id of arg.ids)
+      if (this.__hasDocument__(id)) {
+        result.push(this.__getDocument__(id)!);
+        this.__deleteDocument__(id);
+      }
+
+    resolve(result);
   }
 
   protected __updateById__(query: QueryExecutorMethodArg) {
