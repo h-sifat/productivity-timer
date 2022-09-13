@@ -10,34 +10,37 @@ interface MakeListAllCategories_Argument {
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 
-export default function makeListAllCategories(
+export default function makeListCategories(
   arg: MakeListAllCategories_Argument
 ) {
   const { db, makeCategoryIfNotCorrupted } = arg;
 
-  interface ListAllCategories_Result {
-    corruptionError: EPP[];
+  interface ListCategories_Result {
     categories: Readonly<CategoryFields>[];
+    corrupted: { error: EPP; record: Partial<CategoryFields> }[];
   }
 
-  return async function listAllCategories(): Promise<ListAllCategories_Result> {
+  return async function listCategories(): Promise<ListCategories_Result> {
     const allCategoryRecords = await db.findAll();
 
-    const result: ListAllCategories_Result = {
+    const result: ListCategories_Result = {
+      corrupted: [],
       categories: [],
-      corruptionError: [],
     };
 
-    for (const categoryInfo of allCategoryRecords)
+    for (const categoryRecord of allCategoryRecords)
       try {
         const category = makeCategoryIfNotCorrupted({
           CategoryClass: Category,
-          categoryRecord: categoryInfo,
+          categoryRecord: categoryRecord,
         }).toPlainObject();
 
         result.categories.push(category);
       } catch (ex: any) {
-        result.corruptionError.push(ex);
+        result.corrupted.push({
+          error: ex,
+          record: categoryRecord,
+        });
       }
 
     return result;

@@ -1,13 +1,25 @@
+import type { CategoryInterface } from "entities/category/category";
 import type { MakeCategoryIfNotCorrupted } from "use-cases/interfaces/category-util";
 
 import EPP from "common/util/epp";
-import { CategoryInterface } from "entities/category/category";
+import { assert } from "handy-types";
+import required from "common/util/required";
 
 const makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted =
   function _makeCategoryIfNotCorrupted(arg) {
     const { CategoryClass: Category, categoryRecord } = arg;
 
     let category: CategoryInterface;
+
+    {
+      const { id = required("id", "CORRUPTED") } = categoryRecord;
+
+      assert<string>("non_empty_string", id, {
+        code: "CORRUPTED",
+        otherInfo: { record: categoryRecord, reason: "INVALID_FIELD" },
+        message: `The category with name: "${categoryRecord.name}" is corrupted.`,
+      });
+    }
 
     try {
       category = new Category(categoryRecord);
