@@ -1,14 +1,14 @@
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
 import makeGetProject from "use-cases/project/get-project";
+import ProjectDatabase from "fixtures/use-case/project-db";
 
-const findById = jest.fn();
-const db = Object.freeze({ findById });
+const db = new ProjectDatabase();
 
 const getProject = makeGetProject({ db, isValidId });
 
-beforeEach(() => {
-  Object.values(db).forEach((method) => method.mockClear());
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Validation", () => {
@@ -35,48 +35,40 @@ describe("Functionality", () => {
     const errorCode = "NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if no project is found with the given id`, async () => {
-      expect.assertions(3);
+      expect.assertions(1);
 
       const id = "100";
-      findById.mockResolvedValueOnce(null);
 
       try {
         await getProject({ id });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
-        expect(ex.message).toEqual(expect.any(String));
       }
-
-      expect(findById).toHaveBeenLastCalledWith({ id });
     });
   }
 
   {
     const errorCode = "CORRUPTED";
     it(`throws ewc "${errorCode}" if the project returned by is corrupted`, async () => {
-      expect.assertions(3);
+      expect.assertions(1);
 
       const id = "100";
-      findById.mockResolvedValueOnce({});
+      await db.corruptById({ id, unValidatedDocument: {} });
 
       try {
         await getProject({ id });
-      } catch (ex: any) {
+      } catch (ex) {
         expect(ex.code).toBe(errorCode);
-        expect(ex.message).toEqual(expect.any(String));
       }
-
-      expect(findById).toHaveBeenLastCalledWith({ id });
     });
   }
 
   it(`returns the project if it exists an not corrupted`, async () => {
     const insertedProjectInfo = new Project({ name: "Todo" }).toPlainObject();
 
-    findById.mockResolvedValueOnce(insertedProjectInfo);
+    await db.insert(insertedProjectInfo);
 
     const queriedProjectInfo = await getProject({ id: insertedProjectInfo.id });
-
     expect(queriedProjectInfo).toEqual(insertedProjectInfo);
   });
 });

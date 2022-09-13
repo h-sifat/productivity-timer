@@ -1,13 +1,12 @@
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
 import makeEditProject from "use-cases/project/edit-project";
+import ProjectDatabase from "fixtures/use-case/project-db";
 
-const findById = jest.fn();
-const updateById = jest.fn();
-const db = Object.freeze({ findById, updateById });
+const db = new ProjectDatabase();
 
-beforeEach(() => {
-  Object.values(db).forEach((method) => method.mockClear());
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 const editProject = makeEditProject({
@@ -38,19 +37,16 @@ describe("Validation", () => {
     const errorCode = "NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if the project with the given id doesn't exist`, async () => {
-      expect.assertions(2);
+      expect.assertions(1);
 
+      // right now db is empty so no project exists with the id: "100"
       const id = "100";
-
-      findById.mockResolvedValueOnce(null);
 
       try {
         await editProject({ id, changes: {} });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
-
-      expect(findById).toHaveBeenLastCalledWith({ id });
     });
   }
 });
@@ -64,8 +60,7 @@ describe("Functionality", () => {
       modifiedOn: createdOn,
     }).toPlainObject();
 
-    findById.mockResolvedValueOnce(projectInfo);
-    updateById.mockImplementationOnce((arg) => Promise.resolve(arg));
+    await db.insert(projectInfo);
 
     const editedStatus = "completed";
     const editedProjectCategory = {
@@ -81,11 +76,6 @@ describe("Functionality", () => {
     const editedProject = await editProject({
       id: projectInfo.id,
       changes: edits,
-    });
-
-    expect(updateById).toHaveBeenLastCalledWith({
-      id: projectInfo.id,
-      projectInfo: editedProject,
     });
 
     expect(editedProject.modifiedOn).not.toBe(projectInfo.modifiedOn);

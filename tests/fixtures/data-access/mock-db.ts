@@ -112,7 +112,12 @@ export default class MockDb<Key extends string | number, Type extends object> {
     const { arg, resolve, reject } = query;
 
     const { id, unValidatedDocument } = arg;
-    this.__setDocument__(id, unValidatedDocument, reject);
+    this.__setDocument__({
+      id,
+      reject,
+      callee: "corruptById",
+      document: unValidatedDocument,
+    });
     resolve(unValidatedDocument);
   }
 
@@ -155,7 +160,12 @@ export default class MockDb<Key extends string | number, Type extends object> {
       ...changes,
       id,
     });
-    this.__setDocument__(id, newDoc, reject);
+    this.__setDocument__({
+      id,
+      reject,
+      document: newDoc,
+      callee: "updateById",
+    });
 
     resolve(newDoc);
   }
@@ -177,7 +187,12 @@ export default class MockDb<Key extends string | number, Type extends object> {
     const { id } = arg;
 
     if (!this.__hasDocument__(id))
-      this.__setDocument__(id, Object.freeze(arg), reject);
+      this.__setDocument__({
+        id,
+        reject,
+        callee: "insert",
+        document: Object.freeze(arg),
+      });
 
     resolve(this.__getDocument__(id));
   }
@@ -191,7 +206,12 @@ export default class MockDb<Key extends string | number, Type extends object> {
       if (this.__hasDocument__(doc.id))
         result.push(this.__getDocument__(doc.id));
       else {
-        this.__setDocument__(doc.id, Object.freeze(doc), reject);
+        this.__setDocument__({
+          reject,
+          id: doc.id,
+          callee: "insertMany",
+          document: Object.freeze(doc),
+        });
         result.push(Object.freeze(doc));
       }
 
@@ -235,11 +255,13 @@ export default class MockDb<Key extends string | number, Type extends object> {
     return [...this.store.values()];
   }
 
-  protected __setDocument__(
-    id: Key,
-    document: Type,
-    reject: (v: unknown) => void
-  ): Map<Key, Type> {
+  protected __setDocument__(arg: {
+    id: Key;
+    callee: string;
+    document: Type;
+    reject: (v: unknown) => void;
+  }): Map<Key, Type> {
+    const { id, document } = arg;
     return this.store.set(id, document);
   }
 

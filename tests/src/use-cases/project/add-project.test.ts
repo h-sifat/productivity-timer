@@ -1,14 +1,12 @@
 import Project from "entities/project";
+import ProjectDatabase from "fixtures/use-case/project-db";
 import makeAddProject from "use-cases/project/add-project";
 
-const insert = jest.fn();
-const findByName = jest.fn();
-
-const db = { insert, findByName };
+const db = new ProjectDatabase();
 const addProject = makeAddProject({ db });
 
-beforeEach(() => {
-  Object.values(db).forEach((method) => method.mockClear());
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Validation", () => {
@@ -34,12 +32,16 @@ describe("Functionality", () => {
     it(`throws ewc "${errorCode}" if project already exists but is corrupted`, async () => {
       expect.assertions(3);
 
-      const corruptedRecord = { id: 1 };
-      // will return empty object
-      findByName.mockResolvedValueOnce(corruptedRecord);
+      const name = "TodoApp";
+      const corruptedRecord = { id: "1", name, createdOn: "not_a_time_stamp" };
+
+      db.corruptById({
+        id: corruptedRecord.id,
+        unValidatedDocument: corruptedRecord,
+      });
 
       try {
-        await addProject({ projectInfo: { name: "TodoApp" } });
+        await addProject({ projectInfo: { name: name.toLowerCase() } });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
         expect(ex.record).toEqual(corruptedRecord);
@@ -53,19 +55,18 @@ describe("Functionality", () => {
 
   it(`returns the existing project if the project name is the same (case insensitive)`, async () => {
     const projectName = "Todo App";
-    const existingProjectRecord = new Project({
+    const existingProject = new Project({
       name: projectName,
     }).toPlainObject();
 
-    findByName.mockResolvedValueOnce(existingProjectRecord);
+    await db.insert(existingProject);
 
     const uppercaseName = projectName.toUpperCase();
     const insertedProject = await addProject({
       projectInfo: { name: uppercaseName },
     });
 
-    expect(insertedProject).toEqual(existingProjectRecord);
-    expect(findByName).toHaveBeenLastCalledWith({ name: uppercaseName });
+    expect(insertedProject).toEqual(existingProject);
   });
 
   it(`inserts a new project if it doesn't already exist`, async () => {
@@ -73,13 +74,8 @@ describe("Functionality", () => {
       name: "todo",
     }).toPlainObject();
 
-    insert.mockResolvedValueOnce(insertingProjectRecord);
-
     const inserted = await addProject({ projectInfo: insertingProjectRecord });
 
     expect(inserted).toEqual(insertingProjectRecord);
-    expect(insert).toHaveBeenLastCalledWith({
-      projectInfo: insertingProjectRecord,
-    });
   });
 });

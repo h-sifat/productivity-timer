@@ -1,11 +1,11 @@
 import type { ProjectFields } from "entities/project/project";
-import type ProjectDatabase from "use-cases/interfaces/project-db";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
 
 interface MakeListProjects_Argument {
-  db: Pick<ProjectDatabase, "findAll">;
+  db: Pick<ProjectDatabaseInterface, "findAll">;
 }
 
 interface ListProjects_Result {

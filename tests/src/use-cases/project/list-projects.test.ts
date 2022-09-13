@@ -1,22 +1,18 @@
 import Project from "entities/project";
+import ProjectDatabase from "fixtures/use-case/project-db";
 import makeListProjects from "use-cases/project/list-projects";
 
-const findAll = jest.fn();
-const db = Object.freeze({ findAll });
+const db = new ProjectDatabase();
 
 const listProjects = makeListProjects({ db });
 
-beforeEach(() => {
-  Object.values(db).forEach((method) => method.mockClear());
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Functionality", () => {
   it(`returns empty array if db is empty`, async () => {
-    findAll.mockResolvedValueOnce([]);
-
     const result = await listProjects();
-
-    expect(findAll).toHaveBeenCalled();
 
     expect(result).toEqual({
       projects: [],
@@ -25,14 +21,17 @@ describe("Functionality", () => {
   });
 
   it(`returns any corrupted projects data in the corrupted array`, async () => {
-    const projectInfo = new Project({ name: "todo" }).toPlainObject();
-    const corruptedProjectInfo = { ...projectInfo, name: ["not-a-string"] };
+    const corruptedProjectInfo = {
+      ...new Project({ name: "todo" }).toPlainObject(),
+      name: ["not-a-string"],
+    };
 
-    findAll.mockResolvedValueOnce([corruptedProjectInfo]);
+    await db.corruptById({
+      id: corruptedProjectInfo.id,
+      unValidatedDocument: corruptedProjectInfo,
+    });
 
     const { projects, corrupted } = await listProjects();
-
-    expect(findAll).toHaveBeenCalled();
 
     expect(projects).toHaveLength(0);
     expect(corrupted).toHaveLength(1);
@@ -46,11 +45,9 @@ describe("Functionality", () => {
   it(`returns all the projects records`, async () => {
     const projectInfo = new Project({ name: "todo" }).toPlainObject();
 
-    findAll.mockResolvedValueOnce([projectInfo]);
+    await db.insert(projectInfo);
 
     const { projects, corrupted } = await listProjects();
-
-    expect(findAll).toHaveBeenCalled();
 
     expect(projects).toHaveLength(1);
     expect(corrupted).toHaveLength(0);

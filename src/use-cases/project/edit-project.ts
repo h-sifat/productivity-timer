@@ -1,6 +1,6 @@
 import type { ID } from "common/interfaces/id";
 import type { ProjectFields } from "entities/project/project";
-import type ProjectDatabase from "use-cases/interfaces/project-db";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
@@ -8,7 +8,7 @@ import Project from "entities/project";
 interface MakeEditProject_Argument {
   isValidId: ID["isValid"];
   getCurrentTimestamp(): number;
-  db: Pick<ProjectDatabase, "findById" | "updateById">;
+  db: Pick<ProjectDatabaseInterface, "findById" | "updateById">;
 }
 
 interface EditProject_Argument {
@@ -46,7 +46,7 @@ export default function makeEditProject(arg: MakeEditProject_Argument) {
       const validatedProjectInfo = new Project(
         editedProjectInfo
       ).toPlainObject();
-      await db.updateById({ id, projectInfo: validatedProjectInfo });
+      await db.updateById({ id, changes: validatedProjectInfo });
 
       return validatedProjectInfo;
     }

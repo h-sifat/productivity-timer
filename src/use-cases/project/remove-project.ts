@@ -1,11 +1,11 @@
 import type { ID } from "common/interfaces/id";
-import type ProjectDatabase from "use-cases/interfaces/project-db";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 import EPP from "common/util/epp";
 
 interface MakeRemoveProject_Argument {
   isValidId: ID["isValid"];
-  db: Pick<ProjectDatabase, "deleteById">;
+  db: Pick<ProjectDatabaseInterface, "deleteById">;
 }
 
 interface RemoveProject_Argument {

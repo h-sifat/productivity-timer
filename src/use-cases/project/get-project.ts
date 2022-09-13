@@ -1,12 +1,12 @@
 import type { ID } from "common/interfaces/id";
-import type ProjectDatabase from "use-cases/interfaces/project-db";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type { ProjectFields } from "entities/project/project";
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
 
 interface MakeGetProject_Argument {
-  db: Pick<ProjectDatabase, "findById">;
+  db: Pick<ProjectDatabaseInterface, "findById">;
   isValidId: ID["isValid"];
 }
 

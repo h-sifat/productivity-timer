@@ -1,11 +1,11 @@
 import type { ProjectConstructorArgument } from "entities/project/project";
-import type ProjectDatabase from "use-cases/interfaces/project-db";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 import Project from "entities/project";
 import EPP from "common/util/epp";
 
 interface MakeAddProject_Argument {
-  db: Pick<ProjectDatabase, "findByName" | "insert">;
+  db: Pick<ProjectDatabaseInterface, "findByName" | "insert">;
 }
 
 interface AddProject_Argument {
@@ -36,7 +36,7 @@ export default function makeAddProject(arg: MakeAddProject_Argument) {
         });
       }
 
-    await db.insert({ projectInfo: insertingProjectRecord });
+    await db.insert(insertingProjectRecord);
     return insertingProjectRecord;
   };
 }

@@ -1,15 +1,14 @@
-import EPP from "common/util/epp";
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
 import makeRemoveProject from "use-cases/project/remove-project";
 
-const deleteById = jest.fn();
-const db = Object.freeze({ deleteById });
+import ProjectDatabase from "fixtures/use-case/project-db";
+const db = new ProjectDatabase();
 
 const removeProject = makeRemoveProject({ db, isValidId });
 
-beforeEach(() => {
-  Object.values(db).forEach((method) => method.mockClear());
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Validation", () => {
@@ -33,36 +32,29 @@ describe("Validation", () => {
 
 describe("Functionality", () => {
   it(`return delete and the project record`, async () => {
-    const projectRecord = new Project({ name: "todo" }).toPlainObject();
-    const id = projectRecord.id;
+    const projectInfo = new Project({ name: "todo" }).toPlainObject();
+    const id = projectInfo.id;
 
-    deleteById.mockResolvedValueOnce(projectRecord);
+    await db.insert(projectInfo);
 
     const deleted = await removeProject({ id });
 
-    expect(deleteById).toHaveBeenLastCalledWith({ id });
-
-    expect(deleted).toEqual(projectRecord);
+    expect(deleted).toEqual(projectInfo);
   });
 
   {
     const errorCode = "NOT_FOUND";
     it(`throws ewc "${errorCode}" if project doesn't exist with the given id`, async () => {
-      expect.assertions(3);
+      expect.assertions(1);
 
+      // right now db is empty
       const id = "100";
-      deleteById.mockRejectedValueOnce(
-        new EPP(`No project exist with id: "${id}"`, errorCode)
-      );
 
       try {
         await removeProject({ id });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
-        expect(ex.message).toEqual(expect.any(String));
       }
-
-      expect(deleteById).toHaveBeenLastCalledWith({ id });
     });
   }
 });
