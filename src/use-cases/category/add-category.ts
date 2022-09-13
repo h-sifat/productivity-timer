@@ -2,8 +2,8 @@ import type {
   CategoryFields,
   CategoryConstructor_Argument,
 } from "entities/category/category";
-import type CategoryDatabase from "./interfaces/category-db";
-import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { MakeCategoryIfNotCorrupted } from "use-cases/interfaces/category-util";
 // end of type imports
 
 import EPP from "common/util/epp";
@@ -15,7 +15,7 @@ export interface AddCategory_Argument {
 }
 
 interface MakeAddCategory_Argument {
-  db: Pick<CategoryDatabase, "findByHash" | "findById" | "insert">;
+  db: Pick<CategoryDatabaseInterface, "findByHash" | "findById" | "insert">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 export default function makeAddCategory(arg: MakeAddCategory_Argument) {
@@ -49,7 +49,7 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
         });
     }
 
-    await db.insert({ categoryInfo: insertingCategory.toPlainObject() });
+    await db.insert(insertingCategory.toPlainObject());
 
     return insertingCategory.toPlainObject();
   };

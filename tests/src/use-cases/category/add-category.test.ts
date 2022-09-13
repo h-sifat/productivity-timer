@@ -1,20 +1,20 @@
 import getID from "src/date-access/id";
 import categoryFixture from "fixtures/category";
 import makeAddCategory from "use-cases/category/add-category";
-import { getCategoryDatabase } from "fixtures/use-case/category-db";
 import { CategoryConstructor_Argument } from "entities/category/category";
 import makeCategoryIfNotCorrupted from "use-cases/category/util";
+import CategoryDatabase from "fixtures/use-case/category-db";
 
 const Id = getID({ entity: "category" });
 
-const db = getCategoryDatabase();
+const db = new CategoryDatabase();
 const addCategory = makeAddCategory({ db, makeCategoryIfNotCorrupted });
 
 let categoryInfo: Required<CategoryConstructor_Argument>;
 
-beforeEach(() => {
+beforeEach(async () => {
   categoryInfo = categoryFixture();
-  db._clearDb_();
+  await db.clearDb();
 });
 
 describe("Insertion", () => {
@@ -85,7 +85,7 @@ describe("Insertion", () => {
 
 describe("CorruptionHandling", () => {
   {
-    const errorCode = "CATEGORY_CORRUPTED_IN_DB";
+    const errorCode = "CORRUPTED";
 
     it(`throws error with code "${errorCode}" if the database returns corrupted data`, async () => {
       expect.assertions(2);
@@ -95,14 +95,15 @@ describe("CorruptionHandling", () => {
         categoryInfo: { name, description },
       });
 
-      const id = insertedBefore.id;
-
       {
+        const id = insertedBefore.id;
         const corruptedId = "non_numeric_string";
         expect(Id.isValid(corruptedId)).toBeFalsy();
 
-        const _db_store_ = db._getStore_();
-        _db_store_[id] = { ..._db_store_[id], id: corruptedId };
+        await db.corruptById({
+          id,
+          unValidatedDocument: { ...insertedBefore, id: corruptedId },
+        });
       }
 
       try {
@@ -115,7 +116,7 @@ describe("CorruptionHandling", () => {
   }
 
   {
-    const errorCode = "CATEGORY_CORRUPTED_IN_DB";
+    const errorCode = "CORRUPTED";
 
     it(`throws ewc "${errorCode}" if category created from existing data in db doesn't generate the same hash`, async () => {
       expect.assertions(1);
@@ -128,17 +129,20 @@ describe("CorruptionHandling", () => {
       {
         const id = insertedBefore.id;
         const name = insertedBefore.name;
+        const corruptedDocument = {
+          ...insertedBefore,
+          name: name + "_changed_",
+        };
 
-        const _db_store_ = db._getStore_();
         // changing the name. so the generated hash will be different
-        _db_store_[id] = { ..._db_store_[id], name: name + "_changed_" };
+        await db.corruptById({ id, unValidatedDocument: corruptedDocument });
       }
 
       try {
         // inserting the same category again
         await addCategory({ categoryInfo: { name, description } });
       } catch (ex: any) {
-        expect(ex.code).toBe("CATEGORY_CORRUPTED_IN_DB");
+        expect(ex.code).toBe("CORRUPTED");
       }
     });
   }

@@ -1,17 +1,17 @@
 import Category from "entities/category";
-import { getCategoryDatabase } from "fixtures/use-case/category-db";
-import makeListAllCategories from "use-cases/category/list-all-categories";
+import CategoryDatabase from "fixtures/use-case/category-db";
+import makeListAllCategories from "use-cases/category/list-categories";
 import makeCategoryIfNotCorrupted from "use-cases/category/util";
 
-const db = getCategoryDatabase();
+const db = new CategoryDatabase();
 
 const listAllCategories = makeListAllCategories({
   db,
   makeCategoryIfNotCorrupted: makeCategoryIfNotCorrupted,
 });
 
-afterEach(() => {
-  db._clearDb_();
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Functionality", () => {
@@ -26,10 +26,8 @@ describe("Functionality", () => {
 
   it(`lists all the categories`, async () => {
     const categoryRecord = new Category({ name: "study" }).toPlainObject();
-    {
-      const store = db._getStore_();
-      store[categoryRecord.id] = categoryRecord;
-    }
+
+    await db.insert(categoryRecord);
 
     const { categories, corruptionError } = await listAllCategories();
 

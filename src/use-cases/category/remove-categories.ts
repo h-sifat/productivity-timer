@@ -1,11 +1,14 @@
-import { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
+import { ID } from "common/interfaces/id";
 import { CategoryFields } from "entities/category/category";
-import type CategoryDatabase from "./interfaces/category-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 
 interface MakeRemoveCategory_Argument {
   isValidId: ID["isValid"];
-  db: Pick<CategoryDatabase, "findById" | "findChildren" | "removeCategories">;
+  db: Pick<
+    CategoryDatabaseInterface,
+    "findById" | "findSubCategories" | "deleteMany"
+  >;
 }
 
 export interface RemoveCategory_Argument {
@@ -13,9 +16,9 @@ export interface RemoveCategory_Argument {
   removeChildrenRecursively?: boolean;
 }
 
-export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
+export default function makeRemoveCategories(arg: MakeRemoveCategory_Argument) {
   const { db, isValidId } = arg;
-  return async function removeCategory(
+  return async function removeCategories(
     arg: RemoveCategory_Argument
   ): Promise<Readonly<CategoryFields>[]> {
     const { id, removeChildrenRecursively = false } = arg;
@@ -30,7 +33,10 @@ export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
         message: `No category exists with id: "${id}"`,
       });
 
-    const subCategoryRecords = await db.findChildren({ id, recursive: true });
+    const subCategoryRecords = await db.findSubCategories({
+      id,
+      recursive: true,
+    });
 
     if (subCategoryRecords.length && removeChildrenRecursively === false)
       throw new EPP({
@@ -43,7 +49,7 @@ export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
     );
 
     {
-      const deletedCategories = await db.removeCategories({
+      const deletedCategories = await db.deleteMany({
         ids: categoryIdsToDelete,
       });
 

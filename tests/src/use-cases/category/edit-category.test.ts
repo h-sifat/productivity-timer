@@ -1,11 +1,11 @@
 import makeEditCategory from "use-cases/category/edit-category";
-import { getCategoryDatabase } from "fixtures/use-case/category-db";
 import getID from "src/date-access/id";
 import { CategoryConstructor_Argument } from "entities/category/category";
 import categoryFixture from "fixtures/category";
 import Category from "entities/category";
+import CategoryDatabase from "fixtures/use-case/category-db";
 
-const db = getCategoryDatabase();
+const db = new CategoryDatabase();
 const Id = getID({ entity: "category" });
 
 const editCategory = makeEditCategory({
@@ -17,9 +17,9 @@ const editCategory = makeEditCategory({
 // @ts-ignore
 let categoryInfo: Required<CategoryConstructor_Argument>;
 
-beforeEach(() => {
+beforeEach(async () => {
   categoryInfo = categoryFixture();
-  db._clearDb_();
+  await db.clearDb();
 });
 
 describe("Validation", () => {
@@ -92,12 +92,11 @@ describe("Validation", () => {
     it(`throws ewc "${errorCode}" if the category with the given id doesn't exist`, async () => {
       expect.assertions(2);
 
-      const store = db._getStore_();
-
       const category = new Category({ name: categoryInfo.name });
       const id = category.id;
+
       // manually inserting a category in the db
-      store[id] = category.toPlainObject();
+      await db.insert(category.toPlainObject());
 
       expect(category.parentId).toBeNull();
 
@@ -124,13 +123,7 @@ describe("Functionality", () => {
 
     const id = categoryBeforeEdit.id;
 
-    {
-      const store = db._getStore_();
-      const categoryInfoBeforeEdit = categoryBeforeEdit.toPlainObject();
-
-      // manually inserting a category in the db
-      store[id] = categoryInfoBeforeEdit;
-    }
+    await db.insert(categoryBeforeEdit.toPlainObject());
 
     const editedDescription = "description";
     const editedName = categoryBeforeEdit.name + "_";

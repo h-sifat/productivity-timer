@@ -1,6 +1,6 @@
 import type { ID } from "common/interfaces/id";
-import type CategoryDatabase from "./interfaces/category-db";
-import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { MakeCategoryIfNotCorrupted } from "use-cases/interfaces/category-util";
 import type { CategoryFields } from "entities/category/category";
 
 import EPP from "common/util/epp";
@@ -8,7 +8,7 @@ import Category from "entities/category";
 
 interface MakeListSubCategories_Argument {
   Id: ID;
-  db: Pick<CategoryDatabase, "findChildren">;
+  db: Pick<CategoryDatabaseInterface, "findSubCategories">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 
@@ -38,7 +38,7 @@ export default function makeListSubCategories(
         message: `Invalid parentId: "${id}"`,
       });
 
-    const childCategoryRecords = await db.findChildren({ id, recursive });
+    const childCategoryRecords = await db.findSubCategories({ id, recursive });
 
     const result: ListSubCategories_Result = {
       subCategories: [],

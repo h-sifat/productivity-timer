@@ -1,8 +1,7 @@
 import type { ID } from "common/interfaces/id";
-import type CategoryDatabase from "./interfaces/category-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryFields } from "entities/category/category";
 
-// @ts-ignore
 import EPP from "common/util/epp";
 import Category from "entities/category";
 import required from "common/util/required";
@@ -10,7 +9,7 @@ import required from "common/util/required";
 export interface MakeEditCategory_Argument {
   Id: ID;
   getCurrentTimestamp(): number;
-  db: Pick<CategoryDatabase, "findById" | "insert">;
+  db: Pick<CategoryDatabaseInterface, "findById" | "updateById">;
 }
 
 export interface EditCategory_Argument {
@@ -51,18 +50,16 @@ export default function makeEditCategory(arg: MakeEditCategory_Argument) {
 
     {
       // don't change the order of properties
-      const editedCategoryInfo = {
+      const updatedCategoryInfo = new Category({
         ...existing,
         ...changes,
         id,
         modifiedOn: getCurrentTimestamp(),
-      };
+      }).toPlainObject();
 
-      const editedCategory = new Category(editedCategoryInfo);
+      await db.updateById({ id, changes: updatedCategoryInfo });
 
-      await db.insert({ categoryInfo: editedCategory.toPlainObject() });
-
-      return editedCategory.toPlainObject();
+      return updatedCategoryInfo;
     }
   };
 }

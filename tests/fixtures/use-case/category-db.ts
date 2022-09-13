@@ -1,99 +1,65 @@
 import type { CategoryFields } from "entities/category/category";
-import type CategoryDatabase from "use-cases/category/interfaces/category-db";
+import type { QueryExecutorMethodArg } from "fixtures/data-access/mock-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { FindChildren_Argument } from "use-cases/interfaces/category-db";
 
-interface Store {
-  [key: string]: Readonly<CategoryFields>;
-}
+import { assert } from "handy-types";
+import required from "common/util/required";
+import MockDb from "fixtures/data-access/mock-db";
+import EPP from "common/util/epp";
 
-type FakeCategoryDatabase = CategoryDatabase & {
-  _clearDb_(): Store;
-  _getStore_(): Store;
-  _failNextQuery_(arg: {
-    errCode?: string;
-    errMessage: string;
-    method: AllQueryMethods;
-  }): void;
-};
+export default class CategoryDatabase
+  extends MockDb<string, CategoryFields>
+  implements CategoryDatabaseInterface
+{
+  async findAll() {
+    return await this.find();
+  }
 
-type AllQueryMethods = keyof CategoryDatabase;
+  async findByHash(arg: { hash: string }): Promise<CategoryFields | null> {
+    let { hash = required("hash") } = arg;
 
-type PlannedFailure = {
-  [key in AllQueryMethods]: Error | null;
-};
+    assert<string>("non_empty_string", hash, {
+      name: "hash",
+      code: "INVALID_HASH",
+    });
 
-export function getCategoryDatabase(): FakeCategoryDatabase {
-  let store: Store = {};
+    return this.enqueueQuery<CategoryFields | null>({
+      arg,
+      method: "findByHash",
+    });
+  }
 
-  // @ts-ignore
-  const plannedFailure: PlannedFailure = {};
+  protected __findByHash__(query: QueryExecutorMethodArg) {
+    const { arg, resolve } = query;
 
-  const db: FakeCategoryDatabase = {
-    async findChildren({ id, recursive = false }) {
-      failDeliberatelyIfPlanned("findChildren");
-      return findChildrenSync({ id, recursive });
-    },
+    for (const existingDocument of this.__getAllDocuments__())
+      if (existingDocument.hash === arg.hash) return resolve(existingDocument);
 
-    async removeCategories({ ids }) {
-      failDeliberatelyIfPlanned("removeCategories");
+    resolve(null);
+  }
 
-      const deleted = [];
+  async findSubCategories(
+    arg: FindChildren_Argument
+  ): Promise<CategoryFields[]> {
+    this.assertValidId(arg);
+    return this.enqueueQuery<CategoryFields[]>({
+      arg,
+      method: "findSubCategories",
+    });
+  }
 
-      for (const id of ids)
-        if (id in store) {
-          deleted.push(store[id]);
-          delete store[id];
-        }
+  protected __findSubCategories__(query: QueryExecutorMethodArg) {
+    const { arg, resolve } = query;
+    const subCategories = this.findChildrenSync({
+      id: arg.id,
+      recursive: arg.recursive || false,
+    });
 
-      return deleted;
-    },
+    resolve(subCategories);
+  }
 
-    async insert({ categoryInfo }) {
-      failDeliberatelyIfPlanned("insert");
-
-      const object = Object.freeze(categoryInfo);
-      store[categoryInfo.id] = object;
-      return object;
-    },
-
-    async findById({ id }) {
-      failDeliberatelyIfPlanned("findById");
-      return store[id] || null;
-    },
-
-    async findByHash({ hash }) {
-      failDeliberatelyIfPlanned("findByHash");
-
-      const category = Object.values(store).find((cat) => cat.hash === hash);
-      return category || null;
-    },
-
-    async findAll() {
-      failDeliberatelyIfPlanned("findAll");
-
-      return Object.values(store);
-    },
-
-    _clearDb_() {
-      store = {};
-      return store;
-    },
-
-    _failNextQuery_(arg) {
-      const { method, errMessage } = arg;
-      plannedFailure[method] = new Error(errMessage);
-
-      // @ts-expect-error
-      if ("errCode" in arg) plannedFailure[method].code = arg.errCode;
-    },
-
-    _getStore_() {
-      return store;
-    },
-  };
-
-  return Object.freeze(db);
-
-  function findChildrenSync(arg: {
+  private findChildrenSync(arg: {
     id: string;
     recursive: boolean;
   }): CategoryFields[] {
@@ -101,23 +67,42 @@ export function getCategoryDatabase(): FakeCategoryDatabase {
 
     const subCategories: CategoryFields[] = [];
 
-    for (const category of Object.values(store)) {
-      if (category.parentId !== id) continue;
+    for (const subCategory of this.__getAllDocuments__()) {
+      if (subCategory.parentId !== id) continue;
 
-      subCategories.push(category);
+      subCategories.push(subCategory);
 
       if (recursive)
-        subCategories.push(...findChildrenSync({ id: category.id, recursive }));
+        subCategories.push(
+          ...this.findChildrenSync({ id: subCategory.id, recursive })
+        );
     }
 
     return subCategories;
   }
 
-  function failDeliberatelyIfPlanned(methodName: AllQueryMethods) {
-    if (plannedFailure[methodName]) {
-      const error = plannedFailure[methodName];
-      plannedFailure[methodName] = null;
-      throw error;
+  // make the hash field unique
+  protected override __setDocument__(arg: {
+    id: string;
+    callee: string;
+    document: CategoryFields;
+    reject: (v: unknown) => void;
+  }) {
+    const { id, callee, document: insertingDocument, reject } = arg;
+
+    // for updateById and corruptById don't impose this restriction
+    if (!["updateById", "corruptById"].includes(callee)) {
+      for (const existingDocument of this.store.values())
+        if (existingDocument.hash === insertingDocument.hash) {
+          const error = new EPP({
+            code: "DUPLICATE_HASH",
+            message: `A document with hash: "${insertingDocument.hash}" already exists.`,
+          });
+          reject(error);
+          return this.store;
+        }
     }
+
+    return this.store.set(id, insertingDocument);
   }
 }

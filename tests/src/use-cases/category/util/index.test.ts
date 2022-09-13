@@ -2,7 +2,7 @@ import Category from "entities/category";
 import makeCategoryIfNotCorrupted from "use-cases/category/util";
 
 describe("Validation", () => {
-  const errorCode = "CATEGORY_CORRUPTED_IN_DB";
+  const errorCode = "CORRUPTED";
   const sampleCategoryRecord = new Category({ name: "study" }).toPlainObject();
 
   {

@@ -1,10 +1,10 @@
 import getID from "src/date-access/id";
 import Category from "entities/category";
+import CategoryDatabase from "fixtures/use-case/category-db";
 import makeCategoryIfNotCorrupted from "use-cases/category/util";
-import { getCategoryDatabase } from "fixtures/use-case/category-db";
 import makeListSubCategories from "use-cases/category/list-sub-categories";
 
-const db = getCategoryDatabase();
+const db = new CategoryDatabase();
 const Id = getID({ entity: "category" });
 
 const listSubCategories = makeListSubCategories({
@@ -13,8 +13,8 @@ const listSubCategories = makeListSubCategories({
   makeCategoryIfNotCorrupted,
 });
 
-afterEach(() => {
-  db._clearDb_();
+beforeEach(async () => {
+  await db.clearDb();
 });
 
 describe("Validation", () => {
@@ -38,9 +38,12 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  const parentCategory = new Category({ id: "1", name: "study" });
+  const PARENT_CATEGORY = new Category({
+    id: "1",
+    name: "study",
+  }).toPlainObject();
 
-  const subCategories = [
+  const SUB_CATEGORIES = [
     { id: "2", name: "programming", parentId: "1" },
     { id: "100", name: "DSA", parentId: "2" },
     { id: "101", name: "Backend", parentId: "2" },
@@ -48,7 +51,7 @@ describe("Functionality", () => {
     { id: "3", name: "academic", parentId: "1" },
     { id: "102", name: "math", parentId: "3" },
     { id: "103", name: "english", parentId: "3" },
-  ].map((catInfo) => new Category(catInfo));
+  ].map((catInfo) => new Category(catInfo).toPlainObject());
 
   /*
    * Category structure:
@@ -63,26 +66,16 @@ describe("Functionality", () => {
    * */
 
   // populate the db
-  beforeEach(() => {
-    const store = db._getStore_();
-
-    const allCategoryRecords = [parentCategory, ...subCategories].map((cat) =>
-      cat.toPlainObject()
-    );
-    for (const catRecord of allCategoryRecords) store[catRecord.id] = catRecord;
+  beforeEach(async () => {
+    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
   });
 
   it(`returns an empty array for the children field if no child is found for the given parentId`, async () => {
-    {
-      const store = db._getStore_();
-
-      for (const categoryRecord of Object.values(store))
-        if (categoryRecord.id !== parentCategory.id)
-          delete store[categoryRecord.id];
-    }
+    await db.clearDb();
+    await db.insert(PARENT_CATEGORY);
     // right now no direct sub category should exist in db
 
-    const children = await listSubCategories({ id: parentCategory.id });
+    const children = await listSubCategories({ id: PARENT_CATEGORY.id });
 
     expect(children).toEqual({
       subCategories: [],
@@ -92,13 +85,13 @@ describe("Functionality", () => {
 
   it(`returns only the direct sub categories for the given parentId if "recursive" flag is false`, async () => {
     const { subCategories, corruptionError } = await listSubCategories({
-      id: parentCategory.id,
+      id: PARENT_CATEGORY.id,
     });
 
     expect(corruptionError).toHaveLength(0);
 
     subCategories.forEach((cat) => {
-      expect(cat.parentId).toBe(parentCategory.id);
+      expect(cat.parentId).toBe(PARENT_CATEGORY.id);
     });
   });
 
@@ -106,15 +99,11 @@ describe("Functionality", () => {
     const { subCategories: subCategoryResults, corruptionError } =
       await listSubCategories({
         recursive: true,
-        id: parentCategory.id,
+        id: PARENT_CATEGORY.id,
       });
 
     expect(corruptionError).toHaveLength(0);
 
-    const insertedSubCategoryRecords = subCategories.map((subCat) =>
-      subCat.toPlainObject()
-    );
-
-    expect(insertedSubCategoryRecords).toEqual(subCategoryResults);
+    expect(SUB_CATEGORIES).toEqual(subCategoryResults);
   });
 });

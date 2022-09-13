@@ -31,7 +31,7 @@ export default class ProjectDatabase
   protected __findByName__(query: QueryExecutorMethodArg) {
     const { arg, resolve } = query;
 
-    for (const existingDocument of this.store.values())
+    for (const existingDocument of this.__getAllDocuments__())
       if (existingDocument.name.toLowerCase() === arg.name)
         return resolve(existingDocument);
 
@@ -64,14 +64,5 @@ export default class ProjectDatabase
     }
 
     return this.store.set(id, document);
-  }
-
-  // delete the name index whenever a document is deleted
-  protected override __deleteDocument__(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  protected override __clearStore__() {
-    return this.store.clear();
   }
 }

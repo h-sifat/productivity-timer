@@ -1,12 +1,12 @@
-import type CategoryDatabase from "./interfaces/category-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryFields } from "entities/category/category";
-import type { MakeCategoryIfNotCorrupted } from "./interfaces/util";
+import type { MakeCategoryIfNotCorrupted } from "use-cases/interfaces/category-util";
 
 import EPP from "common/util/epp";
 import Category from "entities/category";
 
 interface MakeListAllCategories_Argument {
-  db: Pick<CategoryDatabase, "findAll">;
+  db: Pick<CategoryDatabaseInterface, "findAll">;
   makeCategoryIfNotCorrupted: MakeCategoryIfNotCorrupted;
 }
 
@@ -30,12 +30,12 @@ export default function makeListAllCategories(
 
     for (const categoryInfo of allCategoryRecords)
       try {
-        const childCategory = makeCategoryIfNotCorrupted({
+        const category = makeCategoryIfNotCorrupted({
           CategoryClass: Category,
           categoryRecord: categoryInfo,
         }).toPlainObject();
 
-        result.categories.push(childCategory);
+        result.categories.push(category);
       } catch (ex: any) {
         result.corruptionError.push(ex);
       }
