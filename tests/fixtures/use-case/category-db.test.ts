@@ -65,3 +65,63 @@ describe('The "hash" field is unique', () => {
     }
   });
 });
+
+describe("findParentCategories", () => {
+  // @ts-ignore
+  const PARENT_CATEGORIES = [
+    { id: "1", name: "study" },
+    { id: "100", name: "programming", parentId: "1" },
+    { id: "200", name: "Backend", parentId: "100" },
+  ].map((catInfo) => new Category(catInfo).toPlainObject());
+
+  // @ts-ignore
+  const CHILD_CATEGORY = new Category({
+    id: "300",
+    name: "Node.js",
+    parentId: "200",
+  }).toPlainObject();
+
+  /*
+   * Category structure:
+   *
+   * study
+   *    |--- programming
+   *            |--- Backend
+   *                    |--- Node.js
+   * */
+
+  it(`returns [null] if the child has a parentId but parent does not exist`, async () => {
+    const category = new Category({
+      name: "study",
+      parentId: "2342",
+    }).toPlainObject();
+
+    await db.insert(category);
+
+    const parents = await db.findParentCategories({ id: category.id });
+    expect(parents).toEqual([null]);
+  });
+
+  it(`returns all the parents recursively if the "recursive" is true`, async () => {
+    await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
+
+    const parents = await db.findParentCategories({
+      id: CHILD_CATEGORY.id,
+      recursive: true,
+    });
+
+    expect(parents.reverse()).toEqual(PARENT_CATEGORIES);
+  });
+
+  it(`only returns the first parent if the "recursive" flag is false`, async () => {
+    await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
+
+    const parents = await db.findParentCategories({
+      id: CHILD_CATEGORY.id,
+      recursive: false,
+    });
+
+    expect(parents).toHaveLength(1);
+    expect(parents[0]!.id).toBe(CHILD_CATEGORY.parentId);
+  });
+});

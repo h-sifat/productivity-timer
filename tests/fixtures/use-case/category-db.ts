@@ -16,6 +16,51 @@ export default class CategoryDatabase
     return await this.find();
   }
 
+  async findParentCategories(arg: {
+    id: string;
+    recursive?: boolean;
+  }): Promise<(CategoryFields | null)[]> {
+    this.assertValidId(arg);
+
+    return this.enqueueQuery<(CategoryFields | null)[]>({
+      arg,
+      method: "findParentCategories",
+    });
+  }
+
+  protected __findParentCategories__(query: QueryExecutorMethodArg) {
+    const { arg, resolve } = query;
+    const { id: childId, recursive = false } = arg;
+
+    const child = this.__getDocument__(childId)!;
+
+    const parentCategories = this.findParentCategoriesSync({
+      recursive,
+      parentId: child?.parentId!,
+    });
+
+    return resolve(parentCategories);
+  }
+
+  protected findParentCategoriesSync(arg: {
+    parentId: string;
+    recursive: boolean;
+  }): (CategoryFields | null)[] {
+    const { parentId, recursive } = arg;
+
+    let currentParent = this.__getDocument__(parentId)! || null;
+    const allParents: (CategoryFields | null)[] = [currentParent];
+
+    if (!recursive) return allParents;
+
+    while (currentParent?.parentId) {
+      currentParent = this.__getDocument__(currentParent.parentId)! || null;
+      allParents.push(currentParent);
+    }
+
+    return allParents;
+  }
+
   async findByHash(arg: { hash: string }): Promise<CategoryFields | null> {
     let { hash = required("hash") } = arg;
 
@@ -54,6 +99,7 @@ export default class CategoryDatabase
     const subCategories = this.findChildrenSync({
       id: arg.id,
       recursive: arg.recursive || false,
+      allDocuments: this.__getAllDocuments__(),
     });
 
     resolve(subCategories);
@@ -62,19 +108,20 @@ export default class CategoryDatabase
   private findChildrenSync(arg: {
     id: string;
     recursive: boolean;
+    allDocuments: CategoryFields[];
   }): CategoryFields[] {
-    const { id, recursive } = arg;
+    const { id, recursive, allDocuments } = arg;
 
     const subCategories: CategoryFields[] = [];
 
-    for (const subCategory of this.__getAllDocuments__()) {
-      if (subCategory.parentId !== id) continue;
+    for (const category of allDocuments) {
+      if (category.parentId !== id) continue;
 
-      subCategories.push(subCategory);
+      subCategories.push(category);
 
       if (recursive)
         subCategories.push(
-          ...this.findChildrenSync({ id: subCategory.id, recursive })
+          ...this.findChildrenSync({ id: category.id, recursive, allDocuments })
         );
     }
 
