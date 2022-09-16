@@ -1,23 +1,22 @@
 import type { ID } from "common/interfaces/id";
-import type { ProjectFields } from "entities/project/project";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type { ProjectFields, Edit_Argument } from "entities/project/project";
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
 
 interface MakeEditProject_Argument {
   isValidId: ID["isValid"];
-  getCurrentTimestamp(): number;
   db: Pick<ProjectDatabaseInterface, "findById" | "updateById">;
 }
 
 interface EditProject_Argument {
   id: string;
-  changes: Partial<ProjectFields>;
+  changes: Edit_Argument["changes"];
 }
 
 export default function makeEditProject(arg: MakeEditProject_Argument) {
-  const { isValidId, db, getCurrentTimestamp } = arg;
+  const { isValidId, db } = arg;
 
   return async function editProject(
     arg: EditProject_Argument
@@ -26,29 +25,19 @@ export default function makeEditProject(arg: MakeEditProject_Argument) {
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 
-    const existingProjectRecord = await db.findById({ id });
+    const project = await db.findById({ id });
 
-    if (!existingProjectRecord)
+    if (!project)
       throw new EPP({
         code: "NOT_FOUND",
         message: `No project exist with id: "${id}"`,
       });
 
     {
-      // don't change property order
-      const editedProjectInfo = {
-        ...existingProjectRecord,
-        ...changes,
-        modifiedOn: getCurrentTimestamp(),
-        id,
-      };
+      const editedProject = Project.edit({ project, changes });
+      await db.updateById({ id, changes: editedProject });
 
-      const validatedProjectInfo = new Project(
-        editedProjectInfo
-      ).toPlainObject();
-      await db.updateById({ id, changes: validatedProjectInfo });
-
-      return validatedProjectInfo;
+      return editedProject;
     }
   };
 }

@@ -5,7 +5,7 @@ import EPP from "common/util/epp";
 
 interface MakeRemoveProject_Argument {
   isValidId: ID["isValid"];
-  db: Pick<ProjectDatabaseInterface, "deleteById">;
+  db: Pick<ProjectDatabaseInterface, "deleteById" | "findById">;
 }
 
 interface RemoveProject_Argument {
@@ -17,9 +17,18 @@ export default function makeRemoveProject(arg: MakeRemoveProject_Argument) {
 
   return async function removeProject(arg: RemoveProject_Argument) {
     const { id } = arg;
-
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 
-    return await db.deleteById({ id });
+    const project = await db.findById({ id });
+
+    if (!project)
+      throw new EPP({
+        code: "NOT_FOUND",
+        message: `No project exists with the id: "${id}"`,
+      });
+
+    await db.deleteById({ id });
+
+    return project;
   };
 }

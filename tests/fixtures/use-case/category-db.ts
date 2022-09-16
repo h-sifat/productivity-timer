@@ -3,10 +3,10 @@ import type { QueryExecutorMethodArg } from "fixtures/data-access/mock-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { FindChildren_Argument } from "use-cases/interfaces/category-db";
 
+import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import required from "common/util/required";
 import MockDb from "fixtures/data-access/mock-db";
-import EPP from "common/util/epp";
 
 export default class CategoryDatabase
   extends MockDb<string, CategoryFields>
@@ -19,10 +19,10 @@ export default class CategoryDatabase
   async findParentCategories(arg: {
     id: string;
     recursive?: boolean;
-  }): Promise<(CategoryFields | null)[]> {
+  }): Promise<CategoryFields[]> {
     this.assertValidId(arg);
 
-    return this.enqueueQuery<(CategoryFields | null)[]>({
+    return this.enqueueQuery<CategoryFields[]>({
       arg,
       method: "findParentCategories",
     });
@@ -45,16 +45,16 @@ export default class CategoryDatabase
   protected findParentCategoriesSync(arg: {
     parentId: string;
     recursive: boolean;
-  }): (CategoryFields | null)[] {
+  }): CategoryFields[] {
     const { parentId, recursive } = arg;
 
-    let currentParent = this.__getDocument__(parentId)! || null;
-    const allParents: (CategoryFields | null)[] = [currentParent];
+    let currentParent = this.__getDocument__(parentId)!;
+    const allParents: CategoryFields[] = [currentParent];
 
     if (!recursive) return allParents;
 
     while (currentParent?.parentId) {
-      currentParent = this.__getDocument__(currentParent.parentId)! || null;
+      currentParent = this.__getDocument__(currentParent.parentId)!;
       allParents.push(currentParent);
     }
 
@@ -87,7 +87,7 @@ export default class CategoryDatabase
   async findSubCategories(
     arg: FindChildren_Argument
   ): Promise<CategoryFields[]> {
-    this.assertValidId(arg);
+    this.assertValidId({ id: arg.parentId });
     return this.enqueueQuery<CategoryFields[]>({
       arg,
       method: "findSubCategories",
@@ -97,7 +97,7 @@ export default class CategoryDatabase
   protected __findSubCategories__(query: QueryExecutorMethodArg) {
     const { arg, resolve } = query;
     const subCategories = this.findChildrenSync({
-      id: arg.id,
+      parentId: arg.parentId,
       recursive: arg.recursive || false,
       allDocuments: this.__getAllDocuments__(),
     });
@@ -106,22 +106,26 @@ export default class CategoryDatabase
   }
 
   private findChildrenSync(arg: {
-    id: string;
+    parentId: string;
     recursive: boolean;
     allDocuments: CategoryFields[];
   }): CategoryFields[] {
-    const { id, recursive, allDocuments } = arg;
+    const { parentId, recursive, allDocuments } = arg;
 
     const subCategories: CategoryFields[] = [];
 
     for (const category of allDocuments) {
-      if (category.parentId !== id) continue;
+      if (category.parentId !== parentId) continue;
 
       subCategories.push(category);
 
       if (recursive)
         subCategories.push(
-          ...this.findChildrenSync({ id: category.id, recursive, allDocuments })
+          ...this.findChildrenSync({
+            parentId: category.id,
+            recursive,
+            allDocuments,
+          })
         );
     }
 

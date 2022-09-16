@@ -1,69 +1,76 @@
-import projectFixture from "fixtures/project";
-import { isValid as isValidId } from "common/util/id";
-import makeProjectClass, {
-  ProjectFields,
-  ProjectObjectInterface,
-} from "entities/project/project";
+import { isValid } from "common/util/id";
+import { ID } from "common/interfaces/id";
 import { assertValidString } from "common/validator/string";
-import makeProjectCategoryClass from "entities/project/project-category";
-import { convertDuration, isValidUnixMsTimestamp } from "common/util/date-time";
+import {
+  convertDuration,
+  assertValidUnixMsTimestamp,
+} from "common/util/date-time";
+import buildProjectEntity, { ProjectEntity } from "entities/project/project";
 
+const MAX_NAME_LENGTH = 5;
+const MAX_DESCRIPTION_LENGTH = 20;
 const MIN_HOUR_BEFORE_DEADLINE = 1;
+const VALID_NAME_PATTERN = /^[\w ]+$/;
+const MSG_NAME_DOES_NOT_MATCH_PATTERN =
+  "Project name must only consist of alphanumeric and whitespace characters";
 
-const { validateTimestamps, MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH } = (() => {
-  const { name, description, createdOn, modifiedOn } = projectFixture();
-
-  const validateTimestamps = (_: any) => ({
-    createdOn,
-    modifiedOn,
-  });
-
-  return {
-    validateTimestamps,
-    MAX_NAME_LENGTH: name.length + 1,
-    MAX_DESCRIPTION_LENGTH: description!.length + 1,
-  };
+const Id: ID = (() => {
+  let id = 1;
+  return Object.freeze({ isValid, makeId: () => (id++).toString() });
 })();
 
-const Id = { isValid: isValidId, makeId: () => "100" };
-const Project = makeProjectClass({
+const currentTimeMs = (() => {
+  let time = Date.now();
+  return () => ++time;
+})();
+
+const Project = buildProjectEntity({
   Id,
+  currentTimeMs,
   MAX_NAME_LENGTH,
   convertDuration,
   assertValidString,
-  validateTimestamps,
+  VALID_NAME_PATTERN,
   MAX_DESCRIPTION_LENGTH,
-  isValidUnixMsTimestamp,
   MIN_HOUR_BEFORE_DEADLINE,
-  ProjectCategory: makeProjectCategoryClass({ isValidId }),
+  assertValidUnixMsTimestamp,
+  MSG_NAME_DOES_NOT_MATCH_PATTERN,
 });
 
-describe("Constructor Arg Validation", () => {
-  describe("mainArgObject", () => {
-    {
-      const errorCode = "INVALID_MAIN_ARG";
+const validateProject: ProjectEntity["validator"]["validate"] =
+  Project.validator.validate;
 
-      it(`throws error with code "${errorCode}" if constructor argument is not a plain_object`, () => {
+const SAMPLE_PROJECT = Project.make({
+  name: "Todo",
+  categoryId: "100",
+  description: "desc",
+});
+
+describe("-------[Project.validator.validate]-------", () => {
+  describe("main argument", () => {
+    {
+      const errorCode = "INVALID_PROJECT";
+
+      it(`throws ewc "${errorCode}" if the argument is not a plain_object`, () => {
         expect(() => {
           // @ts-expect-error
-          new Project(["non_a_plain_object"]);
+          validateProject(null);
         }).toThrowErrorWithCode(errorCode);
       });
     }
   });
 
-  describe("filed:id", () => {
+  describe("field:id", () => {
     {
       const errorCode = "INVALID_ID";
 
-      it(`should throw error with code "${errorCode}" if id is not valid`, () => {
+      it(`should throw ewc "${errorCode}" if id is not valid`, () => {
         const invalidId = "non_numeric_string";
-
         expect(Id.isValid(invalidId)).toBeFalsy();
 
-        const argWithInvalidId = projectFixture({ id: invalidId });
         expect(() => {
-          new Project(argWithInvalidId);
+          // @ts-ignore
+          validateProject({ ...SAMPLE_PROJECT, id: invalidId });
         }).toThrowErrorWithCode(errorCode);
       });
     }
@@ -87,8 +94,8 @@ describe("Constructor Arg Validation", () => {
         case: "is not a non_empty_string",
       },
       {
-        name: "das@#\nasAfa",
-        code: "INVALID_NAME",
+        name: "!@#",
+        code: "INVALID_NAME", // according to the pattern: VALID_NAME_PATTERN
         case: "contains non alphanumeric character",
       },
       {
@@ -96,38 +103,26 @@ describe("Constructor Arg Validation", () => {
         code: "NAME_TOO_LONG",
         case: "is longer than MAX_NAME_LENGTH",
       },
-    ])(
-      `throws error with code "$code" if name ($name) $case`,
-      ({ name, code }) => {
-        expect(() => {
-          // @ts-ignore
-          new Project(projectFixture({ name }));
-        }).toThrowErrorWithCode(code);
-      }
-    );
+    ])(`throws ewc "$code" if name ($name) $case`, ({ name, code }) => {
+      expect(() => {
+        // @ts-ignore
+        validateProject({ ...SAMPLE_PROJECT, name });
+      }).toThrowErrorWithCode(code);
+    });
 
     {
       const errorCode = "MISSING_NAME";
-      it(`throws error with code "${errorCode}" if "name" is missing`, () => {
-        const argWithNoName = projectFixture();
+      it(`throws ewc "${errorCode}" if "name" is missing`, () => {
+        const invalidProject = { ...SAMPLE_PROJECT };
 
         // @ts-ignore
-        delete argWithNoName.name;
+        delete invalidProject.name;
 
         expect(() => {
-          new Project(argWithNoName);
+          validateProject(invalidProject);
         }).toThrowErrorWithCode(errorCode);
       });
     }
-
-    it(`it trims whitespace from the project name`, () => {
-      const name = "    name  \n ";
-      const trimmedName = "name";
-
-      const project = new Project({ name });
-
-      expect(project.name).toBe(trimmedName);
-    });
   });
 
   describe("field:description", () => {
@@ -148,165 +143,265 @@ describe("Constructor Arg Validation", () => {
         case: "is longer than MAX_DESCRIPTION_LENGTH",
       },
     ])(
-      `throws error with code "$code" if description ($description) $case`,
+      `throws ewc "$code" if description ($description) $case`,
       ({ description, code }) => {
         expect(() => {
           // @ts-ignore
-          new Project(projectFixture({ description }));
+          validateProject({ ...SAMPLE_PROJECT, description });
         }).toThrowErrorWithCode(code);
       }
     );
 
-    it.each([
-      {
-        case: "null",
-        // @ts-ignore
-        arg: projectFixture({ description: null }),
-      },
-      {
-        case: "missing",
-        // @ts-ignore
-        arg: (() => {
-          const { description, ...rest } = projectFixture();
-          return rest;
-        })(),
-      },
-    ])("does not throw error if description is $case", ({ arg }) => {
+    it(`doesn't throw if description is null`, () => {
+      const project = { ...SAMPLE_PROJECT, description: null };
       expect(() => {
-        // @ts-ignore
-        new Project(arg);
+        validateProject(project);
       }).not.toThrow();
     });
   });
 
   describe("field: status", () => {
-    it(`doesn't throw error if status is not provided in the arg`, () => {
-      const arg = projectFixture();
-
-      // @ts-ignore
-      delete arg.status;
-
-      expect(() => {
-        new Project(arg);
-      }).not.toThrow();
-    });
-
-    it.each(["ongoing", "halted", "suspended", "completed"] as const)(
+    it.each(["ongoing", "halted", "completed"] as const)(
       `doesn't throw error if status is %p`,
       (status) => {
-        const arg = projectFixture({ status });
+        const project = { ...SAMPLE_PROJECT, status };
 
         expect(() => {
-          new Project(arg);
+          validateProject(project);
         }).not.toThrow();
       }
     );
 
     {
       const errorCode = "INVALID_STATUS";
-      it(`throws error with code "${errorCode}" if status is invalid`, () => {
-        const arg = projectFixture({
-          // @ts-ignore
+      it(`throws ewc "${errorCode}" if status is invalid`, () => {
+        const projectWithInvalidStatus = {
+          ...SAMPLE_PROJECT,
           status: "bla_bla_bla_probably_not_valid",
-        });
+        };
 
         expect(() => {
-          new Project(arg);
+          validateProject(projectWithInvalidStatus);
         }).toThrowErrorWithCode(errorCode);
       });
     }
   });
 
-  describe("filed:deadline", () => {
-    {
-      const errorCode = "INVALID_DEADLINE";
-      it(`throws error with code "${errorCode}" if deadline is not a valid date`, () => {
-        const arg = projectFixture({ deadline: NaN });
+  describe("field:deadline", () => {
+    const errorCode = "INVALID_DEADLINE";
+    it(`throws ewc "${errorCode}" if deadline is not a valid date`, () => {
+      const project = { ...SAMPLE_PROJECT, deadline: NaN };
 
-        expect(() => {
-          new Project(arg);
-        }).toThrowErrorWithCode(errorCode);
-      });
-    }
-
-    {
-      const errorCode = "INVALID_DEADLINE";
-      it(`throws error with code ${errorCode} if hour(s) left before deadline is less than ${MIN_HOUR_BEFORE_DEADLINE}`, () => {
-        const arg = projectFixture();
-        arg.deadline = arg.createdOn - 100000;
-
-        expect(() => {
-          new Project(arg);
-        }).toThrowErrorWithCode(errorCode);
-      });
-    }
-  });
-
-  describe("filed:category", () => {
-    it("throws error if category is invalid", () => {
-      const arg = projectFixture();
-
-      // @ts-ignore
-      arg.category.id = "non_numeric_string";
       expect(() => {
-        new Project(arg);
+        validateProject(project);
+      }).toThrowErrorWithCode(errorCode);
+    });
+
+    it(`throws ewc ${errorCode} if hour(s) left before deadline is less than ${MIN_HOUR_BEFORE_DEADLINE}`, () => {
+      const project = {
+        ...SAMPLE_PROJECT,
+        deadline: SAMPLE_PROJECT.createdOn - 100000000,
+      };
+
+      expect(() => {
+        validateProject(project);
+      }).toThrowErrorWithCode(errorCode);
+    });
+  });
+
+  describe("field:category", () => {
+    it("throws error if category id is invalid", () => {
+      const project = { ...SAMPLE_PROJECT, categoryId: "non_numeric_string" };
+
+      expect(() => {
+        validateProject(project);
       }).toThrow();
     });
   });
 
-  describe("Default Values", () => {
-    it.each([
-      { property: "category", defaultValue: null },
-      { property: "deadline", defaultValue: null },
-      { property: "id", defaultValue: Id.makeId() },
-      { property: "description", defaultValue: null },
-      { property: "status", defaultValue: "ongoing" },
-    ] as const)(
-      `it sets "$property" to $defaultValue if it's not provided`,
-      ({ property, defaultValue }) => {
-        const arg = projectFixture();
+  describe("field:categoryId", () => {
+    it(`doesn't throw error if categoryId is null`, () => {
+      expect(() => {
+        validateProject({ ...SAMPLE_PROJECT, categoryId: null });
+      }).not.toThrow();
+    });
 
-        // @ts-ignore
-        delete arg[property];
+    {
+      const errorCode = "INVALID_CATEGORY_ID";
+      it(`throws ewc "${errorCode}" if categoryId is invalid`, () => {
+        const invalidCategoryId = "non_numeric_string";
+        expect(Id.isValid(invalidCategoryId)).toBeFalsy();
 
-        const project = new Project(arg);
+        expect(() => {
+          // @ts-ignore
+          validateProject({ ...SAMPLE_PROJECT, categoryId: invalidCategoryId });
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
+  });
 
-        expect(project[property]).toBe(defaultValue);
-      }
-    );
+  describe("Other", () => {
+    {
+      const errorCode = "UNKNOWN_PROPERTY";
+      it(`throws ewc "${errorCode}" if project contains unknown properties`, () => {
+        const invalidProject = { ...SAMPLE_PROJECT, duck_quack_quack: ":(" };
+
+        expect(() => {
+          validateProject(invalidProject);
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
   });
 });
 
-describe("Other", () => {
-  let project: ProjectObjectInterface;
-  let arg: ProjectFields;
-  beforeEach(() => {
-    arg = projectFixture();
-    project = new Project(arg);
+describe("-----[Project.make]-----", () => {
+  describe("main argument", () => {
+    const errorCode = "INVALID_MAKE_PROJECT_ARGUMENT";
+
+    it(`throws ewc "${errorCode}" is the main argument is not a plain_object`, () => {
+      expect(() => {
+        // @ts-ignore
+        Project.make(["hello"]);
+      }).toThrowErrorWithCode(errorCode);
+    });
   });
 
-  it("creates a Project instance if everything is valid", () => {
-    expect(project.toPlainObject()).toEqual(arg);
-  });
+  describe("Defaults Values", () => {
+    it(`sets default value (null) to categoryId, description, and deadline if not provide`, () => {
+      expect(Project.make({ name: "a" })).toMatchObject({
+        deadline: null,
+        categoryId: null,
+        description: null,
+      });
+    });
 
-  it("is serializable", () => {
-    const stringifiedProject = JSON.stringify(project);
-    expect(JSON.parse(stringifiedProject)).toEqual(arg);
-  });
-
-  describe("set status", () => {
-    it("sets a new status", () => {
+    it(`sets status to "ongoing" for new project`, () => {
+      const project = Project.make({ name: "a" });
       expect(project.status).toBe("ongoing");
-      project.status = "completed";
-      expect(project.status).toBe("completed");
     });
   });
 
-  describe("set deadline", () => {
-    it("sets a new deadline", () => {
-      const newDeadline = project.deadline! + 100;
-      project.deadline = newDeadline;
-      expect(project.deadline).toBe(newDeadline);
+  describe("Formatting", () => {
+    it.each([
+      { property: "name", value: "    name  \n " },
+      { property: "description", value: "\n\r    desc  \n " },
+    ] as const)(
+      `it trims whitespace from "$property"`,
+      ({ property, value }) => {
+        const project = Project.make({ ...SAMPLE_PROJECT, [property]: value });
+
+        expect(project[property]).toBe(value.trim());
+      }
+    );
+  });
+
+  describe("Other", () => {
+    it(`creates a project if everything is valid`, () => {
+      const name = "a";
+      const description = "desc";
+      const categoryId = Id.makeId();
+      const deadline =
+        currentTimeMs() +
+        convertDuration({
+          fromUnit: "hour",
+          toUnit: "millisecond",
+          duration: MIN_HOUR_BEFORE_DEADLINE * 5,
+        });
+
+      const project = Project.make({
+        name,
+        deadline,
+        categoryId,
+        description,
+      });
+
+      expect(project).toEqual({
+        name,
+        deadline,
+        categoryId,
+        description,
+        status: "ongoing",
+        id: expect.any(String),
+        createdOn: expect.any(Number),
+      });
     });
+  });
+});
+
+describe("----[Project.edit]-----", () => {
+  describe("argument validation", () => {
+    {
+      const errorCode = "INVALID_PROJECT_ARGUMENT";
+
+      it(`throws ewc "${errorCode}" is arg.project is not a plain_object`, () => {
+        expect(() => {
+          // @ts-ignore
+          Project.edit({ project: 12312, changes: {} });
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
+
+    {
+      const errorCode = "INVALID_CHANGES_ARGUMENT";
+
+      it(`throws ewc "${errorCode}" is arg.changes is not a plain_object`, () => {
+        expect(() => {
+          // @ts-ignore
+          Project.edit({ project: {}, changes: ["not a plain_object"] });
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
+  });
+
+  describe("Applying Edits", () => {
+    it(`only picks properties that are allowed to change from the changes object`, () => {
+      const project = { ...SAMPLE_PROJECT };
+
+      const invalidProperty = "duck";
+      const editedProject = Project.edit({
+        project,
+        // @ts-ignore I know that duck is not a valid field  for a project
+        changes: { [invalidProperty]: "quack" },
+      });
+
+      // the change should not be applied
+      expect(editedProject).not.toHaveProperty(invalidProperty);
+      expect(editedProject).toEqual(project);
+    });
+
+    it(`edits a project if everything is valid`, () => {
+      const changes = {
+        name: "a",
+        description: "desc",
+        categoryId: Id.makeId(),
+        deadline:
+          SAMPLE_PROJECT.createdOn +
+          convertDuration({
+            fromUnit: "hour",
+            toUnit: "millisecond",
+            duration: MIN_HOUR_BEFORE_DEADLINE * 5,
+          }),
+      };
+      const editedProject = Project.edit({ project: SAMPLE_PROJECT, changes });
+
+      expect(editedProject).toMatchObject(changes);
+    });
+  });
+
+  describe("Formatting", () => {
+    it.each([
+      { property: "name", value: "    name  \n " },
+      { property: "description", value: "\n\r    desc  \n " },
+    ] as const)(
+      `it trims whitespace from "$property"`,
+      ({ property, value }) => {
+        const project = Project.edit({
+          project: SAMPLE_PROJECT,
+          changes: { [property]: value },
+        });
+
+        expect(project[property]).toBe(value.trim());
+      }
+    );
   });
 });

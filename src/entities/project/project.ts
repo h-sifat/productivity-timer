@@ -1,275 +1,322 @@
 import type {
-  ProjectCategoryClass,
-  ProjectCategoryFields,
-  ProjectCategoryInterface,
-} from "./project-category";
-import type {
+  CurrentTimeMs,
   ConvertDuration,
-  IsValidUnixMsTimestamp,
-  CreationAndModificationTimestampsValidator,
+  AssertValidUnixMsTimestamp,
 } from "common/interfaces/date-time";
 import type { ID } from "common/interfaces/id";
 import type { AssertValidString } from "common/interfaces/validator";
 
-import { assert } from "handy-types";
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import required from "common/util/required";
 
-// --------- end of imports -------
+export type ProjectStatus = "ongoing" | "halted" | "completed";
 
-export type ProjectStatus = "ongoing" | "halted" | "suspended" | "completed";
+export const VALID_PROJECT_STATUSES = Object.freeze([
+  "halted",
+  "ongoing",
+  "completed",
+] as const);
 
-export type ProjectFields = {
+export const FIELDS_ALLOWED_TO_CHANGE = Object.freeze([
+  "name",
+  "status",
+  "deadline",
+  "categoryId",
+  "description",
+]);
+
+export const ALL_FIELDS: Set<keyof ProjectFields> = new Set([
+  "id",
+  "name",
+  "status",
+  "deadline",
+  "createdOn",
+  "categoryId",
+  "description",
+]);
+
+export type ProjectFields = Readonly<{
   id: string;
   name: string;
   createdOn: number;
-  modifiedOn: number;
-  deadline: number | null;
   status: ProjectStatus;
+  deadline: number | null;
+  categoryId: string | null;
   description: string | null;
-  category: Readonly<ProjectCategoryFields> | null;
-};
+}>;
 
-export interface ProjectMethods {
-  setDeadline(date: number): void;
-  setStatus(status: ProjectStatus): void;
-  toPlainObject(): Readonly<ProjectFields>;
+export interface ProjectValidator {
+  assertValidDescription(
+    description: unknown
+  ): asserts description is ProjectFields["description"];
+
+  assertValidId(id: unknown): asserts id is ProjectFields["id"];
+  validate(project: object): asserts project is ProjectFields;
+  assertValidName(name: unknown): asserts name is ProjectFields["name"];
+  assertValidStatus(status: unknown): asserts status is ProjectFields["status"];
+  assertValidCategoryId(id: unknown): asserts id is ProjectFields["categoryId"];
+  assertValidDeadline(
+    deadline: unknown,
+    createdOn: number
+  ): asserts deadline is ProjectFields["deadline"];
 }
 
-export interface ProjectObjectInterface {
-  get id(): string;
-  get name(): string;
-  get createdOn(): number;
-  get modifiedOn(): number;
-  get status(): ProjectStatus;
-  get deadline(): number | null;
-  get description(): string | null;
-  set deadline(date: number | null);
-  set status(status: ProjectStatus);
-  toPlainObject(): Readonly<ProjectFields>;
-  get category(): Readonly<ProjectCategoryFields> | null;
-}
-
-export interface ProjectConstructorArgument {
-  id?: string;
+export interface MakeProject_Argument {
   name: string;
-  createdOn?: number;
-  modifiedOn?: number;
-  status?: ProjectStatus;
   deadline?: number | null;
+  categoryId?: string | null;
   description?: string | null;
-  category?: ProjectCategoryFields | null;
 }
 
-export interface ProjectClass {
-  new (arg: ProjectConstructorArgument): ProjectObjectInterface;
+export interface Edit_Argument {
+  project: ProjectFields;
+  changes: Partial<
+    Pick<
+      ProjectFields,
+      "name" | "description" | "deadline" | "categoryId" | "status"
+    >
+  >;
 }
 
-interface MakeProjectClassArgument {
+export interface ProjectEntity {
+  validator: ProjectValidator;
+  edit(arg: Edit_Argument): ProjectFields;
+  make(arg: MakeProject_Argument): ProjectFields;
+}
+
+interface MakeProjectEntity_Argument {
   Id: ID;
   MAX_NAME_LENGTH: number;
+  VALID_NAME_PATTERN: RegExp;
+  currentTimeMs: CurrentTimeMs;
   MAX_DESCRIPTION_LENGTH: number;
+  MIN_HOUR_BEFORE_DEADLINE: number;
   convertDuration: ConvertDuration;
-  MIN_HOUR_BEFORE_DEADLINE?: number;
   assertValidString: AssertValidString;
-  ProjectCategory: ProjectCategoryClass;
-  isValidUnixMsTimestamp: IsValidUnixMsTimestamp;
-  validateTimestamps: CreationAndModificationTimestampsValidator;
+  MSG_NAME_DOES_NOT_MATCH_PATTERN: string;
+  assertValidUnixMsTimestamp: AssertValidUnixMsTimestamp;
 }
 
-const VALID_PROJECT_STATUSES = Object.freeze([
-  "halted",
-  "ongoing",
-  "suspended",
-  "completed",
-]);
-
-const VALID_NAME_PATTERN = /^[\w ]+$/;
-export default function makeProjectClass(
-  arg: MakeProjectClassArgument
-): ProjectClass {
+export default function buildProjectEntity(
+  arg: MakeProjectEntity_Argument
+): ProjectEntity {
   const {
     Id,
+    currentTimeMs,
     MAX_NAME_LENGTH,
-    ProjectCategory,
     convertDuration,
-    validateTimestamps,
+    VALID_NAME_PATTERN,
     MAX_DESCRIPTION_LENGTH,
-    isValidUnixMsTimestamp,
-    MIN_HOUR_BEFORE_DEADLINE = 1,
+    MIN_HOUR_BEFORE_DEADLINE,
+    MSG_NAME_DOES_NOT_MATCH_PATTERN,
   } = arg;
+  const assertValidUnixMsTimestamp: AssertValidUnixMsTimestamp =
+    arg.assertValidUnixMsTimestamp;
   const assertValidString: AssertValidString = arg.assertValidString;
 
-  return class Project implements ProjectObjectInterface {
-    #id: string;
-    #name: string;
-    #createdOn: number;
-    #modifiedOn: number;
-    #deadline: number | null = null;
-    #description: string | null = null;
-    #status: ProjectStatus = "ongoing";
-    #category: ProjectCategoryInterface | null = null;
+  const validator: ProjectValidator = Object.freeze({
+    validate,
+    assertValidId,
+    assertValidName,
+    assertValidStatus,
+    assertValidDeadline,
+    assertValidCategoryId,
+    assertValidDescription,
+  });
 
-    constructor(arg: ProjectConstructorArgument) {
-      assert("plain_object", arg, {
-        code: "INVALID_MAIN_ARG",
-        name: "ProjectConstructorArgument",
-      });
+  return Object.freeze({ edit, make, validator });
 
-      // ----- id ------
-      {
-        const { id = Id.makeId() } = arg;
+  function make(arg: MakeProject_Argument): ProjectFields {
+    assert<object>("plain_object", arg, {
+      name: "Project.make Argument",
+      code: "INVALID_MAKE_PROJECT_ARGUMENT",
+    });
 
-        if (!Id.isValid(id))
-          throw new EPP(`Invalid project id: ${id}.`, "INVALID_ID");
+    const project: ProjectFields = (() => {
+      const {
+        deadline = null,
+        categoryId = null,
+        description = null,
+        name = required("name"),
+      } = <any>arg;
 
-        this.#id = id;
-      }
+      const currentTimestamp = currentTimeMs();
 
-      // ----- name ------
-      {
-        const { name = required("name") } = arg;
-
-        assertValidString(name, {
-          name: "name",
-          minLength: 1,
-          maxLength: MAX_NAME_LENGTH,
-          trimBeforeLengthValidation: true,
-        });
-
-        this.#name = name.trim();
-
-        if (!VALID_NAME_PATTERN.test(this.#name))
-          throw new EPP({
-            code: "INVALID_NAME",
-            message:
-              "A project name cannot contain non alphanumeric character(s) other than '_' and ' '.",
-          });
-      }
-
-      // ----- description -------
-      if ("description" in arg && arg.description !== null) {
-        const { description } = arg;
-
-        assertValidString(description, {
-          minLength: 1,
-          name: "description",
-          maxLength: MAX_DESCRIPTION_LENGTH,
-        });
-
-        this.#description = description;
-      }
-
-      // ------- createdOn and modifiedOn -----
-      {
-        const timestamps = validateTimestamps({
-          objectContainingTimestamps: arg,
-          creationTimestampPropName: "createdOn",
-          modificationTimestampPropName: "modifiedOn",
-        });
-
-        this.#createdOn = timestamps.createdOn;
-        this.#modifiedOn = timestamps.modifiedOn;
-      }
-
-      // ------- other --------
-      if ("status" in arg) this.#setStatus(arg.status);
-      if ("deadline" in arg) this.#setDeadline(arg.deadline);
-      if ("category" in arg && arg.category !== null)
-        this.#category = new ProjectCategory(arg.category);
-    }
-
-    set deadline(deadline) {
-      this.#setDeadline(deadline);
-    }
-
-    #setDeadline(deadline: number | null = null) {
-      if (deadline === null) {
-        this.#deadline = null;
-        return;
-      }
-
-      if (!isValidUnixMsTimestamp(deadline))
-        throw new EPP(`Invalid timestamp: ${deadline}`, "INVALID_DEADLINE");
-
-      const hourLeftBeforeDeadline = convertDuration({
-        toUnit: "hour",
-        fromUnit: "millisecond",
-        duration: deadline - this.#createdOn,
-      });
-
-      if (hourLeftBeforeDeadline < MIN_HOUR_BEFORE_DEADLINE)
-        throw new EPP({
-          code: "INVALID_DEADLINE",
-          message: `The difference between project creation time and deadline must be greater than ${MIN_HOUR_BEFORE_DEADLINE} hour(s)`,
-        });
-
-      this.#deadline = deadline;
-    }
-
-    #setStatus(status: any) {
-      if (!VALID_PROJECT_STATUSES.includes(status!))
-        throw new EPP({
-          code: "INVALID_STATUS",
-          message: `Invalid project status "${status}"`,
-        });
-
-      this.#status = status;
-    }
-
-    set status(status) {
-      this.#setStatus(status);
-    }
-
-    #toPlainObject() {
-      return {
-        id: this.#id,
-        name: this.#name,
-        status: this.#status,
-        deadline: this.#deadline,
-        createdOn: this.#createdOn,
-        modifiedOn: this.#modifiedOn,
-        description: this.#description,
-        category: this.#category ? this.#category.toPlainObject() : null,
+      const _project = {
+        name,
+        deadline,
+        categoryId,
+        description,
+        id: Id.makeId(),
+        status: "ongoing",
+        createdOn: currentTimestamp,
       };
-    }
 
-    toPlainObject(): Readonly<ProjectFields> {
-      return Object.freeze(this.#toPlainObject());
-    }
+      validate(_project);
 
-    toJSON() {
-      const object = this.#toPlainObject();
+      return _project;
+    })();
 
-      // @ts-ignore
-      if (object.deadline) object.deadline = object.deadline.valueOf();
+    {
+      const { name, description } = project;
 
-      return object;
+      return Object.freeze({
+        ...project,
+        name: name.trim(),
+        description: description ? description.trim() : null,
+      });
     }
+  }
 
-    get id() {
-      return this.#id;
+  function edit(arg: Edit_Argument): ProjectFields {
+    const { project, changes } = arg;
+
+    assert<object>("plain_object", project, {
+      name: "project",
+      code: "INVALID_PROJECT_ARGUMENT",
+    });
+    assert<object>("plain_object", changes, {
+      name: "changes",
+      code: "INVALID_CHANGES_ARGUMENT",
+    });
+
+    const editedProject = { ...project };
+
+    for (const property of FIELDS_ALLOWED_TO_CHANGE)
+      if (property in changes)
+        // @ts-ignore
+        editedProject[property] = changes[property];
+
+    validate(editedProject);
+
+    {
+      const { name, description } = editedProject;
+
+      return Object.freeze({
+        ...editedProject,
+        name: name.trim(),
+        description: description ? description.trim() : null,
+      });
     }
-    get name() {
-      return this.#name;
-    }
-    get deadline() {
-      return this.#deadline;
-    }
-    get createdOn() {
-      return this.#createdOn;
-    }
-    get modifiedOn() {
-      return this.#modifiedOn;
-    }
-    get description() {
-      return this.#description;
-    }
-    get status() {
-      return this.#status;
-    }
-    get category() {
-      return this.#category ? this.#category.toPlainObject() : null;
-    }
-  };
+  }
+
+  function validate(project: object): asserts project is ProjectFields {
+    assert<object>("plain_object", project, {
+      name: "Project",
+      code: "INVALID_PROJECT",
+    });
+
+    const {
+      id = required("id"),
+      name = required("name"),
+      status = required("status"),
+      deadline = required("deadline"),
+      createdOn = required("createdOn"),
+      categoryId = required("categoryId"),
+      description = required("description"),
+    } = <any>project;
+
+    assertValidId(id);
+    assertValidName(name);
+    assertValidStatus(status);
+    assertValidCategoryId(categoryId);
+    assertValidDescription(description);
+    assertValidUnixMsTimestamp(createdOn, "INVALID_CREATION_TIMESTAMP");
+
+    assertValidDeadline(deadline, createdOn);
+
+    assertNoUnknownProperties(project);
+  }
+
+  function assertValidId(id: unknown): asserts id is ProjectFields["id"] {
+    if (!Id.isValid(id))
+      throw new EPP(`Invalid project id: ${id}.`, "INVALID_ID");
+  }
+
+  function assertValidCategoryId(
+    categoryId: unknown
+  ): asserts categoryId is ProjectFields["categoryId"] {
+    if (categoryId !== null && !Id.isValid(categoryId))
+      throw new EPP(
+        `Invalid project category id: ${categoryId}.`,
+        "INVALID_CATEGORY_ID"
+      );
+  }
+
+  function assertValidName(
+    name: unknown
+  ): asserts name is ProjectFields["name"] {
+    assertValidString(name, {
+      name: "name",
+      minLength: 1,
+      maxLength: MAX_NAME_LENGTH,
+      trimBeforeLengthValidation: true,
+    });
+
+    if (!VALID_NAME_PATTERN.test(name.trim()))
+      throw new EPP({
+        code: "INVALID_NAME",
+        message: MSG_NAME_DOES_NOT_MATCH_PATTERN,
+      });
+  }
+
+  function assertValidDescription(
+    description: unknown
+  ): asserts description is ProjectFields["description"] {
+    if (description !== null)
+      assertValidString(description, {
+        minLength: 1,
+        name: "description",
+        trimBeforeLengthValidation: true,
+        maxLength: MAX_DESCRIPTION_LENGTH,
+      });
+  }
+
+  function assertValidStatus(
+    status: unknown
+  ): asserts status is ProjectFields["status"] {
+    assert<string>("non_empty_string", status, {
+      name: "Project.status",
+      code: "INVALID_STATUS",
+    });
+
+    if (!VALID_PROJECT_STATUSES.includes(<any>status))
+      throw new EPP({
+        code: "INVALID_STATUS",
+        message: `Invalid project status: "${status}"`,
+      });
+  }
+
+  function assertValidDeadline(
+    deadline: unknown,
+    createdOn: number
+  ): asserts deadline is ProjectFields["deadline"] {
+    if (deadline === null) return;
+
+    assertValidUnixMsTimestamp(deadline, "INVALID_DEADLINE");
+
+    const hourLeftBeforeDeadline = convertDuration({
+      toUnit: "hour",
+      fromUnit: "millisecond",
+      duration: <number>deadline - createdOn,
+    });
+
+    if (hourLeftBeforeDeadline < MIN_HOUR_BEFORE_DEADLINE)
+      throw new EPP({
+        code: "INVALID_DEADLINE",
+        message: `The difference between project creation time and deadline must be greater than ${MIN_HOUR_BEFORE_DEADLINE} hour(s)`,
+      });
+  }
+
+  function assertNoUnknownProperties(
+    project: object
+  ): asserts project is ProjectFields {
+    for (const property of Object.keys(project))
+      if (!ALL_FIELDS.has(property as any))
+        throw new EPP({
+          code: "UNKNOWN_PROPERTY",
+          message: `Project contains unknown property: "${property}"`,
+        });
+  }
 }

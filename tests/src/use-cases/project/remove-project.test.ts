@@ -1,8 +1,8 @@
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
 import makeRemoveProject from "use-cases/project/remove-project";
-
 import ProjectDatabase from "fixtures/use-case/project-db";
+
 const db = new ProjectDatabase();
 
 const removeProject = makeRemoveProject({ db, isValidId });
@@ -32,7 +32,7 @@ describe("Validation", () => {
 
 describe("Functionality", () => {
   it(`return delete and the project record`, async () => {
-    const projectInfo = new Project({ name: "todo" }).toPlainObject();
+    const projectInfo = Project.make({ name: "todo" });
     const id = projectInfo.id;
 
     await db.insert(projectInfo);

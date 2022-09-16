@@ -1,23 +1,16 @@
+import getID from "src/date-access/id";
 import makeCategoryClass from "./category";
 import { getDefaultConfig } from "src/config";
 import { createMD5Hash } from "common/util/other";
-import getID from "src/date-access/id";
-import {
-  isValidUnixMsTimestamp,
-  makeTimestampsValidator,
-} from "common/util/date-time";
 import { assertValidString } from "common/validator/string";
-
-const creationAndModificationTimestampsValidator = makeTimestampsValidator({
-  getNewTimestamp: () => Date.now(),
-  isValidTimestamp: isValidUnixMsTimestamp,
-});
+import { assertValidUnixMsTimestamp } from "common/util/date-time";
 
 const Category = makeCategoryClass({
   assertValidString,
   createHash: createMD5Hash,
+  assertValidUnixMsTimestamp,
+  currentTimeMs: () => Date.now(),
   Id: getID({ entity: "category" }),
-  creationAndModificationTimestampsValidator,
   ...getDefaultConfig({ entity: "category" }),
 });
 

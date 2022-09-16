@@ -1,24 +1,14 @@
-import makeEditCategory from "use-cases/category/edit-category";
 import getID from "src/date-access/id";
-import { CategoryConstructor_Argument } from "entities/category/category";
-import categoryFixture from "fixtures/category";
 import Category from "entities/category";
 import CategoryDatabase from "fixtures/use-case/category-db";
+import makeEditCategory from "use-cases/category/edit-category";
 
 const db = new CategoryDatabase();
 const Id = getID({ entity: "category" });
 
-const editCategory = makeEditCategory({
-  Id,
-  db,
-  getCurrentTimestamp: () => Date.now(),
-});
-
-// @ts-ignore
-let categoryInfo: Required<CategoryConstructor_Argument>;
+const editCategory = makeEditCategory({ db, isValidId: Id.isValid });
 
 beforeEach(async () => {
-  categoryInfo = categoryFixture();
   await db.clearDb();
 });
 
@@ -71,7 +61,7 @@ describe("Validation", () => {
   }
 
   {
-    const errorCode = "CATEGORY_DOES_NOT_EXIST";
+    const errorCode = "NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if the category with the given id doesn't exist`, async () => {
       expect.assertions(1);
@@ -87,16 +77,16 @@ describe("Validation", () => {
   }
 
   {
-    const errorCode = "PARENT_DOES_NOT_EXIST";
+    const errorCode = "PARENT_NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if the category with the given id doesn't exist`, async () => {
       expect.assertions(2);
 
-      const category = new Category({ name: categoryInfo.name });
+      const category = Category.make({ name: "a" });
       const id = category.id;
 
       // manually inserting a category in the db
-      await db.insert(category.toPlainObject());
+      await db.insert(category);
 
       expect(category.parentId).toBeNull();
 
@@ -112,18 +102,17 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  it("edits a comment if everything is valid", async () => {
-    const categoryBeforeEdit = new Category({
-      name: categoryInfo.name,
-      createdOn: 1112612148648,
-      modifiedOn: 1112612148648,
-    });
+  it("edits a category if everything is valid", async () => {
+    const categoryBeforeEdit = {
+      ...Category.make({ name: "a" }),
+      createdOn: 100,
+    };
 
     expect(categoryBeforeEdit.description).toBeNull();
 
     const id = categoryBeforeEdit.id;
 
-    await db.insert(categoryBeforeEdit.toPlainObject());
+    await db.insert(categoryBeforeEdit);
 
     const editedDescription = "description";
     const editedName = categoryBeforeEdit.name + "_";
@@ -142,8 +131,5 @@ describe("Functionality", () => {
     });
 
     expect(categoryBeforeEdit.hash).not.toBe(categoryAfterEdit.hash);
-    expect(categoryBeforeEdit.modifiedOn).not.toBe(
-      categoryAfterEdit.modifiedOn
-    );
   });
 });

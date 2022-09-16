@@ -1,55 +1,39 @@
 import { isValid } from "common/util/id";
 import { ID } from "common/interfaces/id";
-import categoryFixture from "fixtures/category";
-import makeCategoryClass from "entities/category/category";
-import { makeTimestampsValidator } from "common/util/date-time";
-import { isValidUnixMsTimestamp } from "common/util/date-time";
-import { assertValidString } from "common/validator/string";
 import { createMD5Hash } from "common/util/other";
+import { assertValidString } from "common/validator/string";
+import buildCategoryEntity from "entities/category/category";
+import { assertValidUnixMsTimestamp } from "common/util/date-time";
 
-let makeId: ID["makeId"] = (() => {
-  const category = categoryFixture();
-
-  // I'm combining the fixture's id and parentId to eliminate
-  // the chance of accidentally returning an id that is equal to fixture's
-  // parentId.
-  // In that case the Category class will throw an error with code
-  // "SELF_ID_EQUAL_PARENT_ID"
-  let id = Number(category.id! + category.parentId!);
-
-  return () => (id++).toString();
+const Id: ID = (() => {
+  let id = 1;
+  return Object.freeze({ isValid, makeId: () => (id++).toString() });
 })();
 
-const Id: ID = Object.freeze({ isValid, makeId });
-
-const { MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH } = (() => {
-  const category = categoryFixture();
-
-  const MAX_DESCRIPTION_LENGTH = category.description
-    ? category.description.length + 1
-    : 5;
-
-  return {
-    MAX_DESCRIPTION_LENGTH,
-    MAX_NAME_LENGTH: category.name.length + 1,
-  };
+const currentTimeMs = (() => {
+  let time = Date.now();
+  return () => ++time;
 })();
 
-const creationAndModificationTimestampsValidator = makeTimestampsValidator({
-  getNewTimestamp: () => 200,
-  isValidTimestamp: isValidUnixMsTimestamp,
-});
+const MAX_NAME_LENGTH = 5;
+const MAX_DESCRIPTION_LENGTH = 20;
+const VALID_NAME_PATTERN = /^[\w ]+$/;
+const MSG_NAME_DOES_NOT_MATCH_PATTERN =
+  "Category name must only consist of alphanumeric and whitespace characters";
 
-const Category = makeCategoryClass({
+const Category = buildCategoryEntity({
   Id,
+  currentTimeMs,
   MAX_NAME_LENGTH,
   assertValidString,
+  VALID_NAME_PATTERN,
   MAX_DESCRIPTION_LENGTH,
   createHash: createMD5Hash,
-  creationAndModificationTimestampsValidator,
+  assertValidUnixMsTimestamp,
+  MSG_NAME_DOES_NOT_MATCH_PATTERN,
 });
 
-describe("Constructor Validation", () => {
+describe("Category.make", () => {
   describe("field:name", () => {
     it.each([
       {
@@ -60,7 +44,7 @@ describe("Constructor Validation", () => {
       {
         name: "a/b",
         code: "INVALID_NAME",
-        case: "contains backslash (/)",
+        case: "contains invalid chars out of VALID_NAME_PATTERN",
       },
       {
         name: "",
@@ -77,7 +61,7 @@ describe("Constructor Validation", () => {
       ({ name, code }) => {
         expect(() => {
           // @ts-ignore
-          new Category(categoryFixture({ name }));
+          Category.make({ name });
         }).toThrowErrorWithCode(code);
       }
     );
@@ -85,71 +69,39 @@ describe("Constructor Validation", () => {
     {
       const errorCode = "MISSING_NAME";
       it(`throws error with code "${errorCode}" if "name" is missing`, () => {
-        const argWithNoName = categoryFixture();
-
-        // @ts-expect-error
-        delete argWithNoName.name;
-
         expect(() => {
-          new Category(argWithNoName);
+          // @ts-ignore
+          Category.make({});
         }).toThrowErrorWithCode(errorCode);
       });
     }
+
+    it.each([
+      { property: "name", value: "    study " },
+      { property: "description", value: "    Description " },
+    ] as const)(
+      `trims whitespace from the $property field`,
+      ({ property, value }) => {
+        const arg = { name: "a", [property]: value };
+        const category = Category.make(arg);
+
+        expect(category[property]).toBe(value.trim());
+      }
+    );
   });
 
   describe("Other", () => {
-    it.each(["id", "parentId"])(
+    const arg = { name: "todo", id: "1", parentId: "100" };
+    it.each(["id", "parentId"] as const)(
       `does not throw error if the %p is missing in constructor argument`,
       (property) => {
-        const invalidArg = categoryFixture();
-
-        // @ts-expect-error
-        delete invalidArg[property];
+        delete arg[property];
 
         expect(() => {
-          new Category(invalidArg);
+          Category.make(arg);
         }).not.toThrow();
       }
     );
-  });
-
-  describe("fields:id and parentId", () => {
-    it.each([
-      { property: "id", errorCode: "INVALID_ID" },
-      { property: "parentId", errorCode: "INVALID_PARENT_ID" },
-    ])(
-      `throws error with code "$errorCode" if "$property" is invalid`,
-      ({ property, errorCode }) => {
-        const invalidId = "non_numeric_string";
-
-        expect(Id.isValid(invalidId)).toBeFalsy();
-
-        const argWithInvalidId = categoryFixture({ [property]: invalidId });
-        expect(() => {
-          new Category(argWithInvalidId);
-        }).toThrowErrorWithCode(errorCode);
-      }
-    );
-
-    it('throws error with code "SELF_ID_EQUAL_PARENT_ID" if id and parentId are equal', () => {
-      const validId = "12312";
-
-      expect(Id.isValid(validId)).toBeTruthy();
-
-      const argWithSameId = categoryFixture({ id: validId, parentId: validId });
-
-      expect(() => {
-        new Category(argWithSameId);
-      }).toThrowErrorWithCode("SELF_ID_EQUAL_PARENT_ID");
-    });
-
-    it("does not throw error if parentId is null", () => {
-      const arg = categoryFixture({ parentId: null });
-
-      expect(() => {
-        new Category(arg);
-      }).not.toThrow();
-    });
   });
 
   describe("field:description", () => {
@@ -174,92 +126,114 @@ describe("Constructor Validation", () => {
       ({ description, code }) => {
         expect(() => {
           // @ts-ignore
-          new Category(categoryFixture({ description }));
+          Category.make({ name: "a", description });
         }).toThrowErrorWithCode(code);
       }
     );
 
     it("does not throw error if description is null", () => {
-      const arg = categoryFixture({ description: null });
-
       expect(() => {
-        new Category(arg);
+        // @ts-ignore
+        Category.make({ name: "a", description: null });
       }).not.toThrow();
     });
   });
 
   describe("mainArgObject", () => {
-    it('throws error with code "INVALID_MAIN_ARG" if constructor argument is not a plain_object', () => {
-      expect(() => {
-        // @ts-expect-error
-        new Category(["non_a_plain_object"]);
-      }).toThrowErrorWithCode("INVALID_MAIN_ARG");
+    {
+      const errorCode = "INVALID_MAKE_ARG";
+
+      it(`throws error with code "${errorCode}" if constructor argument is not a plain_object`, () => {
+        expect(() => {
+          // @ts-expect-error
+          Category.make(["non_a_plain_object"]);
+        }).toThrowErrorWithCode(errorCode);
+      });
+    }
+  });
+
+  describe("Other", () => {
+    describe("Defaults", () => {
+      test.each(["description", "parentId"] as const)(
+        "if %p is not provided then it's value should be null",
+        (property) => {
+          const category = Category.make({ name: "a" });
+          expect(category[property]).toBeNull();
+        }
+      );
+    });
+
+    describe("hashing", () => {
+      it("creates the same hash for categories with same name but different casing", () => {
+        const name = "Study";
+        const categoryA = Category.make({ name });
+        const categoryB = Category.make({
+          name: `   ${name.toUpperCase()}   `,
+        });
+
+        expect(categoryA.hash).toEqual(categoryB.hash);
+      });
     });
   });
 });
 
-describe("Other", () => {
-  describe("Getters", () => {
-    test(`every field has a getter`, () => {
-      const arg = categoryFixture();
-      const category = new Category(arg);
-
-      expect(category.id).toBe(arg.id);
-      expect(category.name).toBe(arg.name);
-      expect(category.hash).toEqual(expect.any(String));
-      expect(category.createdOn).toBe(arg.createdOn);
-      expect(category.modifiedOn).toBe(arg.modifiedOn);
-      expect(category.parentId).toBe(arg.parentId);
-      expect(category.description).toBe(arg.description);
-    });
-  });
-
-  describe("toPlainObject", () => {
-    it("returns a frozen category object", () => {
-      const arg = categoryFixture();
-      const category = new Category(arg).toPlainObject();
-
-      expect(Object.isFrozen(category)).toBeTruthy();
-      expect(category).toEqual({ ...arg, hash: expect.any(String) });
-    });
-  });
-
-  describe("Defaults", () => {
-    test.each(["description", "parentId"] as const)(
-      "if %p is not provided then it's value should be null",
-      (property) => {
-        const arg = categoryFixture();
-        // @ts-expect-error
-        delete arg[[property]];
-
-        const category = new Category(arg);
-        expect(category[property]).toBeNull();
-      }
-    );
-  });
-
-  describe("String Formatting", () => {
+describe("Category.validator.validate", () => {
+  describe("fields:id and parentId", () => {
     it.each([
-      { property: "name", value: "    study " },
-      { property: "description", value: "    Description " },
-    ] as const)(
-      `trims whitespace from the $property field`,
-      ({ property, value }) => {
-        const arg = categoryFixture({ [property]: value });
-        const category = new Category(arg);
+      { property: "id", errorCode: "INVALID_ID" },
+      { property: "parentId", errorCode: "INVALID_PARENT_ID" },
+    ])(
+      `throws error with code "$errorCode" if "$property" is invalid`,
+      ({ property, errorCode }) => {
+        const invalidId = "non_numeric_string";
 
-        expect(category[property]).toBe(value.trim());
+        expect(Id.isValid(invalidId)).toBeFalsy();
+
+        const invalidCategory = {
+          ...Category.make({ name: "a" }),
+          [property]: invalidId,
+        };
+        expect(() => {
+          (Category.validator.validate as any)(invalidCategory);
+        }).toThrowErrorWithCode(errorCode);
       }
     );
-  });
 
-  describe("hashing", () => {
-    it("creates the same hash for categories with same name but different casing", () => {
-      const name = "Study";
-      const categoryA = new Category({ name });
-      const categoryB = new Category({ name: `   ${name.toUpperCase()}   ` });
+    it('throws error with code "SELF_ID_EQUAL_PARENT_ID" if id and parentId are equal', () => {
+      const currentId = +Id.makeId();
+      // so the next id will be currentId + 1
 
-      expect(categoryA.hash).toEqual(categoryB.hash);
+      expect(() => {
+        Category.make({ name: "a", parentId: (currentId + 1).toString() });
+      }).toThrowErrorWithCode("SELF_ID_EQUAL_PARENT_ID");
     });
+
+    it("does not throw error if parentId is null", () => {
+      expect(() => {
+        Category.make({ name: "a" });
+      }).not.toThrow();
+    });
+  });
+});
+
+describe("Category.edit", () => {
+  it(`edits a category`, () => {
+    const category = Category.make({ name: "a" });
+
+    const changes = {
+      parentId: +category.id + "324",
+      description: "\n\n  Desc         ",
+      name: "     " + category.name + "b       \n\r",
+    };
+
+    const editedCategory = Category.edit({ category, changes });
+
+    expect(editedCategory).toMatchObject({
+      name: changes.name.trim(),
+      parentId: changes.parentId,
+      description: changes.description.trim(),
+    });
+
+    expect(editedCategory.hash).not.toBe(category.hash);
   });
 });

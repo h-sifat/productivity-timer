@@ -3,22 +3,20 @@ export interface CurrentTimeMs {
 }
 
 export interface IsValidUnixMsTimestamp {
-  (timestamp: number): timestamp is number;
+  (timestamp: unknown): timestamp is number;
 }
 
-interface TimestampValidatorArgument {
-  creationTimestampPropName?: string;
-  modificationTimestampPropName?: string;
-  objectContainingTimestamps: object;
+export interface AssertValidUnixMsTimestamp {
+  (timestamp: unknown, errorCode?: string): asserts timestamp is number;
 }
 
-interface TimestampValidationResult {
+interface Timestamps {
   createdOn: number;
   modifiedOn: number;
 }
 
-export interface CreationAndModificationTimestampsValidator {
-  (arg: TimestampValidatorArgument): TimestampValidationResult;
+export interface AssertValidTimestamps {
+  (arg: { [k in keyof Timestamps]: any }): asserts arg is Timestamps;
 }
 
 export type DurationUnit =

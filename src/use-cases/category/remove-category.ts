@@ -16,44 +16,37 @@ export interface RemoveCategory_Argument {
   removeChildrenRecursively?: boolean;
 }
 
-export default function makeRemoveCategories(arg: MakeRemoveCategory_Argument) {
+export default function makeRemoveCategory(arg: MakeRemoveCategory_Argument) {
   const { db, isValidId } = arg;
-  return async function removeCategories(
+  return async function removeCategory(
     arg: RemoveCategory_Argument
   ): Promise<Readonly<CategoryFields>[]> {
     const { id, removeChildrenRecursively = false } = arg;
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 
-    const categoryRecord = await db.findById({ id });
+    const category = await db.findById({ id });
 
-    if (!categoryRecord)
+    if (!category)
       throw new EPP({
-        code: "CATEGORY_DOES_NOT_EXIST",
-        message: `No category exists with id: "${id}"`,
+        code: "NOT_FOUND",
+        message: `No category exists with the id: "${id}"`,
       });
 
-    const subCategoryRecords = await db.findSubCategories({
-      id,
+    const subCategories = await db.findSubCategories({
+      parentId: id,
       recursive: true,
     });
 
-    if (subCategoryRecords.length && removeChildrenRecursively === false)
+    if (subCategories.length && removeChildrenRecursively === false)
       throw new EPP({
         code: "CATEGORY_HAS_CHILDREN",
         message: `Category with id: "${id}" can't be removed because it has children.`,
       });
 
-    const categoryIdsToDelete = [categoryRecord, ...subCategoryRecords].map(
-      (record) => record.id
-    );
-
     {
-      const deletedCategories = await db.deleteMany({
-        ids: categoryIdsToDelete,
-      });
-
-      return deletedCategories.map((category) => Object.freeze(category));
+      const ids = [category, ...subCategories].map(({ id }) => id);
+      return await db.deleteMany({ ids });
     }
   };
 }

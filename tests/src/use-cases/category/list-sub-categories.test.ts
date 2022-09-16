@@ -1,17 +1,13 @@
 import getID from "src/date-access/id";
 import Category from "entities/category";
+import { CategoryFields } from "entities/category/category";
 import CategoryDatabase from "fixtures/use-case/category-db";
-import makeCategoryIfNotCorrupted from "use-cases/category/util";
 import makeListSubCategories from "use-cases/category/list-sub-categories";
 
 const db = new CategoryDatabase();
 const Id = getID({ entity: "category" });
 
-const listSubCategories = makeListSubCategories({
-  Id,
-  db,
-  makeCategoryIfNotCorrupted,
-});
+const listSubCategories = makeListSubCategories({ Id, db });
 
 beforeEach(async () => {
   await db.clearDb();
@@ -29,7 +25,7 @@ describe("Validation", () => {
 
       try {
         // @ts-ignore
-        await listSubCategories({ id: invalidParentId });
+        await listSubCategories({ parentId: invalidParentId });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
@@ -38,21 +34,34 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  const PARENT_CATEGORY = new Category({
-    id: "1",
-    name: "study",
-  }).toPlainObject();
+  const categoryIdSortPredicate = (
+    catA: CategoryFields,
+    catB: CategoryFields
+  ) => +catA.id - +catB.id;
 
-  const SUB_CATEGORIES = [
-    { id: "2", name: "programming", parentId: "1" },
-    { id: "100", name: "DSA", parentId: "2" },
-    { id: "101", name: "Backend", parentId: "2" },
+  const PARENT_CATEGORY = Category.make({ name: "study" });
 
-    { id: "3", name: "academic", parentId: "1" },
-    { id: "102", name: "math", parentId: "3" },
-    { id: "103", name: "english", parentId: "3" },
-  ].map((catInfo) => new Category(catInfo).toPlainObject());
+  const SUB_CATEGORIES = (() => {
+    const programming = Category.make({
+      name: "programming",
+      parentId: PARENT_CATEGORY.id,
+    });
 
+    const academic = Category.make({
+      name: "academic",
+      parentId: PARENT_CATEGORY.id,
+    });
+
+    const levelTwoSubCategories = [
+      { name: "DSA", parentId: programming.id },
+      { name: "Backend", parentId: programming.id },
+
+      { name: "math", parentId: academic.id },
+      { name: "english", parentId: academic.id },
+    ].map((arg) => Category.make(arg));
+
+    return [programming, academic, ...levelTwoSubCategories];
+  })();
   /*
    * Category structure:
    *
@@ -65,45 +74,41 @@ describe("Functionality", () => {
    *            |--- english
    * */
 
-  // populate the db
-  beforeEach(async () => {
-    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
-  });
-
   it(`returns an empty array for the children field if no child is found for the given parentId`, async () => {
-    await db.clearDb();
     await db.insert(PARENT_CATEGORY);
     // right now no direct sub category should exist in db
 
-    const children = await listSubCategories({ id: PARENT_CATEGORY.id });
+    const children = await listSubCategories({ parentId: PARENT_CATEGORY.id });
 
-    expect(children).toEqual({
-      subCategories: [],
-      corruptionError: [],
-    });
+    expect(children).toEqual([]);
   });
 
   it(`returns only the direct sub categories for the given parentId if "recursive" flag is false`, async () => {
-    const { subCategories, corruptionError } = await listSubCategories({
-      id: PARENT_CATEGORY.id,
+    // populate the db manually
+    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
+
+    const subCategories = await listSubCategories({
+      parentId: PARENT_CATEGORY.id,
     });
 
-    expect(corruptionError).toHaveLength(0);
+    const expectedSubCategories = SUB_CATEGORIES.filter(
+      (cat) => cat.parentId === PARENT_CATEGORY.id
+    );
 
-    subCategories.forEach((cat) => {
-      expect(cat.parentId).toBe(PARENT_CATEGORY.id);
-    });
+    expect(subCategories).toEqual(expectedSubCategories);
   });
 
   it(`returns all children recursively if the "recursive" flag is true`, async () => {
-    const { subCategories: subCategoryResults, corruptionError } =
-      await listSubCategories({
-        recursive: true,
-        id: PARENT_CATEGORY.id,
-      });
+    // populate the db manually
+    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
 
-    expect(corruptionError).toHaveLength(0);
+    const subCategories = await listSubCategories({
+      recursive: true,
+      parentId: PARENT_CATEGORY.id,
+    });
 
-    expect(SUB_CATEGORIES).toEqual(subCategoryResults);
+    expect(subCategories.sort(categoryIdSortPredicate)).toEqual(
+      SUB_CATEGORIES.sort(categoryIdSortPredicate)
+    );
   });
 });

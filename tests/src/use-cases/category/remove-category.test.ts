@@ -1,17 +1,24 @@
-import { isValid as isValidId } from "common/util/id";
 import Category from "entities/category";
+import { isValid as isValidId } from "common/util/id";
 import CategoryDatabase from "fixtures/use-case/category-db";
-import makeRemoveCategories from "use-cases/category/remove-categories";
+import makeRemoveCategory from "use-cases/category/remove-category";
 
 const db = new CategoryDatabase();
-const removeCategories = makeRemoveCategories({ db, isValidId });
+const removeCategories = makeRemoveCategory({ db, isValidId });
 
-const parentId = "1";
-const INSERTED_CATEGORY_RECORDS = [
-  { id: parentId, name: "study" },
-  { id: "100", name: "programming", parentId },
-  { id: "200", name: "dsa", parentId: "100" },
-].map((catInfo) => new Category(catInfo).toPlainObject());
+const { INSERTED_CATEGORY_RECORDS, parentId } = (() => {
+  const parent = Category.make({ name: "study" });
+
+  const subCategories = [
+    { name: "dsa", parentId: parent.id },
+    { name: "programming", parentId: parent.id },
+  ].map((catInfo) => Category.make(catInfo));
+
+  return {
+    parentId: parent.id,
+    INSERTED_CATEGORY_RECORDS: [parent, ...subCategories],
+  };
+})();
 
 beforeEach(async () => {
   await db.insertMany(INSERTED_CATEGORY_RECORDS);
@@ -40,7 +47,7 @@ describe("Validation", () => {
   }
 
   {
-    const errorCode = "CATEGORY_DOES_NOT_EXIST";
+    const errorCode = "NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if no category exists with the given id`, async () => {
       expect.assertions(1);
@@ -74,9 +81,9 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  it(`removes a category if it has not children`, async () => {
+  it(`removes a category if it has no children`, async () => {
     expect.assertions(3);
-    const category = new Category({ name: "work" }).toPlainObject();
+    const category = Category.make({ name: "work" });
 
     await db.clearDb();
     await db.insert(category);
@@ -92,7 +99,7 @@ describe("Functionality", () => {
       // the category is already deleted so it should throw an error
       await removeCategories({ id: category.id });
     } catch (ex: any) {
-      expect(ex.code).toBe("CATEGORY_DOES_NOT_EXIST");
+      expect(ex.code).toBe("NOT_FOUND");
     }
   });
 
@@ -103,5 +110,13 @@ describe("Functionality", () => {
     });
 
     expect(deletedCategoryRecords).toEqual(INSERTED_CATEGORY_RECORDS);
+
+    for (const deletedCategory of deletedCategoryRecords)
+      try {
+        // the category is already deleted so it should throw an error
+        await removeCategories({ id: deletedCategory.id });
+      } catch (ex: any) {
+        expect(ex.code).toBe("NOT_FOUND");
+      }
   });
 });

@@ -1,7 +1,7 @@
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
-import makeEditProject from "use-cases/project/edit-project";
 import ProjectDatabase from "fixtures/use-case/project-db";
+import makeEditProject from "use-cases/project/edit-project";
 
 const db = new ProjectDatabase();
 
@@ -9,11 +9,7 @@ beforeEach(async () => {
   await db.clearDb();
 });
 
-const editProject = makeEditProject({
-  db,
-  isValidId,
-  getCurrentTimestamp: () => Date.now(),
-});
+const editProject = makeEditProject({ db, isValidId });
 
 describe("Validation", () => {
   {
@@ -53,37 +49,17 @@ describe("Validation", () => {
 
 describe("Functionality", () => {
   it(`edits a project if everything is valid`, async () => {
-    const createdOn = 1231231;
-    const projectInfo = new Project({
-      name: "Todo",
-      createdOn,
-      modifiedOn: createdOn,
-    }).toPlainObject();
+    const project = Project.make({ name: "Todo" });
 
-    await db.insert(projectInfo);
-
-    const editedStatus = "completed";
-    const editedProjectCategory = {
-      id: "100",
-      fullName: "coding/personal_projects",
-    };
+    await db.insert(project);
 
     const edits = {
-      category: editedProjectCategory,
-      status: editedStatus,
+      status: "completed",
+      categoryId: project.id + "12",
     } as const;
 
-    const editedProject = await editProject({
-      id: projectInfo.id,
-      changes: edits,
-    });
+    const editedProject = await editProject({ id: project.id, changes: edits });
 
-    expect(editedProject.modifiedOn).not.toBe(projectInfo.modifiedOn);
-
-    expect(editedProject).toMatchObject({
-      ...projectInfo,
-      ...edits,
-      modifiedOn: editedProject.modifiedOn,
-    });
+    expect(editedProject).toMatchObject({ ...project, ...edits });
   });
 });

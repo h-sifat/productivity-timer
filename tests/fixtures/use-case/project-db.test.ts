@@ -15,10 +15,10 @@ describe("The name is unique and case insensitive", () => {
       expect.assertions(3);
 
       const name = "todo";
-      const projectA = new Project({ name }).toPlainObject();
-      const projectB = new Project({
+      const projectA = Project.make({ name });
+      const projectB = Project.make({
         name: "  \n" + name.toUpperCase() + "  \n",
-      }).toPlainObject();
+      });
 
       expect(projectA).not.toEqual(projectB);
 
@@ -45,10 +45,10 @@ describe("clearDb", () => {
     expect.assertions(3);
 
     const name = "todo";
-    const projectA = new Project({ name }).toPlainObject();
-    const projectB = new Project({
+    const projectA = Project.make({ name });
+    const projectB = Project.make({
       name: "  \n" + name.toUpperCase() + "  \n",
-    }).toPlainObject();
+    });
 
     expect(projectA).not.toEqual(projectB);
 
@@ -71,7 +71,7 @@ describe("clearDb", () => {
 
 describe("findAll", () => {
   it(`returns all the documents`, async () => {
-    const project = new Project({ name: "Timer App" }).toPlainObject();
+    const project = Project.make({ name: "Timer App" });
     await db.insert(project);
 
     const allInsertedDocuments = await db.findAll();
@@ -115,7 +115,7 @@ describe("findByName", () => {
   });
 
   it(`finds a document by name`, async () => {
-    const project = new Project({ name: "Timer App" }).toPlainObject();
+    const project = Project.make({ name: "Timer App" });
     await db.insert(project);
 
     // search should be case insensitive

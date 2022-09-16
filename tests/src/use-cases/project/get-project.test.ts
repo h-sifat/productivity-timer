@@ -31,44 +31,17 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  {
-    const errorCode = "NOT_FOUND";
+  it(`returns null if project doesn't exist`, async () => {
+    // db is empty
+    expect(await getProject({ id: "100" })).toBeNull();
+  });
+  it(`returns the project if it exists`, async () => {
+    const inserted = Project.make({ name: "Todo" });
 
-    it(`throws ewc "${errorCode}" if no project is found with the given id`, async () => {
-      expect.assertions(1);
+    // inserting manually
+    await db.insert(inserted);
 
-      const id = "100";
-
-      try {
-        await getProject({ id });
-      } catch (ex: any) {
-        expect(ex.code).toBe(errorCode);
-      }
-    });
-  }
-
-  {
-    const errorCode = "CORRUPTED";
-    it(`throws ewc "${errorCode}" if the project returned by is corrupted`, async () => {
-      expect.assertions(1);
-
-      const id = "100";
-      await db.corruptById({ id, unValidatedDocument: {} });
-
-      try {
-        await getProject({ id });
-      } catch (ex) {
-        expect(ex.code).toBe(errorCode);
-      }
-    });
-  }
-
-  it(`returns the project if it exists an not corrupted`, async () => {
-    const insertedProjectInfo = new Project({ name: "Todo" }).toPlainObject();
-
-    await db.insert(insertedProjectInfo);
-
-    const queriedProjectInfo = await getProject({ id: insertedProjectInfo.id });
-    expect(queriedProjectInfo).toEqual(insertedProjectInfo);
+    const queriedProjectInfo = await getProject({ id: inserted.id });
+    expect(queriedProjectInfo).toEqual(inserted);
   });
 });

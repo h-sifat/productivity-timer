@@ -2,7 +2,7 @@ import { CategoryFields } from "entities/category/category";
 import { ProjectFields } from "entities/project/project";
 
 export interface FindChildren_Argument {
-  id: string;
+  parentId: string;
   recursive?: boolean;
 }
 

@@ -27,38 +27,11 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  {
-    const errorCode = "CORRUPTED";
-    it(`throws ewc "${errorCode}" if project already exists but is corrupted`, async () => {
-      expect.assertions(3);
-
-      const name = "TodoApp";
-      const corruptedRecord = { id: "1", name, createdOn: "not_a_time_stamp" };
-
-      db.corruptById({
-        id: corruptedRecord.id,
-        unValidatedDocument: corruptedRecord,
-      });
-
-      try {
-        await addProject({ projectInfo: { name: name.toLowerCase() } });
-      } catch (ex: any) {
-        expect(ex.code).toBe(errorCode);
-        expect(ex.record).toEqual(corruptedRecord);
-        expect(ex.originalError).toMatchObject({
-          code: expect.any(String),
-          message: expect.any(String),
-        });
-      }
-    });
-  }
-
   it(`returns the existing project if the project name is the same (case insensitive)`, async () => {
     const projectName = "Todo App";
-    const existingProject = new Project({
-      name: projectName,
-    }).toPlainObject();
+    const existingProject = Project.make({ name: projectName });
 
+    // inserting project manually
     await db.insert(existingProject);
 
     const uppercaseName = projectName.toUpperCase();
@@ -70,12 +43,14 @@ describe("Functionality", () => {
   });
 
   it(`inserts a new project if it doesn't already exist`, async () => {
-    const insertingProjectRecord = new Project({
+    const projectInfo = {
       name: "todo",
-    }).toPlainObject();
+      description: "hi",
+    };
 
-    const inserted = await addProject({ projectInfo: insertingProjectRecord });
+    const inserted = await addProject({ projectInfo });
 
-    expect(inserted).toEqual(insertingProjectRecord);
+    expect(inserted).toMatchObject(projectInfo);
+    expect(await db.findById({ id: inserted.id })).toEqual(inserted);
   });
 });

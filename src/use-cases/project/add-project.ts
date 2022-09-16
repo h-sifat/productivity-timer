@@ -1,15 +1,14 @@
-import type { ProjectConstructorArgument } from "entities/project/project";
+import type { MakeProject_Argument } from "entities/project/project";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 import Project from "entities/project";
-import EPP from "common/util/epp";
 
 interface MakeAddProject_Argument {
   db: Pick<ProjectDatabaseInterface, "findByName" | "insert">;
 }
 
 interface AddProject_Argument {
-  projectInfo: ProjectConstructorArgument;
+  projectInfo: MakeProject_Argument;
 }
 
 export default function makeAddProject(arg: MakeAddProject_Argument) {
@@ -18,25 +17,14 @@ export default function makeAddProject(arg: MakeAddProject_Argument) {
   return async function addProject(arg: AddProject_Argument) {
     const { projectInfo } = arg;
 
-    const insertingProjectRecord = new Project(projectInfo).toPlainObject();
+    const project = Project.make(projectInfo);
 
-    const existingRecord = await db.findByName({
-      name: insertingProjectRecord.name,
-    });
+    {
+      const existingProject = await db.findByName({ name: project.name });
+      if (existingProject) return existingProject;
+    }
 
-    if (existingRecord)
-      try {
-        return new Project(existingRecord).toPlainObject();
-      } catch (ex: any) {
-        const { name, id } = existingRecord;
-        throw new EPP({
-          code: "CORRUPTED",
-          message: `The project with id: ${id} and name: "${name}" is corrupted in db.`,
-          otherInfo: { record: existingRecord, originalError: ex },
-        });
-      }
-
-    await db.insert(insertingProjectRecord);
-    return insertingProjectRecord;
+    await db.insert(project);
+    return project;
   };
 }

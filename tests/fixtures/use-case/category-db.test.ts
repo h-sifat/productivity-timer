@@ -1,4 +1,5 @@
 import Category from "entities/category";
+import { CategoryFields } from "entities/category/category";
 import CategoryDatabase from "./category-db";
 
 const db = new CategoryDatabase();
@@ -41,7 +42,7 @@ describe("findByHash", () => {
   });
 
   it(`returns the document with the given hash`, async () => {
-    const category = new Category({ name: "study" }).toPlainObject();
+    const category = Category.make({ name: "study" });
 
     await db.insert(category);
 
@@ -53,7 +54,7 @@ describe('The "hash" field is unique', () => {
   it(`should not allow inserting two documents with the same hash`, async () => {
     expect.assertions(2);
 
-    const documentA = new Category({ name: "study" }).toPlainObject();
+    const documentA = Category.make({ name: "study" });
     const documentB = { ...documentA, id: String(+documentA.id + 1) };
 
     expect(documentA.hash).toBe(documentB.hash);
@@ -67,19 +68,26 @@ describe('The "hash" field is unique', () => {
 });
 
 describe("findParentCategories", () => {
-  // @ts-ignore
-  const PARENT_CATEGORIES = [
-    { id: "1", name: "study" },
-    { id: "100", name: "programming", parentId: "1" },
-    { id: "200", name: "Backend", parentId: "100" },
-  ].map((catInfo) => new Category(catInfo).toPlainObject());
+  const categoryIdSortPredicate = (
+    catA: CategoryFields,
+    catB: CategoryFields
+  ) => +catA.id - +catB.id;
 
-  // @ts-ignore
-  const CHILD_CATEGORY = new Category({
-    id: "300",
+  const study = Category.make({ name: "study" });
+  const programming = Category.make({
+    name: "programming",
+    parentId: study.id,
+  });
+  const backend = Category.make({ name: "Backend", parentId: programming.id });
+
+  const PARENT_CATEGORIES = [study, programming, backend].sort(
+    categoryIdSortPredicate
+  );
+
+  const CHILD_CATEGORY = Category.make({
     name: "Node.js",
-    parentId: "200",
-  }).toPlainObject();
+    parentId: backend.id,
+  });
 
   /*
    * Category structure:
@@ -90,18 +98,6 @@ describe("findParentCategories", () => {
    *                    |--- Node.js
    * */
 
-  it(`returns [null] if the child has a parentId but parent does not exist`, async () => {
-    const category = new Category({
-      name: "study",
-      parentId: "2342",
-    }).toPlainObject();
-
-    await db.insert(category);
-
-    const parents = await db.findParentCategories({ id: category.id });
-    expect(parents).toEqual([null]);
-  });
-
   it(`returns all the parents recursively if the "recursive" is true`, async () => {
     await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
 
@@ -110,7 +106,9 @@ describe("findParentCategories", () => {
       recursive: true,
     });
 
-    expect(parents.reverse()).toEqual(PARENT_CATEGORIES);
+    expect(parents).toHaveLength(3);
+
+    expect(parents.sort(categoryIdSortPredicate)).toEqual(PARENT_CATEGORIES);
   });
 
   it(`only returns the first parent if the "recursive" flag is false`, async () => {
@@ -122,6 +120,6 @@ describe("findParentCategories", () => {
     });
 
     expect(parents).toHaveLength(1);
-    expect(parents[0]!.id).toBe(CHILD_CATEGORY.parentId);
+    expect(parents[0].id).toBe(CHILD_CATEGORY.parentId);
   });
 });

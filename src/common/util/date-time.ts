@@ -1,8 +1,9 @@
 import type {
   CurrentTimeMs,
   ConvertDuration,
+  AssertValidTimestamps,
   IsValidUnixMsTimestamp,
-  CreationAndModificationTimestampsValidator,
+  AssertValidUnixMsTimestamp,
 } from "common/interfaces/date-time";
 
 import { is } from "handy-types";
@@ -17,77 +18,40 @@ export const isValidUnixMsTimestamp: IsValidUnixMsTimestamp =
     return is<number>("non_negative_integer", timestamp);
   };
 
-interface MakeTimestampValidatorArgument {
-  getNewTimestamp(): number;
-  isValidTimestamp(timestamp: number): timestamp is number;
-}
+export const assertValidUnixMsTimestamp: AssertValidUnixMsTimestamp =
+  function _assertValidUnixMsTimestamp(
+    timestamp,
+    errorCode = "INVALID_TIMESTAMP"
+  ) {
+    if (!isValidUnixMsTimestamp(timestamp))
+      throw new EPP({
+        code: errorCode,
+        message: `Invalid unix millisecond timestamp: ${timestamp}`,
+      });
+  };
 
-export function makeTimestampsValidator(
-  arg: MakeTimestampValidatorArgument
-): CreationAndModificationTimestampsValidator {
-  const { getNewTimestamp, isValidTimestamp } = arg;
+export const assertValidTimestamps: AssertValidTimestamps =
+  function _validateTimestamps(arg) {
+    const { createdOn, modifiedOn } = arg;
 
-  return function validateTimestamps(arg) {
-    const {
-      objectContainingTimestamps,
-      creationTimestampPropName = "createdOn",
-      modificationTimestampPropName = "modifiedOn",
-    } = arg;
+    if (!isValidUnixMsTimestamp(createdOn))
+      throw new EPP({
+        code: "INVALID_CREATION_TIMESTAMP",
+        message: `Invalid timestamp createdOn: ${createdOn}`,
+      });
 
-    {
-      const onlyOneTimestampIsPresent =
-        +(creationTimestampPropName in objectContainingTimestamps) ^
-        +(modificationTimestampPropName in objectContainingTimestamps);
-
-      if (onlyOneTimestampIsPresent)
-        throw new EPP({
-          code: "MISSING_ANOTHER_TIMESTAMP",
-          message:
-            "Creation and Modification timestamps must be provided together.",
-        });
-    }
-
-    let createdOn: number, modifiedOn: number;
-
-    // ------ createdOn ----
-    if (creationTimestampPropName in objectContainingTimestamps) {
-      const _createdOn = (objectContainingTimestamps as any)[
-        creationTimestampPropName
-      ];
-
-      if (!isValidTimestamp(_createdOn))
-        throw new EPP({
-          code: "INVALID_CREATION_TIMESTAMP",
-          message: `Invalid timestamp createdOn: ${_createdOn}`,
-        });
-
-      createdOn = _createdOn;
-    } else createdOn = getNewTimestamp();
-
-    // ------ modifiedOn ------
-    if (creationTimestampPropName in objectContainingTimestamps) {
-      const _modifiedOn = (objectContainingTimestamps as any)[
-        modificationTimestampPropName
-      ];
-
-      if (!isValidTimestamp(_modifiedOn))
-        throw new EPP({
-          code: "INVALID_MODIFICATION_TIMESTAMP",
-          message: `Invalid timestamp ${modificationTimestampPropName}: ${_modifiedOn}`,
-        });
-
-      modifiedOn = _modifiedOn;
-    } else modifiedOn = createdOn;
+    if (!isValidUnixMsTimestamp(modifiedOn))
+      throw new EPP({
+        code: "INVALID_MODIFICATION_TIMESTAMP",
+        message: `Invalid timestamp modifiedOn: ${modifiedOn}`,
+      });
 
     if (modifiedOn < createdOn)
       throw new EPP({
         code: "MODIFIED_BEFORE_CREATED",
-        message: `Modified before creation! Huh? Error: ${modificationTimestampPropName} < ${creationTimestampPropName}.`,
+        message: `Modified before creation! Huh? Error: modifiedOn < createdOn.`,
       });
-
-    return { createdOn, modifiedOn };
   };
-}
 
 const msPerUnit = Object.freeze({
   ms: 1,
