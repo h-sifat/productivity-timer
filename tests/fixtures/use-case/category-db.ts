@@ -16,10 +16,7 @@ export default class CategoryDatabase
     return await this.find();
   }
 
-  async findParentCategories(arg: {
-    id: string;
-    recursive?: boolean;
-  }): Promise<CategoryFields[]> {
+  async findParentCategories(arg: { id: string }): Promise<CategoryFields[]> {
     this.assertValidId(arg);
 
     return this.enqueueQuery<CategoryFields[]>({
@@ -30,13 +27,12 @@ export default class CategoryDatabase
 
   protected __findParentCategories__(query: QueryExecutorMethodArg) {
     const { arg, resolve } = query;
-    const { id: childId, recursive = false } = arg;
+    const { id: childId } = arg;
 
-    const child = this.__getDocument__(childId)!;
+    const category = this.__getDocument__(childId)!;
 
     const parentCategories = this.findParentCategoriesSync({
-      recursive,
-      parentId: child?.parentId!,
+      parentId: category.parentId!,
     });
 
     return resolve(parentCategories);
@@ -44,14 +40,11 @@ export default class CategoryDatabase
 
   protected findParentCategoriesSync(arg: {
     parentId: string;
-    recursive: boolean;
   }): CategoryFields[] {
-    const { parentId, recursive } = arg;
+    const { parentId } = arg;
 
     let currentParent = this.__getDocument__(parentId)!;
     const allParents: CategoryFields[] = [currentParent];
-
-    if (!recursive) return allParents;
 
     while (currentParent?.parentId) {
       currentParent = this.__getDocument__(currentParent.parentId)!;

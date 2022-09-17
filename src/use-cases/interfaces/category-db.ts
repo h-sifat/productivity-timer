@@ -17,4 +17,5 @@ export default interface CategoryDatabaseInterface {
   findById(arg: { id: string }): Promise<CategoryFields | null>;
   findByHash(arg: { hash: string }): Promise<CategoryFields | null>;
   findSubCategories(arg: FindChildren_Argument): Promise<CategoryFields[]>;
+  findParentCategories(arg: { id: string }): Promise<CategoryFields[]>;
 }

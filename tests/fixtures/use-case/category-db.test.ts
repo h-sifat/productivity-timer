@@ -98,28 +98,13 @@ describe("findParentCategories", () => {
    *                    |--- Node.js
    * */
 
-  it(`returns all the parents recursively if the "recursive" is true`, async () => {
+  it(`returns all the parents recursively`, async () => {
     await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
 
-    const parents = await db.findParentCategories({
-      id: CHILD_CATEGORY.id,
-      recursive: true,
-    });
+    const parents = await db.findParentCategories({ id: CHILD_CATEGORY.id });
 
     expect(parents).toHaveLength(3);
 
     expect(parents.sort(categoryIdSortPredicate)).toEqual(PARENT_CATEGORIES);
-  });
-
-  it(`only returns the first parent if the "recursive" flag is false`, async () => {
-    await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
-
-    const parents = await db.findParentCategories({
-      id: CHILD_CATEGORY.id,
-      recursive: false,
-    });
-
-    expect(parents).toHaveLength(1);
-    expect(parents[0].id).toBe(CHILD_CATEGORY.parentId);
   });
 });
