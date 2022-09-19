@@ -28,7 +28,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "useUnknownInCatchVariables": false,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true
   },
