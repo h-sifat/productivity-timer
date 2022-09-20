@@ -4,9 +4,10 @@ import type {
   AssertValidTimestamps,
   IsValidUnixMsTimestamp,
   AssertValidUnixMsTimestamp,
+  AssertValidUSLocaleDateString,
 } from "common/interfaces/date-time";
 
-import { is } from "handy-types";
+import { assert, is } from "handy-types";
 import EPP from "./epp";
 
 export const currentTimeMs: CurrentTimeMs = function _currentTimeMs() {
@@ -70,3 +71,23 @@ export const convertDuration: ConvertDuration = function _convertDuration(arg) {
   const durationMS = duration * msPerUnit[fromUnit];
   return durationMS / msPerUnit[toUnit];
 };
+
+const VALID_DATE_PATTERN = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+export const assertValidUSLocaleDateString: AssertValidUSLocaleDateString =
+  function _assertValidUSLocaleDateString(
+    date: unknown
+  ): asserts date is string {
+    assert<string>("non_empty_string", date, {
+      name: "Date",
+      code: "INVALID_DATE_STRING",
+    });
+
+    const isInvalidDate =
+      !VALID_DATE_PATTERN.test(date) || Number.isNaN(+new Date(date));
+
+    if (isInvalidDate)
+      throw new EPP({
+        code: "INVALID_DATE_STRING",
+        message: `Invalid date (us-locale: mm/dd/yyyy) string: "${date}"`,
+      });
+  };

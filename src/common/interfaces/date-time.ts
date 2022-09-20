@@ -19,6 +19,10 @@ export interface AssertValidTimestamps {
   (arg: { [k in keyof Timestamps]: any }): asserts arg is Timestamps;
 }
 
+export interface AssertValidUSLocaleDateString {
+  (date: unknown): asserts date is string;
+}
+
 export type DurationUnit =
   | "h"
   | "m"
