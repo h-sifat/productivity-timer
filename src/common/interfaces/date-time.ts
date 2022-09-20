@@ -20,7 +20,11 @@ export interface AssertValidTimestamps {
 }
 
 export interface AssertValidUSLocaleDateString {
-  (date: unknown): asserts date is string;
+  (date: unknown, errorCode?: string): asserts date is string;
+}
+
+export interface UnixMsTimestampToUsLocaleDateString {
+  (timestamp: number): string;
 }
 
 export type DurationUnit =

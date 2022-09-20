@@ -5,6 +5,7 @@ import type {
   IsValidUnixMsTimestamp,
   AssertValidUnixMsTimestamp,
   AssertValidUSLocaleDateString,
+  UnixMsTimestampToUsLocaleDateString,
 } from "common/interfaces/date-time";
 
 import { assert, is } from "handy-types";
@@ -75,11 +76,12 @@ export const convertDuration: ConvertDuration = function _convertDuration(arg) {
 const VALID_DATE_PATTERN = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
 export const assertValidUSLocaleDateString: AssertValidUSLocaleDateString =
   function _assertValidUSLocaleDateString(
-    date: unknown
+    date: unknown,
+    errorCode = "INVALID_DATE_STRING"
   ): asserts date is string {
     assert<string>("non_empty_string", date, {
       name: "Date",
-      code: "INVALID_DATE_STRING",
+      code: errorCode,
     });
 
     const isInvalidDate =
@@ -87,7 +89,13 @@ export const assertValidUSLocaleDateString: AssertValidUSLocaleDateString =
 
     if (isInvalidDate)
       throw new EPP({
-        code: "INVALID_DATE_STRING",
+        code: errorCode,
         message: `Invalid date (us-locale: mm/dd/yyyy) string: "${date}"`,
       });
+  };
+
+export const unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateString =
+  function _unixMsTimestampToUsLocaleDateString(timestamp) {
+    assertValidUnixMsTimestamp(timestamp);
+    return new Date(timestamp).toLocaleDateString("en-US");
   };
