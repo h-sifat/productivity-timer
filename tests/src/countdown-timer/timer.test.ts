@@ -1,10 +1,10 @@
 import CountDownTimer, {
-  assertValidTimerReference,
   DEFAULT_TIMER_DURATION,
   TimerStates,
 } from "src/countdown-timer/timer";
 import createFakeIntervalTimer from "fixtures/countdown-timer/interval-timer";
 import getSeries from "fixtures/countdown-timer/other";
+import EPP from "common/util/epp";
 
 const {
   allFakeTimers,
@@ -36,7 +36,9 @@ function configureFakeCurrentTimeMsForChangingTimestamps(
   fakeCurrentTimeMs.mockImplementation(() => series.next());
 }
 
+const assertValidRef = jest.fn();
 const DEFAULT_CONSTRUCTOR_ARGUMENT = Object.freeze({
+  assertValidRef,
   TICK_INTERVAL_MS,
   MAX_ALLOWED_TICK_DIFF_MS,
   setInterval: fakeSetInterval,
@@ -57,6 +59,8 @@ const INITIAL_TIMER_INFO = Object.freeze({
 });
 
 beforeEach(() => {
+  assertValidRef.mockReset();
+
   clearAllFakeTimers();
 
   fakeCurrentTimeMs.mockReset();
@@ -634,6 +638,7 @@ describe("Timer.reset()", () => {
   it(`sets the "ref" if provided and is valid`, () => {
     const newRef = { id: "1", type: "project" } as const;
     expect(timer.ref).not.toEqual(newRef);
+
     {
       const result = timer.reset({ ref: newRef });
       expect(result).toEqual({ success: true, message: expect.any(String) });
@@ -644,53 +649,13 @@ describe("Timer.reset()", () => {
 });
 
 it(`doesn't set the ref if it's invalid`, () => {
-  // @ts-expect-error
-  const result = timer.reset({ ref: null });
+  assertValidRef.mockImplementationOnce(() => {
+    throw new EPP(`Invalid ref.`, "INITIAL_TIMER_REF");
+  });
+
+  const result = timer.reset({ ref: "quack,quack,QuaCK" });
+
   expect(result).toEqual({ success: false, message: expect.any(String) });
-});
-
-describe("assertValidTimerReference", () => {
-  it.each([
-    {
-      ref: ["not_a_plain_object"],
-      case: "not a plain object",
-      errorCode: "INVALID_TIMER_REF",
-    },
-    {
-      ref: { type: "category" },
-      case: "the id field is missing",
-      errorCode: "MISSING_TIMER_REF_ID",
-    },
-    {
-      ref: { id: "23432" },
-      case: "the type field is missing",
-      errorCode: "MISSING_TIMER_REF_TYPE",
-    },
-    {
-      ref: { id: "", type: "project" },
-      case: "the id is not a non_empty_string",
-      errorCode: "INVALID_TIMER_REF_ID",
-    },
-    {
-      ref: { id: "23423", type: "" },
-      case: "the value of type is neither 'category' nor 'project'",
-      errorCode: "INVALID_TIMER_REF_TYPE",
-    },
-  ])(`throws ewc "$errorCode" if $case`, ({ ref, errorCode }) => {
-    expect(() => {
-      assertValidTimerReference(ref);
-    }).toThrowErrorWithCode(errorCode);
-  });
-
-  it(`doesn't throw error if TimerRef is valid`, () => {
-    expect(() => {
-      assertValidTimerReference({ id: "123", type: "category" });
-    }).not.toThrow();
-
-    expect(() => {
-      assertValidTimerReference({ id: "123", type: "project" });
-    }).not.toThrow();
-  });
 });
 
 describe("Constructor_Argument Validation", () => {

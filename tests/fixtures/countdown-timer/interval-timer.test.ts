@@ -16,7 +16,6 @@ describe("fakeSetInterval", () => {
     expect(id).toBeDefined();
     expect(id).toBe(timer.getCurrentFakeTimerId());
 
-    // @ts-expect-error
     expect(timer.allFakeTimers).toHaveProperty(id, { interval, callback });
   });
 });
@@ -25,12 +24,10 @@ describe("fakeClearInterval", () => {
   it(`clears an interval timer`, () => {
     const id = timer.fakeSetInterval({ interval: 1, callback: () => {} });
 
-    // @ts-expect-error
     expect(timer.allFakeTimers).toHaveProperty(id);
 
     timer.fakeClearInterval(id);
 
-    // @ts-expect-error
     expect(timer.allFakeTimers).not.toHaveProperty(id);
   });
 });
@@ -39,12 +36,10 @@ describe("clearAllFakeTimers", () => {
   it(`clears all interval timers`, () => {
     const id = timer.fakeSetInterval({ interval: 1, callback: () => {} });
 
-    // @ts-expect-error
     expect(timer.allFakeTimers).toHaveProperty(id);
 
     timer.clearAllFakeTimers();
 
-    // @ts-expect-error
     expect(timer.allFakeTimers).not.toHaveProperty(id);
   });
 });

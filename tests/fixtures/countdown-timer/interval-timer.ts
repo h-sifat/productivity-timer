@@ -19,7 +19,7 @@ export default function createFakeIntervalTimer() {
     return currentTimerId.toString();
   };
 
-  const fakeClearInterval: Constructor_Argument["clearInterval"] = (
+  const fakeClearInterval: Constructor_Argument<null>["clearInterval"] = (
     timerId
   ) => {
     // @ts-ignore

@@ -1,7 +1,6 @@
 import EPP from "common/util/epp";
 import EventEmitter from "events";
 import { assert, is } from "handy-types";
-import required from "common/util/required";
 
 export type TimerEventNames =
   | "pause"
@@ -13,11 +12,6 @@ export type TimerEventNames =
   | "duration_change"
   | "err:time_decrement"
   | "err:wake_up_or_time_increment";
-
-export type TimerRef = Readonly<{
-  id: string;
-  type: "project" | "category";
-}>;
 
 export type TimerEventLog = Readonly<{
   timestamp: number;
@@ -48,21 +42,22 @@ export type TimerStateNames =
   | "TIMED_UP"
   | "NOT_STARTED";
 
-interface TimerData {
+interface TimerData<RefType> {
+  ref: RefType | null;
   duration: number;
   state: TimerStates;
-  ref: TimerRef | null;
   logs: TimerEventLog[];
   lastTick: number | null;
   elapsedTime: TimerElapsedTime;
 }
 
-export interface Constructor_Argument {
+export interface Constructor_Argument<RefType> {
   currentTimeMs(): number;
   TICK_INTERVAL_MS: number;
   MAX_ALLOWED_TICK_DIFF_MS: number;
   getDateFromTimeMs(time: number): string;
   clearInterval(timerId: NodeJS.Timer): void;
+  assertValidRef(ref: unknown): asserts ref is RefType;
   setInterval(arg: { interval: number; callback: Function }): NodeJS.Timer;
 }
 
@@ -75,7 +70,7 @@ export const INVALID_ACTION_FOR_STATE_MESSAGES = Object.freeze({
   [TimerStates.NOT_STARTED]: "Timer hasn't started yet.",
 });
 
-function getDefaultTimerData(): TimerData {
+function getDefaultTimerData<RefType>(): TimerData<RefType> {
   return {
     logs: [],
     ref: null,
@@ -86,23 +81,25 @@ function getDefaultTimerData(): TimerData {
   };
 }
 
-export default class CountDownTimer extends EventEmitter {
-  #data: TimerData = { ...getDefaultTimerData() };
+export default class CountDownTimer<RefType> extends EventEmitter {
+  #data: TimerData<RefType> = { ...getDefaultTimerData() };
 
   #tickIntervalId: NodeJS.Timer | null = null;
-  readonly #setInterval: Constructor_Argument["setInterval"];
-  readonly #clearInterval: Constructor_Argument["clearInterval"];
-  readonly #currentTimeMs: Constructor_Argument["currentTimeMs"];
-  readonly #TICK_INTERVAL_MS: Constructor_Argument["TICK_INTERVAL_MS"];
-  readonly #getDateFromTimeMs: Constructor_Argument["getDateFromTimeMs"];
-  readonly #MAX_ALLOWED_TICK_DIFF_MS: Constructor_Argument["MAX_ALLOWED_TICK_DIFF_MS"];
+  readonly #setInterval: Constructor_Argument<RefType>["setInterval"];
+  readonly #clearInterval: Constructor_Argument<RefType>["clearInterval"];
+  readonly #currentTimeMs: Constructor_Argument<RefType>["currentTimeMs"];
+  readonly #assertValidRef: Constructor_Argument<RefType>["assertValidRef"];
+  readonly #TICK_INTERVAL_MS: Constructor_Argument<RefType>["TICK_INTERVAL_MS"];
+  readonly #getDateFromTimeMs: Constructor_Argument<RefType>["getDateFromTimeMs"];
+  readonly #MAX_ALLOWED_TICK_DIFF_MS: Constructor_Argument<RefType>["MAX_ALLOWED_TICK_DIFF_MS"];
 
-  constructor(arg: Constructor_Argument) {
+  constructor(arg: Constructor_Argument<RefType>) {
     super();
 
     this.#setInterval = arg.setInterval;
     this.#clearInterval = arg.clearInterval;
     this.#currentTimeMs = arg.currentTimeMs;
+    this.#assertValidRef = arg.assertValidRef;
     this.#getDateFromTimeMs = arg.getDateFromTimeMs;
 
     assert<number>("positive_integer", arg.TICK_INTERVAL_MS, {
@@ -291,8 +288,8 @@ export default class CountDownTimer extends EventEmitter {
       });
   }
 
-  reset(arg: { duration?: number; ref?: TimerRef } = {}) {
-    const defaultTimerData = getDefaultTimerData();
+  reset(arg: { duration?: number; ref?: RefType } = {}) {
+    const defaultTimerData = getDefaultTimerData<RefType>();
 
     if ("duration" in arg)
       try {
@@ -309,8 +306,7 @@ export default class CountDownTimer extends EventEmitter {
 
     if ("ref" in arg)
       try {
-        assertValidTimerReference(arg.ref);
-
+        this.#assertValidRef(arg.ref);
         defaultTimerData.ref = arg.ref;
       } catch (ex) {
         return { success: false, message: ex.message };
@@ -403,7 +399,7 @@ export default class CountDownTimer extends EventEmitter {
     return [...this.#data.logs];
   }
 
-  get ref(): TimerRef | null {
+  get ref(): RefType | null {
     const ref = this.#data.ref;
     return ref ? { ...ref } : null;
   }
@@ -416,29 +412,4 @@ export default class CountDownTimer extends EventEmitter {
       ...this.timeInfo,
     };
   }
-}
-
-export function assertValidTimerReference(
-  ref: unknown
-): asserts ref is TimerRef {
-  assert<object>("plain_object", ref, {
-    name: "TimerRef",
-    code: "INVALID_TIMER_REF",
-  });
-
-  const {
-    id = required("id", "MISSING_TIMER_REF_ID"),
-    type = required("type", "MISSING_TIMER_REF_TYPE"),
-  } = <TimerRef>ref;
-
-  assert<string>("non_empty_string", id, {
-    name: "TimerRef.id",
-    code: "INVALID_TIMER_REF_ID",
-  });
-
-  if (type !== "project" && type !== "category")
-    throw new EPP({
-      code: "INVALID_TIMER_REF_TYPE",
-      message: `Invalid TimerRef.type: "${type}"`,
-    });
 }
