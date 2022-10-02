@@ -20,7 +20,7 @@ describe("Insertion", () => {
       parentId: null,
       id: expect.any(String),
       hash: expect.any(String),
-      createdOn: expect.any(Number),
+      createdAt: expect.any(Number),
     });
   });
 

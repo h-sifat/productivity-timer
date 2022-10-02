@@ -11,7 +11,7 @@ export const ALL_FIELDS: Set<keyof CategoryFields> = new Set([
   "hash",
   "name",
   "parentId",
-  "createdOn",
+  "createdAt",
   "description",
 ] as const);
 
@@ -25,7 +25,7 @@ export type CategoryFields = Readonly<{
   id: string;
   name: string;
   hash: string;
-  createdOn: number;
+  createdAt: number;
   parentId: string | null;
   description: string | null;
 }>;
@@ -122,7 +122,7 @@ export default function buildCategoryEntity(
         parentId,
         description,
         id: Id.makeId(),
-        createdOn: currentTimeMs(),
+        createdAt: currentTimeMs(),
         hash: "h", // will be generated later
       };
 
@@ -196,7 +196,7 @@ export default function buildCategoryEntity(
     {
       const {
         id = required("id"),
-        createdOn = required("createdOn"),
+        createdAt = required("createdAt"),
         description = required("description"),
       } = category as any;
 
@@ -205,7 +205,7 @@ export default function buildCategoryEntity(
 
       assertValidName(name);
       assertValidDescription(description);
-      assertValidUnixMsTimestamp(createdOn);
+      assertValidUnixMsTimestamp(createdAt);
     }
 
     if (options.validateHash) {

@@ -5,7 +5,7 @@ import {
 } from "common/util/date-time";
 import getID from "src/date-access/id";
 import buildProjectEntity from "./project";
-import { getDefaultConfig } from "src/config";
+import { getDefaultEntityConfig } from "src/config";
 import { assertValidString } from "common/validator/string";
 
 const Project = buildProjectEntity({
@@ -14,7 +14,7 @@ const Project = buildProjectEntity({
   assertValidString,
   assertValidUnixMsTimestamp,
   Id: getID({ entity: "project" }),
-  ...getDefaultConfig({ entity: "project" }),
+  ...getDefaultEntityConfig({ entity: "project" }),
 });
 
 export default Project;

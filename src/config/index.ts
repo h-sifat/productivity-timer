@@ -32,9 +32,9 @@ const defaults: DEFAULT_CONFIG = Object.freeze({
   }),
 });
 
-export function getDefaultConfig<EntityName extends keyof DEFAULT_CONFIG>(arg: {
-  entity: EntityName;
-}) {
+export function getDefaultEntityConfig<
+  EntityName extends keyof DEFAULT_CONFIG
+>(arg: { entity: EntityName }) {
   const { entity } = arg;
 
   return defaults[entity] as DEFAULT_CONFIG[EntityName];

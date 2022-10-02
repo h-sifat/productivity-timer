@@ -105,7 +105,7 @@ describe("Functionality", () => {
   it("edits a category if everything is valid", async () => {
     const categoryBeforeEdit = {
       ...Category.make({ name: "a" }),
-      createdOn: 100,
+      createdAt: 100,
     };
 
     expect(categoryBeforeEdit.description).toBeNull();
@@ -127,7 +127,7 @@ describe("Functionality", () => {
       name: editedName,
       description: editedDescription,
       parentId: categoryBeforeEdit.parentId,
-      createdOn: categoryBeforeEdit.createdOn,
+      createdAt: categoryBeforeEdit.createdAt,
     });
 
     expect(categoryBeforeEdit.hash).not.toBe(categoryAfterEdit.hash);
