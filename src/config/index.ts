@@ -1,3 +1,5 @@
+import { makeReadonlyProxy } from "common/util/other";
+
 type DEFAULT_CONFIG = Readonly<{
   category: Readonly<{
     MAX_NAME_LENGTH: number;
@@ -38,4 +40,37 @@ export function getDefaultEntityConfig<
   const { entity } = arg;
 
   return defaults[entity] as DEFAULT_CONFIG[EntityName];
+}
+
+const dbConfig = {
+  // @TODO on production these variables must be changed to appropriate values
+  pragmas: Object.freeze({
+    encoding: "'UTF-8'",
+    cache_size: 10_000,
+    foreign_keys: "ON",
+    synchronous: "EXTRA",
+    default_cache_size: 10_000,
+  }),
+  SQLITE_DB_PATH: ":memory:",
+  DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
+  SQLITE_SUB_PROCESS_MODULE_PATH: "../date-access/db/db-subprocess.js",
+
+  tables: Object.freeze({
+    category: `create table if not exists categories(
+  id integer primary key check(typeof(id) = 'integer'),
+  name text not null check(typeof(name) = 'text'),
+
+  parentId integer default null
+    check(typeof(parentId) = 'integer' OR typeof(parentId) = 'null')
+    references categories(id)
+    on update cascade
+    on delete restrict
+);`,
+  }),
+};
+
+const readonlyDbConfigProxy = makeReadonlyProxy(dbConfig);
+
+export function getDbConfig(): typeof dbConfig {
+  return readonlyDbConfigProxy;
 }
