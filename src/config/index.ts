@@ -53,7 +53,7 @@ const dbConfig = {
   }),
   SQLITE_DB_PATH: ":memory:",
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
-  SQLITE_SUB_PROCESS_MODULE_PATH: "../date-access/db/db-subprocess.js",
+  SQLITE_SUB_PROCESS_MODULE_PATH: "../data-access/db/db-subprocess.js",
 
   tables: Object.freeze({
     category: `create table if not exists categories(

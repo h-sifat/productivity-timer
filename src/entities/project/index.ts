@@ -3,7 +3,7 @@ import {
   convertDuration,
   assertValidUnixMsTimestamp,
 } from "common/util/date-time";
-import getID from "src/date-access/id";
+import getID from "src/data-access/id";
 import buildProjectEntity from "./project";
 import { getDefaultEntityConfig } from "src/config";
 import { assertValidString } from "common/validator/string";

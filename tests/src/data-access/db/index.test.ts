@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import EventEmitter from "events";
 import { ChildProcess, fork } from "child_process";
-import SqliteDatabase from "src/date-access/db/mainprocess-db";
-import { Commands, MakeDbSubProcess } from "src/date-access/db/interface";
+import SqliteDatabase from "src/data-access/db/mainprocess-db";
+import { Commands, MakeDbSubProcess } from "src/data-access/db/interface";
 
 class FakeDbSubProcess extends EventEmitter {
   isKilled = false;
@@ -22,7 +22,7 @@ class FakeDbSubProcess extends EventEmitter {
 
 const sqliteDbSubprocessModulePath = path.join(
   process.cwd(), // the cwd has to be the root of this project
-  "src/date-access/db/subprocess-db.js"
+  "src/data-access/db/subprocess-db.js"
 );
 
 // TIP: change {stdio: "ignore"} to {stdio: "inherit"} to see error logs

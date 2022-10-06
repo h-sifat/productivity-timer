@@ -1,4 +1,4 @@
-import getID from "src/date-access/id";
+import getID from "src/data-access/id";
 import Category from "entities/category";
 import { CategoryFields } from "entities/category/category";
 import CategoryDatabase from "fixtures/use-case/category-db";

@@ -1,4 +1,4 @@
-import getID from "src/date-access/id";
+import getID from "src/data-access/id";
 import makeCategoryClass from "./category";
 import { getDefaultEntityConfig } from "src/config";
 import { createMD5Hash } from "common/util/other";
