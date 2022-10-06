@@ -5,22 +5,23 @@ import SqliteDatabase from "./mainprocess-db";
 
 const dbConfig = getDbConfig();
 
-function makeDbSubProcess(): DbSubProcess {
-  return fork(dbConfig.SQLITE_SUB_PROCESS_MODULE_PATH, {
-    stdio: "ignore",
-    cwd: process.cwd(),
-  });
-}
-
-const db = new SqliteDatabase({
+const database = new SqliteDatabase({
   makeDbSubProcess,
   sqliteDbPath: dbConfig.SQLITE_DB_PATH,
   dbCloseTimeoutMsWhenKilling: dbConfig.DB_CLOSE_TIMEOUT_WHEN_KILLING,
 });
+export default database;
+
+function makeDbSubProcess(): DbSubProcess {
+  return fork(dbConfig.SQLITE_SUB_PROCESS_MODULE_PATH, {
+    stdio: "inherit",
+    cwd: process.cwd(),
+  });
+}
 
 // @TODO still have to do a lot of error handling and checking
 // I'm just trying to set up the db to develop the categoryDb and ProjectsDb
-async function initDb(db: SqliteDatabase) {
+export async function initializeDatabase(db: SqliteDatabase) {
   {
     const result = await db.pragma({ command: "integrity_check" });
     if (String(result).toLowerCase() !== "ok")
@@ -32,21 +33,13 @@ async function initDb(db: SqliteDatabase) {
   }
 
   {
-    const result = await db.pragma({ command: "foreign_key_check" });
-    if (String(result).toLowerCase() !== "ok")
-      throw new Error(`Database is corrupted: ${result}`);
+    const table = await db.pragma({ command: "foreign_key_check" });
+    if (table)
+      throw new Error(
+        `Database is corrupted: foreign key constraint violated in table: "${table}"`
+      );
   }
 
   for (const statement of Object.values(dbConfig.tables))
     await db.execute({ sql: statement });
-}
-
-let isDbInitiated = false;
-export default async function getDb(): Promise<SqliteDatabase> {
-  if (!isDbInitiated) {
-    await initDb(db);
-    isDbInitiated = true;
-  }
-
-  return db;
 }

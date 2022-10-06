@@ -1,7 +1,7 @@
 import type { CategoryFields } from "entities/category/category";
 import type { QueryExecutorMethodArg } from "fixtures/data-access/mock-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import type { FindChildren_Argument } from "use-cases/interfaces/category-db";
+import type { QueryMethodArguments } from "use-cases/interfaces/category-db";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
@@ -78,7 +78,7 @@ export default class CategoryDatabase
   }
 
   async findSubCategories(
-    arg: FindChildren_Argument
+    arg: QueryMethodArguments["findSubCategories"]
   ): Promise<CategoryFields[]> {
     this.assertValidId({ id: arg.parentId });
     return this.enqueueQuery<CategoryFields[]>({

@@ -17,6 +17,7 @@ interface NonVoidReturnTypes {
   pragma: Promise<unknown>;
   isPrepared: Promise<boolean>;
   executePrepared: Promise<unknown[]>;
+  runPrepared: Promise<{ changes: 1; lastInsertRowid: 1 }>;
 }
 
 export type QueryMethodReturnType = Record<

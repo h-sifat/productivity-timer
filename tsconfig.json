@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "esnext",
     "lib": ["es2015"],
-    "module": "commonjs",
+    "module": "nodenext",
     "moduleResolution": "node",
 
     "allowJs": true,

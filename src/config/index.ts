@@ -1,3 +1,4 @@
+import path from "path";
 import { makeReadonlyProxy } from "common/util/other";
 
 type DEFAULT_CONFIG = Readonly<{
@@ -53,12 +54,20 @@ const dbConfig = {
   }),
   SQLITE_DB_PATH: ":memory:",
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
-  SQLITE_SUB_PROCESS_MODULE_PATH: "../data-access/db/db-subprocess.js",
+  SQLITE_SUB_PROCESS_MODULE_PATH: path.join(
+    process.cwd(),
+    "src/data-access/db/subprocess-db.js"
+  ),
 
   tables: Object.freeze({
-    category: `create table if not exists categories(
+    categories: `create table if not exists categories (
   id integer primary key check(typeof(id) = 'integer'),
   name text not null check(typeof(name) = 'text'),
+  hash text not null unique check(typeof(hash) = 'text'),
+  createdAt integer not null check(typeof(createdAt) = 'integer'),
+
+  description text default null
+    check(typeof(description) = 'text' OR typeof(description) = 'null'),
 
   parentId integer default null
     check(typeof(parentId) = 'integer' OR typeof(parentId) = 'null')
