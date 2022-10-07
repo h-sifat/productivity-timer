@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { CategoryFields } from "entities/category/category";
 import type { QueryExecutorMethodArg } from "fixtures/data-access/mock-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";

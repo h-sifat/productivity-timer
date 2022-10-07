@@ -3,9 +3,9 @@ import { ProjectFields } from "entities/project/project";
 
 export interface QueryMethodArguments {
   insert: CategoryFields;
+  deleteById: { id: string };
   findById: { id: string };
   findByHash: { hash: string };
-  deleteMany: { ids: string[] };
   findParentCategories: { id: string };
   updateById: { id: string; changes: Partial<ProjectFields> };
   findSubCategories: { parentId: string; recursive?: boolean };
@@ -14,8 +14,8 @@ export interface QueryMethodArguments {
 export default interface CategoryDatabaseInterface {
   findAll(): Promise<CategoryFields[]>;
   insert(arg: QueryMethodArguments["insert"]): Promise<CategoryFields>;
-  deleteMany(
-    arg: QueryMethodArguments["deleteMany"]
+  deleteById(
+    arg: QueryMethodArguments["deleteById"]
   ): Promise<CategoryFields[]>;
   findById(
     arg: QueryMethodArguments["findById"]
