@@ -19,6 +19,7 @@ const PREPARED_QUERY_NAMES = Object.freeze({
   findAll: "cat/findAll",
   findById: "cat/findById",
   findByHash: "cat/findByHash",
+  findSubCategories: "cat/findSubCategories",
   findParentCategories: "cat/findParentCategories",
 });
 
@@ -42,7 +43,7 @@ const PREPARED_QUERY_STATEMENTS: {
   select
     id, name, parentId, hash, createdAt, description
   from categories where id = (
-    select parentId from categories
+    select parentId from ${TABLE_NAME}
     where id = $id
   )
 
@@ -55,11 +56,33 @@ const PREPARED_QUERY_STATEMENTS: {
     c.hash as hash,
     c.createdAt as createdAt,
     c.description as description
-  from categories as c
+  from ${TABLE_NAME} as c
   inner join parent_categories as pc
     on c.id = pc.parentId
 )
 select * from parent_categories;`,
+
+  findSubCategories: `with recursive
+sub_categories(id, name, parentId, hash, createdAt, description) as (
+  select
+    id, name, parentId, hash, createdAt, description
+  from ${TABLE_NAME}
+  where parentId = $parentId
+
+  union 
+
+  select
+    c.id as id,
+    c.name as name,
+    c.parentId as parentId,
+    c.hash as hash,
+    c.createdAt as createdAt,
+    c.description as description
+  from ${TABLE_NAME} as c
+  inner join sub_categories as sc
+    on c.parentId = sc.id
+)
+select * from sub_categories;`,
 });
 
 interface BuildCategoryDatabase_Argument {
@@ -76,11 +99,39 @@ export default function buildCategoryDatabase(
     findAll,
     findById,
     findByHash,
-    // @ts-ignore
+    findSubCategories,
     findParentCategories,
   };
 
   return categoryDb;
+
+  async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {
+    await prepareQueryIfNotPrepared({
+      db,
+      queryMethod: "findSubCategories",
+    });
+
+    // start transaction
+    await db.execute({ sql: "begin immediate;" });
+
+    let subCategories: any[];
+    try {
+      subCategories = await db.executePrepared({
+        name: PREPARED_QUERY_NAMES.findSubCategories,
+        statementArgs: { parentId: Number(arg.parentId) },
+      });
+    } finally {
+      // try to commit transaction
+      try {
+        await db.execute({ sql: "commit;" });
+      } catch {}
+    }
+
+    for (const category of subCategories)
+      validateAndNormalizeCategoryRecord(category);
+
+    return subCategories as CategoryFields[];
+  }
 
   async function findParentCategories(
     arg: QM_Arguments["findParentCategories"]
@@ -90,19 +141,26 @@ export default function buildCategoryDatabase(
       queryMethod: "findParentCategories",
     });
 
+    // start transaction
     await db.execute({ sql: "begin immediate;" });
 
-    const parentCategories = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findParentCategories,
-      statementArgs: { id: Number(arg.id) },
-    });
-
-    await db.execute({ sql: "commit;" });
+    let parentCategories: any[];
+    try {
+      parentCategories = await db.executePrepared({
+        name: PREPARED_QUERY_NAMES.findParentCategories,
+        statementArgs: { id: Number(arg.id) },
+      });
+    } finally {
+      // try to commit transaction
+      try {
+        await db.execute({ sql: "commit;" });
+      } catch {}
+    }
 
     for (const category of parentCategories)
       validateAndNormalizeCategoryRecord(category);
 
-    return parentCategories;
+    return parentCategories as CategoryFields[];
   }
 
   async function findAll() {

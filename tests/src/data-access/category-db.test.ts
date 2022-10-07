@@ -3,6 +3,7 @@ import buildCategoryDatabase from "data-access/category-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import Category from "entities/category";
 import { CategoryFields } from "entities/category/category";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
@@ -101,10 +102,10 @@ describe("findParentCategories", () => {
 
   it(`returns all the parent categories`, async () => {
     // insert SAMPLE_HIERARCHICAL_CATEGORIES
-    await _internalDb_.execute({ sql: "begin immediate;" });
-    for (const category of Object.values(SAMPLE_HIERARCHICAL_CATEGORIES))
-      await categoryDb.insert(category);
-    await _internalDb_.execute({ sql: "commit;" });
+    await insertMany({
+      db: _internalDb_,
+      categories: Object.values(SAMPLE_HIERARCHICAL_CATEGORIES),
+    });
 
     const parentOfMathCategory = await categoryDb.findParentCategories({
       id: SAMPLE_HIERARCHICAL_CATEGORIES.math.id,
@@ -116,8 +117,55 @@ describe("findParentCategories", () => {
       SAMPLE_HIERARCHICAL_CATEGORIES.study,
       SAMPLE_HIERARCHICAL_CATEGORIES.academic,
     ].sort(CATEGORY_SORT_PREDICATE);
+
     parentOfMathCategory.sort(CATEGORY_SORT_PREDICATE);
 
     expect(parentOfMathCategory).toEqual(expectedResults);
   });
 });
+
+describe("findSubCategories", () => {
+  it(`returns an empty array if category has no children`, async () => {
+    const category = Category.make({ name: "study" });
+    await categoryDb.insert(category);
+
+    const subCategories = await categoryDb.findSubCategories({
+      parentId: category.id,
+    });
+    expect(subCategories).toEqual([]);
+  });
+
+  it(`returns all the sub categories`, async () => {
+    // insert SAMPLE_HIERARCHICAL_CATEGORIES
+    await insertMany({
+      db: _internalDb_,
+      categories: Object.values(SAMPLE_HIERARCHICAL_CATEGORIES),
+    });
+
+    const subCategoriesOfStudy = await categoryDb.findSubCategories({
+      parentId: SAMPLE_HIERARCHICAL_CATEGORIES.study.id,
+    });
+
+    expect(subCategoriesOfStudy).toHaveLength(2);
+
+    const expectedResults = [
+      SAMPLE_HIERARCHICAL_CATEGORIES.academic,
+      SAMPLE_HIERARCHICAL_CATEGORIES.math,
+    ].sort(CATEGORY_SORT_PREDICATE);
+
+    subCategoriesOfStudy.sort(CATEGORY_SORT_PREDICATE);
+
+    expect(subCategoriesOfStudy).toEqual(expectedResults);
+  });
+});
+
+// ---- Utility Functions -------
+async function insertMany(arg: {
+  categories: CategoryFields[];
+  db: SqliteDatabase;
+}) {
+  const { categories, db } = arg;
+  await db.execute({ sql: "begin immediate;" });
+  for (const category of categories) await categoryDb.insert(category);
+  await db.execute({ sql: "commit;" });
+}
