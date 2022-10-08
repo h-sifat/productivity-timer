@@ -1,9 +1,9 @@
-import _internalDb_, { initializeDatabase } from "data-access/db";
-import buildCategoryDatabase from "data-access/category-db";
-import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import Category from "entities/category";
-import { CategoryFields } from "entities/category/category";
 import SqliteDatabase from "data-access/db/mainprocess-db";
+import buildCategoryDatabase from "data-access/category-db";
+import { CategoryFields } from "entities/category/category";
+import _internalDb_, { initializeDatabase } from "data-access/db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
@@ -175,6 +175,53 @@ describe("deleteMany", () => {
       categories.sort(CATEGORY_SORT_PREDICATE)
     );
   });
+});
+
+describe("updateById", () => {
+  it(`edit's a category`, async () => {
+    const category = Category.make({ name: "programming" });
+
+    await categoryDb.insert(category);
+
+    const editedCategory = Category.edit({
+      category: category,
+      changes: {
+        name: "Programming",
+        description: "Banging my head on the keyboard",
+      },
+    });
+
+    await categoryDb.updateById({ id: category.id, edited: editedCategory });
+
+    const updated = await categoryDb.findById({ id: category.id });
+    expect(updated).toEqual(editedCategory);
+  });
+
+  {
+    const errorCode = "SQLITE_CONSTRAINT_FOREIGNKEY";
+
+    it(`throws ewc "${errorCode}" if the edited parentId doesn't exist`, async () => {
+      const category = Category.make({ name: "programming" });
+
+      await categoryDb.insert(category);
+
+      const nonExistentParentId = String(Number(category.id) + 1);
+
+      const editedCategory = Category.edit({
+        category: category,
+        changes: { name: "Programming", parentId: nonExistentParentId },
+      });
+
+      try {
+        await categoryDb.updateById({
+          id: category.id,
+          edited: editedCategory,
+        });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
 });
 
 // ---- Utility Functions -------

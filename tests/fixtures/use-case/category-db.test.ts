@@ -38,7 +38,7 @@ describe("findByHash", () => {
 
   it(`returns null if no document is found with the given hash`, async () => {
     // db is empty
-    expect(await db.findByHash({ hash: "blabla" })).toBeNull();
+    expect(await db.findByHash({ hash: "hash" })).toBeNull();
   });
 
   it(`returns the document with the given hash`, async () => {

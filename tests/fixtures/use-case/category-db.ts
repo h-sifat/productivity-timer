@@ -17,6 +17,11 @@ export default class CategoryDatabase
     return await this.find();
   }
 
+  override async updateById(arg: { id; edited }): Promise<void> {
+    const { id, edited } = arg;
+    await super.updateById({ id, changes: edited });
+  }
+
   async findParentCategories(arg: { id: string }): Promise<CategoryFields[]> {
     this.assertValidId(arg);
 

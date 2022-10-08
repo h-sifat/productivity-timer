@@ -1,8 +1,8 @@
-import type SqliteDatabase from "./db/mainprocess-db";
 import type {
   CategoryFields,
   CategoryValidator,
 } from "entities/category/category";
+import type SqliteDatabase from "./db/mainprocess-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/category-db";
 
@@ -18,6 +18,7 @@ const PREPARED_QUERY_NAMES = Object.freeze({
   insert: "cat/insert",
   findAll: "cat/findAll",
   findById: "cat/findById",
+  updateById: "cat/updateById",
   findByHash: "cat/findByHash",
   deleteById: "cat/deleteById",
   findSubCategories: "cat/findSubCategories",
@@ -36,6 +37,15 @@ const PREPARED_QUERY_STATEMENTS: {
   insert: `insert into ${TABLE_NAME}
   ( id, name, hash, parentId, createdAt, description)
   values ( $id, $name, $hash, $parentId, $createdAt, $description);`,
+
+  updateById: `update ${TABLE_NAME}
+    set
+      name = $name,
+      hash = $hash,
+      parentId = $parentId,
+      createdAt = $createdAt,
+      description = $description
+    where id = $id;`,
 
   /*
    * @WARNING:
@@ -96,19 +106,30 @@ export default function buildCategoryDatabase(
 ): Partial<CategoryDatabaseInterface> {
   const { db } = builderArg;
 
-  // @ts-ignore
   const categoryDb: CategoryDatabaseInterface = {
     insert,
     findAll,
     findById,
     deleteById,
     findByHash,
+    updateById,
     findSubCategories,
     findParentCategories,
   };
   return categoryDb;
 
   // -------------- db methods ----------------------------------------
+  async function updateById(arg: QM_Arguments["updateById"]) {
+    const { edited } = arg;
+
+    await prepareQueryIfNotPrepared({ db, queryMethod: "updateById" });
+
+    await db.runPrepared({
+      statementArgs: edited,
+      name: PREPARED_QUERY_NAMES.updateById,
+    });
+  }
+
   async function deleteById(arg: QM_Arguments["deleteById"]) {
     await prepareQueryIfNotPrepared({ db, queryMethod: "deleteById" });
 

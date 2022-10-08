@@ -58,7 +58,7 @@ export default function makeEditCategory(arg: MakeEditCategory_Argument) {
         changes: filteredChanges,
       });
 
-      await db.updateById({ id, changes: editedCategory });
+      await db.updateById({ id, edited: editedCategory });
 
       return editedCategory;
     }
