@@ -19,6 +19,7 @@ const PREPARED_QUERY_NAMES = Object.freeze({
   findAll: "cat/findAll",
   findById: "cat/findById",
   findByHash: "cat/findByHash",
+  deleteById: "cat/deleteById",
   findSubCategories: "cat/findSubCategories",
   findParentCategories: "cat/findParentCategories",
 });
@@ -29,6 +30,8 @@ const PREPARED_QUERY_STATEMENTS: {
   findAll: `select * from ${TABLE_NAME};`,
   findById: `select * from ${TABLE_NAME} where id=$id;`,
   findByHash: `select * from ${TABLE_NAME} where hash=$hash;`,
+
+  deleteById: `delete from ${TABLE_NAME} where id = ($id);`,
 
   insert: `insert into ${TABLE_NAME}
   ( id, name, hash, parentId, createdAt, description)
@@ -98,18 +101,63 @@ export default function buildCategoryDatabase(
     insert,
     findAll,
     findById,
+    deleteById,
     findByHash,
     findSubCategories,
     findParentCategories,
   };
-
   return categoryDb;
 
-  async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {
-    await prepareQueryIfNotPrepared({
-      db,
-      queryMethod: "findSubCategories",
+  // -------------- db methods ----------------------------------------
+  async function deleteById(arg: QM_Arguments["deleteById"]) {
+    await prepareQueryIfNotPrepared({ db, queryMethod: "deleteById" });
+
+    const { id } = arg;
+    const parentCategory = await findById({ id });
+
+    if (!parentCategory)
+      throw new EPP({
+        code: "NOT_FOUND",
+        message: `No category exists with the id: "${id}"`,
+      });
+
+    const subCategories = await findSubCategories({ parentId: id });
+
+    const allCategories = [parentCategory, ...subCategories];
+
+    // sort them in depth first order so that we don't get any foreign key
+    // constraints error. Remember the parent cannot be deleted if it has
+    // children. So we'll removing categories from the lower levels first.
+    const categoryIdsToDelete = sortCategoryIdsInDepthFirstOrder({
+      categories: allCategories.map(({ id, parentId }) => ({ id, parentId })),
     });
+
+    // start transaction
+    await db.execute({ sql: "begin immediate;" });
+
+    try {
+      for (const id of categoryIdsToDelete)
+        await db.runPrepared({
+          name: PREPARED_QUERY_NAMES.deleteById,
+          statementArgs: { id },
+        });
+
+      await db.execute({ sql: "commit;" });
+    } catch (ex) {
+      // try to rollback the transaction
+      try {
+        await db.execute({ sql: "rollback;" });
+      } catch {}
+
+      // rethrow the error
+      throw ex;
+    }
+
+    return allCategories;
+  }
+
+  async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {
+    await prepareQueryIfNotPrepared({ db, queryMethod: "findSubCategories" });
 
     // start transaction
     await db.execute({ sql: "begin immediate;" });
@@ -277,4 +325,62 @@ async function prepareQueryIfNotPrepared(arg: {
       name: PREPARED_QUERY_NAMES[queryMethod],
       statement: PREPARED_QUERY_STATEMENTS[queryMethod],
     });
+}
+
+// ---- types for sortCategoryIdsInDepthFirstOrder ------------
+
+interface CategoryNode {
+  id: string;
+  children: CategoryNode[];
+  isRoot: boolean;
+}
+
+interface CategoryTree {
+  [k: string]: CategoryNode;
+}
+
+function sortCategoryIdsInDepthFirstOrder(arg: {
+  categories: Pick<CategoryFields, "id" | "parentId">[];
+}) {
+  const { categories } = arg;
+
+  const tree: CategoryTree = {};
+
+  for (const { id, parentId: pid } of categories) {
+    if (tree[id]) tree[id].isRoot = false;
+    else tree[id] = { isRoot: false, children: [], id };
+
+    const parentId = String(pid);
+    if (!tree[parentId])
+      tree[parentId] = { isRoot: true, children: [], id: parentId };
+    tree[parentId].children.push(tree[id]);
+  }
+
+  const root = tree["null"]
+    ? tree["null"]
+    : Object.values(tree).find((cat) => cat.isRoot);
+
+  return getCategoryIdsDepthFirstOrder({ parent: root! }).map(Number);
+
+  // --- Utility function below -----
+  interface GetCategoryIdsDepthFirst_Argument {
+    parent: CategoryNode;
+    result?: string[];
+  }
+
+  function getCategoryIdsDepthFirstOrder(
+    arg: GetCategoryIdsDepthFirst_Argument
+  ): string[] {
+    const { parent, result = [] } = arg;
+
+    if (!parent.children.length) return result;
+
+    for (const child of parent.children) {
+      getCategoryIdsDepthFirstOrder({ parent: child, result });
+    }
+
+    result.push(...parent.children.map(({ id }) => id));
+
+    return result;
+  }
 }

@@ -10,8 +10,9 @@ const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
   const study = Category.make({ name: "study" });
   const academic = Category.make({ name: "Academic", parentId: study.id });
   const math = Category.make({ name: "Math", parentId: academic.id });
+  const english = Category.make({ name: "English", parentId: academic.id });
 
-  return Object.freeze({ study, academic, math });
+  return Object.freeze({ study, academic, math, english });
 })();
 const CATEGORY_SORT_PREDICATE = (a: CategoryFields, b: CategoryFields) =>
   +a.id - +b.id;
@@ -146,16 +147,33 @@ describe("findSubCategories", () => {
       parentId: SAMPLE_HIERARCHICAL_CATEGORIES.study.id,
     });
 
-    expect(subCategoriesOfStudy).toHaveLength(2);
+    expect(subCategoriesOfStudy).toHaveLength(3);
 
     const expectedResults = [
       SAMPLE_HIERARCHICAL_CATEGORIES.academic,
       SAMPLE_HIERARCHICAL_CATEGORIES.math,
+      SAMPLE_HIERARCHICAL_CATEGORIES.english,
     ].sort(CATEGORY_SORT_PREDICATE);
 
     subCategoriesOfStudy.sort(CATEGORY_SORT_PREDICATE);
 
     expect(subCategoriesOfStudy).toEqual(expectedResults);
+  });
+});
+
+describe("deleteMany", () => {
+  it(`it returns the number of item that has been deleted`, async () => {
+    const categories = Object.values(SAMPLE_HIERARCHICAL_CATEGORIES);
+
+    await insertMany({ db: _internalDb_, categories: categories });
+
+    const deletedCategories = await categoryDb.deleteById({
+      id: SAMPLE_HIERARCHICAL_CATEGORIES.study.id,
+    });
+
+    expect(deletedCategories.sort(CATEGORY_SORT_PREDICATE)).toEqual(
+      categories.sort(CATEGORY_SORT_PREDICATE)
+    );
   });
 });
 
