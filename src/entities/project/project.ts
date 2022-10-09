@@ -31,7 +31,7 @@ export const ALL_FIELDS: Set<keyof ProjectFields> = new Set([
   "name",
   "status",
   "deadline",
-  "createdOn",
+  "createdAt",
   "categoryId",
   "description",
 ]);
@@ -39,7 +39,7 @@ export const ALL_FIELDS: Set<keyof ProjectFields> = new Set([
 export type ProjectFields = Readonly<{
   id: string;
   name: string;
-  createdOn: number;
+  createdAt: number;
   status: ProjectStatus;
   deadline: number | null;
   categoryId: string | null;
@@ -58,7 +58,7 @@ export interface ProjectValidator {
   assertValidCategoryId(id: unknown): asserts id is ProjectFields["categoryId"];
   assertValidDeadline(
     deadline: unknown,
-    createdOn: number
+    createdAt: number
   ): asserts deadline is ProjectFields["deadline"];
 }
 
@@ -150,7 +150,7 @@ export default function buildProjectEntity(
         description,
         id: Id.makeId(),
         status: "ongoing",
-        createdOn: currentTimestamp,
+        createdAt: currentTimestamp,
       };
 
       validate(_project);
@@ -212,7 +212,7 @@ export default function buildProjectEntity(
       name = required("name"),
       status = required("status"),
       deadline = required("deadline"),
-      createdOn = required("createdOn"),
+      createdAt = required("createdAt"),
       categoryId = required("categoryId"),
       description = required("description"),
     } = <any>project;
@@ -222,9 +222,9 @@ export default function buildProjectEntity(
     assertValidStatus(status);
     assertValidCategoryId(categoryId);
     assertValidDescription(description);
-    assertValidUnixMsTimestamp(createdOn, "INVALID_CREATION_TIMESTAMP");
+    assertValidUnixMsTimestamp(createdAt, "INVALID_CREATION_TIMESTAMP");
 
-    assertValidDeadline(deadline, createdOn);
+    assertValidDeadline(deadline, createdAt);
 
     assertNoUnknownProperties(project);
   }
@@ -290,7 +290,7 @@ export default function buildProjectEntity(
 
   function assertValidDeadline(
     deadline: unknown,
-    createdOn: number
+    createdAt: number
   ): asserts deadline is ProjectFields["deadline"] {
     if (deadline === null) return;
 
@@ -299,7 +299,7 @@ export default function buildProjectEntity(
     const hourLeftBeforeDeadline = convertDuration({
       toUnit: "hour",
       fromUnit: "millisecond",
-      duration: <number>deadline - createdOn,
+      duration: <number>deadline - createdAt,
     });
 
     if (hourLeftBeforeDeadline < MIN_HOUR_BEFORE_DEADLINE)

@@ -200,7 +200,7 @@ describe("-------[Project.validator.validate]-------", () => {
     it(`throws ewc ${errorCode} if hour(s) left before deadline is less than ${MIN_HOUR_BEFORE_DEADLINE}`, () => {
       const project = {
         ...SAMPLE_PROJECT,
-        deadline: SAMPLE_PROJECT.createdOn - 100000000,
+        deadline: SAMPLE_PROJECT.createdAt - 100000000,
       };
 
       expect(() => {
@@ -322,7 +322,7 @@ describe("-----[Project.make]-----", () => {
         description,
         status: "ongoing",
         id: expect.any(String),
-        createdOn: expect.any(Number),
+        createdAt: expect.any(Number),
       });
     });
   });
@@ -375,7 +375,7 @@ describe("----[Project.edit]-----", () => {
         description: "desc",
         categoryId: Id.makeId(),
         deadline:
-          SAMPLE_PROJECT.createdOn +
+          SAMPLE_PROJECT.createdAt +
           convertDuration({
             fromUnit: "hour",
             toUnit: "millisecond",
