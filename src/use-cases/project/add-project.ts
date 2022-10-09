@@ -1,6 +1,7 @@
 import type { MakeProject_Argument } from "entities/project/project";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
+import EPP from "common/util/epp";
 import Project from "entities/project";
 
 interface MakeAddProject_Argument {
@@ -21,10 +22,15 @@ export default function makeAddProject(arg: MakeAddProject_Argument) {
 
     {
       const existingProject = await db.findByName({ name: project.name });
-      if (existingProject) return existingProject;
+      if (existingProject)
+        throw new EPP({
+          code: "DUPLICATE_NAME",
+          message: `A project already exists with the name: "${project.name.toLowerCase()}" (case insensitive).`,
+        });
     }
 
     await db.insert(project);
+
     return project;
   };
 }

@@ -35,7 +35,7 @@ export default function makeEditProject(arg: MakeEditProject_Argument) {
 
     {
       const editedProject = Project.edit({ project, changes });
-      await db.updateById({ id, changes: editedProject });
+      await db.updateById({ id, edited: editedProject });
 
       return editedProject;
     }

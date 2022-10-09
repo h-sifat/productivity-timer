@@ -1,14 +1,17 @@
 import Project from "entities/project";
 import { isValid as isValidId } from "common/util/id";
 import makeRemoveProject from "use-cases/project/remove-project";
-import ProjectDatabase from "fixtures/use-case/project-db";
 
-const db = new ProjectDatabase();
+const db = Object.freeze({
+  findById: jest.fn(),
+  deleteById: jest.fn(),
+});
 
 const removeProject = makeRemoveProject({ db, isValidId });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  db.findById.mockReset();
+  db.deleteById.mockReset();
 });
 
 describe("Validation", () => {
@@ -31,23 +34,31 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  it(`return delete and the project record`, async () => {
-    const projectInfo = Project.make({ name: "todo" });
-    const id = projectInfo.id;
+  it(`returns the deleted project record`, async () => {
+    expect.assertions(5);
 
-    await db.insert(projectInfo);
+    const project = Project.make({ name: "todo" });
+    const id = project.id;
+
+    db.findById.mockResolvedValueOnce(project);
 
     const deleted = await removeProject({ id });
+    expect(deleted).toEqual(project);
 
-    expect(deleted).toEqual(projectInfo);
+    expect(db.findById).toHaveBeenCalledTimes(1);
+    expect(db.deleteById).toHaveBeenCalledTimes(1);
+
+    expect(db.findById).toHaveBeenCalledWith({ id });
+    expect(db.deleteById).toHaveBeenCalledWith({ id });
   });
 
   {
     const errorCode = "NOT_FOUND";
     it(`throws ewc "${errorCode}" if project doesn't exist with the given id`, async () => {
-      expect.assertions(1);
+      expect.assertions(4);
 
-      // right now db is empty
+      db.findById.mockResolvedValueOnce(null);
+
       const id = "100";
 
       try {
@@ -55,6 +66,11 @@ describe("Functionality", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(db.findById).toHaveBeenCalledTimes(1);
+      expect(db.deleteById).not.toHaveBeenCalled();
+
+      expect(db.findById).toHaveBeenCalledWith({ id });
     });
   }
 });

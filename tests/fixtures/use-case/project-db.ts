@@ -1,10 +1,11 @@
 import MockDb, { QueryExecutorMethodArg } from "fixtures/data-access/mock-db";
-import type { ProjectFields } from "entities/project/project";
+import type { ProjectFields, ProjectStatus } from "entities/project/project";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import required from "common/util/required";
 
+// @ts-ignore
 export default class ProjectDatabase
   extends MockDb<string, ProjectFields>
   implements ProjectDatabaseInterface

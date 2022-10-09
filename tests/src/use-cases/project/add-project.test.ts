@@ -1,12 +1,16 @@
 import Project from "entities/project";
-import ProjectDatabase from "fixtures/use-case/project-db";
 import makeAddProject from "use-cases/project/add-project";
 
-const db = new ProjectDatabase();
+const db = Object.freeze({
+  findByName: jest.fn(),
+  insert: jest.fn(),
+});
+
 const addProject = makeAddProject({ db });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  db.findByName.mockReset();
+  db.insert.mockReset();
 });
 
 describe("Validation", () => {
@@ -27,30 +31,48 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  it(`returns the existing project if the project name is the same (case insensitive)`, async () => {
-    const projectName = "Todo App";
-    const existingProject = Project.make({ name: projectName });
+  {
+    const errorCode = "DUPLICATE_NAME";
 
-    // inserting project manually
-    await db.insert(existingProject);
+    it(`throws ewc "${errorCode}" if a project already with the same name (case insensitive)`, async () => {
+      expect.assertions(4);
 
-    const uppercaseName = projectName.toUpperCase();
-    const insertedProject = await addProject({
-      projectInfo: { name: uppercaseName },
+      const projectName = "Todo App";
+      const existingProject = Project.make({ name: projectName });
+
+      db.findByName.mockResolvedValueOnce(existingProject);
+
+      const uppercaseName = projectName.toUpperCase();
+
+      try {
+        await addProject({ projectInfo: { name: uppercaseName } });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      expect(db.findByName).toHaveBeenCalledTimes(1);
+      expect(db.insert).not.toHaveBeenCalled();
+
+      expect(db.findByName).toHaveBeenCalledWith({ name: uppercaseName });
     });
-
-    expect(insertedProject).toEqual(existingProject);
-  });
+  }
 
   it(`inserts a new project if it doesn't already exist`, async () => {
-    const projectInfo = {
+    const projectInfo = Object.freeze({
       name: "todo",
       description: "hi",
-    };
+    });
 
-    const inserted = await addProject({ projectInfo });
+    db.findByName.mockResolvedValueOnce(null);
 
-    expect(inserted).toMatchObject(projectInfo);
-    expect(await db.findById({ id: inserted.id })).toEqual(inserted);
+    await addProject({ projectInfo });
+
+    expect(db.findByName).toHaveBeenCalledTimes(1);
+    expect(db.insert).toHaveBeenCalledTimes(1);
+
+    expect(db.findByName).toHaveBeenCalledWith({ name: projectInfo.name });
+
+    // @ts-ignore I don't know why it says lastCall doesn't exists!
+    expect(db.insert.mock.lastCall[0]).toMatchObject(projectInfo);
   });
 });

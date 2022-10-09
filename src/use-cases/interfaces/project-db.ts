@@ -1,15 +1,23 @@
 import type { ProjectFields } from "entities/project/project";
 
-interface UpdateById_Argument {
-  id: string;
-  changes: Partial<ProjectFields>;
+export interface QueryMethodArguments {
+  insert: ProjectFields;
+  findById: { id: string };
+  deleteById: { id: string };
+  findByName: { name: string };
+  updateById: { id: string; edited: Partial<ProjectFields> };
 }
 
 export default interface ProjectDatabaseInterface {
+  findByName(
+    arg: QueryMethodArguments["findByName"]
+  ): Promise<ProjectFields | null>;
+  findById(
+    arg: QueryMethodArguments["findById"]
+  ): Promise<ProjectFields | null>;
+
   findAll(): Promise<ProjectFields[]>;
-  insert(arg: ProjectFields): Promise<ProjectFields>;
-  deleteById(arg: { id: string }): Promise<ProjectFields>;
-  findById(arg: { id: string }): Promise<ProjectFields | null>;
-  updateById(arg: UpdateById_Argument): Promise<ProjectFields>;
-  findByName(arg: { name: string }): Promise<ProjectFields | null>;
+  insert(arg: QueryMethodArguments["insert"]): Promise<void>;
+  updateById(arg: QueryMethodArguments["updateById"]): Promise<void>;
+  deleteById(arg: QueryMethodArguments["deleteById"]): Promise<void>;
 }
