@@ -24,7 +24,6 @@ beforeEach(async () => {
   await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
   await initializeDatabase(_internalDb_);
 
-  // @ts-expect-error
   if (!categoryDb) categoryDb = buildCategoryDatabase({ db: _internalDb_ });
 });
 

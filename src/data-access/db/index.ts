@@ -40,6 +40,6 @@ export async function initializeDatabase(db: SqliteDatabase) {
       );
   }
 
-  for (const statement of Object.values(dbConfig.tables))
-    await db.execute({ sql: statement });
+  await db.execute({ sql: dbConfig.tables.categories });
+  await db.execute({ sql: dbConfig.tables.projects });
 }

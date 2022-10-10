@@ -44,7 +44,6 @@ export function getDefaultEntityConfig<
 }
 
 const dbConfig = {
-  // @TODO on production these variables must be changed to appropriate values
   pragmas: Object.freeze({
     encoding: "'UTF-8'",
     cache_size: 10_000,
@@ -52,6 +51,7 @@ const dbConfig = {
     synchronous: "EXTRA",
     default_cache_size: 10_000,
   }),
+  // @TODO on production these variables must be changed to appropriate values
   SQLITE_DB_PATH: ":memory:",
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
   SQLITE_SUB_PROCESS_MODULE_PATH: path.join(
@@ -61,20 +61,39 @@ const dbConfig = {
 
   tables: Object.freeze({
     categories: `create table if not exists categories (
-  id integer primary key check(typeof(id) = 'integer'),
-  name text not null check(typeof(name) = 'text'),
-  hash text not null unique check(typeof(hash) = 'text'),
-  createdAt integer not null check(typeof(createdAt) = 'integer'),
+      id integer primary key check(typeof(id) = 'integer'),
+      name text not null check(typeof(name) = 'text'),
+      hash text not null unique check(typeof(hash) = 'text'),
+      createdAt integer not null check(typeof(createdAt) = 'integer'),
 
-  description text default null
-    check(typeof(description) = 'text' OR typeof(description) = 'null'),
+      description text default null
+        check(typeof(description) = 'text' OR typeof(description) = 'null'),
 
-  parentId integer default null
-    check(typeof(parentId) = 'integer' OR typeof(parentId) = 'null')
-    references categories(id)
-    on update cascade
-    on delete restrict
-);`,
+      parentId integer default null
+        check(typeof(parentId) = 'integer' OR typeof(parentId) = 'null')
+        references categories(id)
+        on update cascade
+        on delete restrict
+    );`,
+
+    projects: `create table if not exists projects (
+      id integer primary key check(typeof(id) = 'integer'),
+      status text not null check(typeof(status) = 'text'),
+      name text not null collate nocase unique check(typeof(name) = 'text'),
+      createdAt integer not null check(typeof(createdAt) = 'integer'),
+
+      deadline integer default null
+        check(typeof(deadline) = 'integer' OR typeof(deadline) = 'null'),
+
+      description text default null
+        check(typeof(description) = 'text' OR typeof(description) = 'null'),
+
+      categoryId integer default null
+        check(typeof(categoryId) = 'integer' OR typeof(categoryId) = 'null')
+        references categories(id)
+        on update cascade
+        on delete set null
+    );`,
   }),
 };
 

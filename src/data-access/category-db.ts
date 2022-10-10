@@ -103,7 +103,7 @@ interface BuildCategoryDatabase_Argument {
 }
 export default function buildCategoryDatabase(
   builderArg: BuildCategoryDatabase_Argument
-): Partial<CategoryDatabaseInterface> {
+): CategoryDatabaseInterface {
   const { db } = builderArg;
 
   const categoryDb: CategoryDatabaseInterface = {
@@ -120,12 +120,12 @@ export default function buildCategoryDatabase(
 
   // -------------- db methods ----------------------------------------
   async function updateById(arg: QM_Arguments["updateById"]) {
-    const { edited } = arg;
+    const { edited, id } = arg;
 
     await prepareQueryIfNotPrepared({ db, queryMethod: "updateById" });
 
     await db.runPrepared({
-      statementArgs: edited,
+      statementArgs: { ...edited, id },
       name: PREPARED_QUERY_NAMES.updateById,
     });
   }
