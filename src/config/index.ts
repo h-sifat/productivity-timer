@@ -15,6 +15,10 @@ type DEFAULT_CONFIG = Readonly<{
     MIN_HOUR_BEFORE_DEADLINE: number;
     MSG_NAME_DOES_NOT_MATCH_PATTERN: string;
   }>;
+
+  work_session: Readonly<{
+    MAX_ALLOWED_ELAPSED_TIME_DIFF: number;
+  }>;
 }>;
 
 const defaults: DEFAULT_CONFIG = Object.freeze({
@@ -32,6 +36,9 @@ const defaults: DEFAULT_CONFIG = Object.freeze({
     VALID_NAME_PATTERN: /^[\w_ .-]+$/,
     MSG_NAME_DOES_NOT_MATCH_PATTERN:
       "Project.name must only contain alphanumeric, '_', ' ', '.', and '-' characters.",
+  }),
+  work_session: Object.freeze({
+    MAX_ALLOWED_ELAPSED_TIME_DIFF: 10_000, // 10 seconds
   }),
 });
 
