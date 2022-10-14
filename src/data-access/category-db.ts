@@ -134,6 +134,7 @@ export default function buildCategoryDatabase(
     await prepareQueryIfNotPrepared({ db, queryMethod: "deleteById" });
 
     const { id } = arg;
+
     const parentCategory = await findById({ id });
 
     if (!parentCategory)
@@ -144,37 +145,12 @@ export default function buildCategoryDatabase(
 
     const subCategories = await findSubCategories({ parentId: id });
 
-    const allCategories = [parentCategory, ...subCategories];
-
-    // sort them in depth first order so that we don't get any foreign key
-    // constraints error. Remember the parent cannot be deleted if it has
-    // children. So we'll removing categories from the lower levels first.
-    const categoryIdsToDelete = sortCategoryIdsInDepthFirstOrder({
-      categories: allCategories.map(({ id, parentId }) => ({ id, parentId })),
+    await db.runPrepared({
+      name: PREPARED_QUERY_NAMES.deleteById,
+      statementArgs: { id },
     });
 
-    // start transaction
-    await db.execute({ sql: "begin immediate;" });
-
-    try {
-      for (const id of categoryIdsToDelete)
-        await db.runPrepared({
-          name: PREPARED_QUERY_NAMES.deleteById,
-          statementArgs: { id },
-        });
-
-      await db.execute({ sql: "commit;" });
-    } catch (ex) {
-      // try to rollback the transaction
-      try {
-        await db.execute({ sql: "rollback;" });
-      } catch {}
-
-      // rethrow the error
-      throw ex;
-    }
-
-    return allCategories;
+    return [parentCategory, ...subCategories];
   }
 
   async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {

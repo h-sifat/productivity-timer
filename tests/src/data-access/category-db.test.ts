@@ -160,7 +160,7 @@ describe("findSubCategories", () => {
   });
 });
 
-describe("deleteMany", () => {
+describe("deleteById", () => {
   it(`it returns the number of item that has been deleted`, async () => {
     const categories = Object.values(SAMPLE_HIERARCHICAL_CATEGORIES);
 
@@ -173,6 +173,9 @@ describe("deleteMany", () => {
     expect(deletedCategories.sort(CATEGORY_SORT_PREDICATE)).toEqual(
       categories.sort(CATEGORY_SORT_PREDICATE)
     );
+
+    for (const { id } of deletedCategories)
+      expect(await categoryDb.findById({ id })).toBeNull();
   });
 });
 

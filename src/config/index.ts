@@ -73,7 +73,7 @@ const dbConfig = {
         check(typeof(parentId) = 'integer' OR typeof(parentId) = 'null')
         references categories(id)
         on update cascade
-        on delete restrict
+        on delete cascade
     );`,
 
     projects: `create table if not exists projects (
