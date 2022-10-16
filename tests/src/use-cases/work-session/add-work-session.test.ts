@@ -1,4 +1,4 @@
-import { SAMPLE_WORK_SESSION } from "fixtures/work-session";
+import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import buildAddWorkSession from "use-cases/work-session/add-work-session";
 
 const db = Object.freeze({

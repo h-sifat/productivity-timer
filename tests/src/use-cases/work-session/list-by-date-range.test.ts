@@ -2,7 +2,7 @@ import {
   assertValidUSLocaleDateString,
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
-import { SAMPLE_WORK_SESSION } from "fixtures/work-session";
+import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import buildListWorkSessionsByDateRange from "use-cases/work-session/list-by-date-range";
 
 const db = Object.freeze({

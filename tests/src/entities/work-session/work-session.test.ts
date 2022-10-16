@@ -5,36 +5,15 @@ import {
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
 import { isValid } from "common/util/id";
+import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import buildWorkSessionEntity, {
   EventLog,
-  WorkSessionFields,
   WorkSessionValidator,
 } from "entities/work-session/work-session";
 
 const makeId = jest.fn().mockReturnValue("1234");
 const Id: ID = { isValid, makeId };
 const MAX_ALLOWED_ELAPSED_TIME_DIFF = 5000; // 5s
-
-const VALID_WORK_SESSION: WorkSessionFields = Object.freeze({
-  id: makeId() + "234234",
-  startedAt: "1/1/1970",
-  targetDuration: 10_000,
-  elapsedTime: {
-    total: 9_000,
-    byDate: { "1/1/1970": 9_000 },
-  },
-  events: Object.freeze(
-    (
-      [
-        { name: "start", timestamp: 0 },
-        { name: "pause", timestamp: 5_000 },
-        { name: "start", timestamp: 9_000 },
-        { name: "end_manually", timestamp: 13_000 },
-      ] as const
-    ).map((e) => Object.freeze(e))
-  ),
-  ref: Object.freeze({ type: "category", id: "1" } as const),
-});
 
 const WorkSession = buildWorkSessionEntity({
   Id,
@@ -467,7 +446,7 @@ describe("WorkSession.validator.validate", () => {
   ])(`throws error if property %p is missing`, (property) => {
     expect.assertions(1);
     try {
-      const workSession = { ...VALID_WORK_SESSION };
+      const workSession = { ...SAMPLE_WORK_SESSION };
 
       // @ts-ignore
       delete workSession[property];
@@ -483,62 +462,62 @@ describe("WorkSession.validator.validate", () => {
     const errorCode = "INVALID_ID";
     it(`throws ewc "${errorCode}" if id is not valid`, () => {
       expect(() => {
-        validate({ ...VALID_WORK_SESSION, id: "not_valid_id" });
+        validate({ ...SAMPLE_WORK_SESSION, id: "not_valid_id" });
       }).toThrowErrorWithCode(errorCode);
     });
   }
 
   it(`throws error if ref is invalid`, () => {
     expect(() => {
-      validate({ ...VALID_WORK_SESSION, ref: "bla_bla" });
+      validate({ ...SAMPLE_WORK_SESSION, ref: "bla_bla" });
     }).toThrowError();
   });
 
   it(`throws error if events is not valid `, () => {
     expect(() => {
-      validate({ ...VALID_WORK_SESSION, events: [] });
+      validate({ ...SAMPLE_WORK_SESSION, events: [] });
     }).toThrowError();
   });
 
   it(`throws error if target duration is not valid `, () => {
     expect(() => {
-      validate({ ...VALID_WORK_SESSION, targetDuration: 0 });
+      validate({ ...SAMPLE_WORK_SESSION, targetDuration: 0 });
     }).toThrowError();
   });
 
   it(`throws error if elapsedTime is not valid`, () => {
     expect(() => {
-      validate({ ...VALID_WORK_SESSION, elapsedTime: {} });
+      validate({ ...SAMPLE_WORK_SESSION, elapsedTime: {} });
     }).toThrowError();
   });
 
   it(`throws error if startedAt date is not valid`, () => {
     expect(() => {
-      validate({ ...VALID_WORK_SESSION, startedAt: "23/23/2022" });
+      validate({ ...SAMPLE_WORK_SESSION, startedAt: "23/23/2022" });
     }).toThrowError();
   });
 
   it(`doesn't throw error if everything is valid`, () => {
     expect(() => {
-      validate(VALID_WORK_SESSION);
+      validate(SAMPLE_WORK_SESSION);
     }).not.toThrowError();
   });
 });
 
 describe("WorkSession.make", () => {
   it(`makes a workSession object if everything is valid`, () => {
-    const makeWorkSessionArg = { ...VALID_WORK_SESSION };
+    const makeWorkSessionArg = { ...SAMPLE_WORK_SESSION };
     // @ts-ignore
     delete makeWorkSessionArg.id;
 
     const workSession = WorkSession.make(makeWorkSessionArg);
 
     expect(workSession).toHaveProperty("id");
-    expect(workSession.id).not.toBe(VALID_WORK_SESSION.id);
+    expect(workSession.id).not.toBe(SAMPLE_WORK_SESSION.id);
   });
 
   it(`throws error workSession arg is not valid`, () => {
-    const invalidArg = { ...VALID_WORK_SESSION, ref: "why I'm alive?" };
+    const invalidArg = { ...SAMPLE_WORK_SESSION, ref: "why I'm alive?" };
 
     expect(() => {
       // @ts-expect-error
@@ -547,28 +526,28 @@ describe("WorkSession.make", () => {
   });
 
   it(`returns a frozen object and doesn't modify the given arg`, () => {
-    const workSession = WorkSession.make(VALID_WORK_SESSION);
+    const workSession = WorkSession.make(SAMPLE_WORK_SESSION);
 
     expect(Object.isFrozen(workSession)).toBeTruthy();
-    expect(workSession).not.toBe(VALID_WORK_SESSION);
+    expect(workSession).not.toBe(SAMPLE_WORK_SESSION);
 
     expect(Object.isFrozen(workSession.ref)).toBeTruthy();
-    expect(workSession.ref).not.toBe(VALID_WORK_SESSION.ref);
+    expect(workSession.ref).not.toBe(SAMPLE_WORK_SESSION.ref);
 
     expect(Object.isFrozen(workSession.elapsedTime)).toBeTruthy();
     expect(Object.isFrozen(workSession.elapsedTime.byDate)).toBeTruthy();
 
-    expect(workSession.elapsedTime).not.toBe(VALID_WORK_SESSION.elapsedTime);
+    expect(workSession.elapsedTime).not.toBe(SAMPLE_WORK_SESSION.elapsedTime);
     expect(workSession.elapsedTime.byDate).not.toBe(
-      VALID_WORK_SESSION.elapsedTime.byDate
+      SAMPLE_WORK_SESSION.elapsedTime.byDate
     );
 
     expect(Object.isFrozen(workSession.events)).toBeTruthy();
-    expect(workSession.events).not.toBe(VALID_WORK_SESSION.events);
+    expect(workSession.events).not.toBe(SAMPLE_WORK_SESSION.events);
 
     for (let i = 0; i < workSession.events.length; i++) {
       expect(Object.isFrozen(workSession.events[i])).toBeTruthy();
-      expect(workSession.events[i]).not.toBe(VALID_WORK_SESSION.events[i]);
+      expect(workSession.events[i]).not.toBe(SAMPLE_WORK_SESSION.events[i]);
     }
 
     // after writing everything above in this test, I feel like a crazy person
