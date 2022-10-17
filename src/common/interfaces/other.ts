@@ -4,6 +4,6 @@ export type DeepFreezeTypeMapper<Type extends object> = {
     : Type[key];
 };
 
-export type DeepFreeze = <Type extends object>(
+export type DeepFreeze = <Type>(
   object: Type
-) => DeepFreezeTypeMapper<object>;
+) => Type extends object ? DeepFreezeTypeMapper<Type> : Type;
