@@ -8,6 +8,7 @@ import type { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import required from "common/util/required";
+import { DeepFreezeTypeMapper } from "common/interfaces/other";
 
 export type EventLog = {
   timestamp: number;
@@ -28,17 +29,17 @@ export type TimerRef = {
 
 export type ElapsedTime = {
   total: number;
-  byDate: { readonly [date: string]: number };
+  byDate: { [date: string]: number };
 };
 
-export type WorkSessionFields = Readonly<{
+export type WorkSessionFields = {
   id: string;
+  ref: TimerRef;
   startedAt: string;
+  events: EventLog[];
   targetDuration: number;
-  ref: Readonly<TimerRef>;
-  elapsedTime: Readonly<ElapsedTime>;
-  events: Readonly<Readonly<EventLog>[]>;
-}>;
+  elapsedTime: ElapsedTime;
+};
 
 export interface WorkSessionValidator {
   assertValidId(id: unknown): asserts id is WorkSessionFields["id"];
@@ -72,10 +73,12 @@ export interface WorkSessionValidator {
   validate(workSession: object): asserts workSession is WorkSessionFields;
 }
 
-export type MakeWorkSession_Argument = Omit<WorkSessionFields, "id">;
+export type MakeWorkSession_Argument =
+  | Omit<WorkSessionFields, "id">
+  | DeepFreezeTypeMapper<Omit<WorkSessionFields, "id">>;
 
 export interface WorkSessionEntity {
-  make(arg: MakeWorkSession_Argument): WorkSessionFields;
+  make(arg: MakeWorkSession_Argument): Readonly<WorkSessionFields>;
   validator: WorkSessionValidator;
 }
 
@@ -111,7 +114,9 @@ export default function buildWorkSessionEntity(
 
   return Object.freeze({ validator, make });
 
-  function make(workSessionArg: MakeWorkSession_Argument): WorkSessionFields {
+  function make(
+    workSessionArg: MakeWorkSession_Argument
+  ): DeepFreezeTypeMapper<WorkSessionFields> {
     const id = Id.makeId();
     validate({ ...workSessionArg, id });
 
