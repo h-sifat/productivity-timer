@@ -8,7 +8,7 @@ import type { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import required from "common/util/required";
-import { DeepFreezeTypeMapper } from "common/interfaces/other";
+import { DeepFreeze, DeepFreezeTypeMapper } from "common/interfaces/other";
 
 export type EventLog = {
   timestamp: number;
@@ -84,6 +84,7 @@ export interface WorkSessionEntity {
 
 export interface BuildWorkSessionEntity_Argument {
   Id: ID;
+  deepFreeze: DeepFreeze;
   MAX_ALLOWED_ELAPSED_TIME_DIFF: number;
   assertValidUnixMsTimestamp: AssertValidUnixMsTimestamp;
   assertValidUSLocaleDateString: AssertValidUSLocaleDateString;
@@ -95,6 +96,7 @@ export default function buildWorkSessionEntity(
 ) {
   const {
     Id,
+    deepFreeze,
     assertValidUnixMsTimestamp,
     MAX_ALLOWED_ELAPSED_TIME_DIFF,
     unixMsTimestampToUsLocaleDateString,
@@ -123,15 +125,15 @@ export default function buildWorkSessionEntity(
     {
       const { ref, events, elapsedTime } = workSessionArg;
 
-      const workSession = Object.freeze({
+      const workSession = deepFreeze({
         ...workSessionArg,
         id,
-        ref: Object.freeze({ ...ref }),
-        elapsedTime: Object.freeze({
+        ref: { ...ref },
+        elapsedTime: {
           total: elapsedTime.total,
-          byDate: Object.freeze({ ...elapsedTime.byDate }),
-        }),
-        events: Object.freeze(events.map((e) => Object.freeze({ ...e }))),
+          byDate: { ...elapsedTime.byDate },
+        },
+        events: events.map((e) => ({ ...e })),
       });
 
       return workSession;

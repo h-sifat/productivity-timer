@@ -10,6 +10,7 @@ import buildWorkSessionEntity, {
   EventLog,
   WorkSessionValidator,
 } from "entities/work-session/work-session";
+import { deepFreeze } from "common/util/other";
 
 const makeId = jest.fn().mockReturnValue("1234");
 const Id: ID = { isValid, makeId };
@@ -17,6 +18,7 @@ const MAX_ALLOWED_ELAPSED_TIME_DIFF = 5000; // 5s
 
 const WorkSession = buildWorkSessionEntity({
   Id,
+  deepFreeze,
   assertValidUnixMsTimestamp,
   MAX_ALLOWED_ELAPSED_TIME_DIFF,
   assertValidUSLocaleDateString,
