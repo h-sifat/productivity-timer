@@ -24,7 +24,11 @@ beforeEach(async () => {
   await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
   await initializeDatabase(_internalDb_);
 
-  if (!categoryDb) categoryDb = buildCategoryDatabase({ db: _internalDb_ });
+  if (!categoryDb)
+    categoryDb = buildCategoryDatabase({
+      db: _internalDb_,
+      notifyDatabaseCorruption: () => {},
+    });
 });
 
 afterEach(async () => {

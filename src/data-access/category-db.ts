@@ -8,13 +8,14 @@ import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/
 
 import EPP from "common/util/epp";
 import Category from "entities/category";
+import { makeProcessSingleValueReturningQueryResult } from "./util";
 
 const assertValidCategory: CategoryValidator["validate"] =
   Category.validator.validate;
 
 const TABLE_NAME = "categories";
 
-const PREPARED_QUERY_NAMES = Object.freeze({
+const preparedQueryNames = Object.freeze({
   insert: "cat/insert",
   findAll: "cat/findAll",
   findById: "cat/findById",
@@ -25,8 +26,8 @@ const PREPARED_QUERY_NAMES = Object.freeze({
   findParentCategories: "cat/findParentCategories",
 });
 
-const PREPARED_QUERY_STATEMENTS: {
-  [key in keyof typeof PREPARED_QUERY_NAMES]: string;
+const preparedQueryStatements: {
+  [key in keyof typeof preparedQueryNames]: string;
 } = Object.freeze({
   findAll: `select * from ${TABLE_NAME};`,
   findById: `select * from ${TABLE_NAME} where id=$id;`,
@@ -52,59 +53,67 @@ const PREPARED_QUERY_STATEMENTS: {
    * do not change the order of column names!
    * */
   findParentCategories: `with recursive
-  parent_categories(id, name, parentId, hash, createdAt, description) as (
-  select
-    id, name, parentId, hash, createdAt, description
-  from categories where id = (
-    select parentId from ${TABLE_NAME}
-    where id = $id
+    parent_categories(id, name, parentId, hash, createdAt, description) as (
+    select
+      id, name, parentId, hash, createdAt, description
+    from categories where id = (
+      select parentId from ${TABLE_NAME}
+      where id = $id
+    )
+
+    union 
+
+    select
+      c.id as id,
+      c.name as name,
+      c.parentId as parentId,
+      c.hash as hash,
+      c.createdAt as createdAt,
+      c.description as description
+    from ${TABLE_NAME} as c
+    inner join parent_categories as pc
+      on c.id = pc.parentId
   )
-
-  union 
-
-  select
-    c.id as id,
-    c.name as name,
-    c.parentId as parentId,
-    c.hash as hash,
-    c.createdAt as createdAt,
-    c.description as description
-  from ${TABLE_NAME} as c
-  inner join parent_categories as pc
-    on c.id = pc.parentId
-)
-select * from parent_categories;`,
+  select * from parent_categories;`,
 
   findSubCategories: `with recursive
-sub_categories(id, name, parentId, hash, createdAt, description) as (
-  select
-    id, name, parentId, hash, createdAt, description
-  from ${TABLE_NAME}
-  where parentId = $parentId
+  sub_categories(id, name, parentId, hash, createdAt, description) as (
+    select
+      id, name, parentId, hash, createdAt, description
+    from ${TABLE_NAME}
+    where parentId = $parentId
 
-  union 
+    union 
 
-  select
-    c.id as id,
-    c.name as name,
-    c.parentId as parentId,
-    c.hash as hash,
-    c.createdAt as createdAt,
-    c.description as description
-  from ${TABLE_NAME} as c
-  inner join sub_categories as sc
-    on c.parentId = sc.id
-)
-select * from sub_categories;`,
+    select
+      c.id as id,
+      c.name as name,
+      c.parentId as parentId,
+      c.hash as hash,
+      c.createdAt as createdAt,
+      c.description as description
+    from ${TABLE_NAME} as c
+    inner join sub_categories as sc
+      on c.parentId = sc.id
+  )
+  select * from sub_categories;`,
 });
 
 interface BuildCategoryDatabase_Argument {
   db: SqliteDatabase;
+  notifyDatabaseCorruption: (arg: any) => void;
 }
 export default function buildCategoryDatabase(
   builderArg: BuildCategoryDatabase_Argument
 ): CategoryDatabaseInterface {
-  const { db } = builderArg;
+  const { db, notifyDatabaseCorruption } = builderArg;
+  const processSingleValueReturningQueryResult =
+    makeProcessSingleValueReturningQueryResult<CategoryFields>({
+      validate,
+      normalize,
+      tableName: TABLE_NAME,
+      notifyDatabaseCorruption,
+    });
 
   const categoryDb: CategoryDatabaseInterface = {
     insert,
@@ -122,16 +131,24 @@ export default function buildCategoryDatabase(
   async function updateById(arg: QM_Arguments["updateById"]) {
     const { edited, id } = arg;
 
-    await prepareQueryIfNotPrepared({ db, queryMethod: "updateById" });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.updateById,
+      statement: preparedQueryStatements.updateById,
+    });
 
     await db.runPrepared({
       statementArgs: { ...edited, id },
-      name: PREPARED_QUERY_NAMES.updateById,
+      name: preparedQueryNames.updateById,
     });
   }
 
   async function deleteById(arg: QM_Arguments["deleteById"]) {
-    await prepareQueryIfNotPrepared({ db, queryMethod: "deleteById" });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.deleteById,
+      statement: preparedQueryStatements.deleteById,
+    });
 
     const { id } = arg;
 
@@ -146,7 +163,7 @@ export default function buildCategoryDatabase(
     const subCategories = await findSubCategories({ parentId: id });
 
     await db.runPrepared({
-      name: PREPARED_QUERY_NAMES.deleteById,
+      name: preparedQueryNames.deleteById,
       statementArgs: { id },
     });
 
@@ -154,26 +171,21 @@ export default function buildCategoryDatabase(
   }
 
   async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {
-    await prepareQueryIfNotPrepared({ db, queryMethod: "findSubCategories" });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.findSubCategories,
+      statement: preparedQueryStatements.findSubCategories,
+    });
 
-    // start transaction
-    await db.execute({ sql: "begin immediate;" });
+    const subCategories = await db.executePrepared({
+      name: preparedQueryNames.findSubCategories,
+      statementArgs: { parentId: Number(arg.parentId) },
+    });
 
-    let subCategories: any[];
-    try {
-      subCategories = await db.executePrepared({
-        name: PREPARED_QUERY_NAMES.findSubCategories,
-        statementArgs: { parentId: Number(arg.parentId) },
-      });
-    } finally {
-      // try to commit transaction
-      try {
-        await db.execute({ sql: "commit;" });
-      } catch {}
+    for (const categoryRecord of subCategories) {
+      normalize(categoryRecord);
+      validate(categoryRecord);
     }
-
-    for (const category of subCategories)
-      validateAndNormalizeCategoryRecord(category);
 
     return subCategories as CategoryFields[];
   }
@@ -181,76 +193,71 @@ export default function buildCategoryDatabase(
   async function findParentCategories(
     arg: QM_Arguments["findParentCategories"]
   ) {
-    await prepareQueryIfNotPrepared({
-      db,
-      queryMethod: "findParentCategories",
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.findParentCategories,
+      statement: preparedQueryStatements.findParentCategories,
     });
 
-    // start transaction
-    await db.execute({ sql: "begin immediate;" });
+    const parentCategories = await db.executePrepared({
+      name: preparedQueryNames.findParentCategories,
+      statementArgs: { id: Number(arg.id) },
+    });
 
-    let parentCategories: any[];
-    try {
-      parentCategories = await db.executePrepared({
-        name: PREPARED_QUERY_NAMES.findParentCategories,
-        statementArgs: { id: Number(arg.id) },
-      });
-    } finally {
-      // try to commit transaction
-      try {
-        await db.execute({ sql: "commit;" });
-      } catch {}
+    for (const categoryRecord of parentCategories) {
+      normalize(categoryRecord);
+      validate(categoryRecord);
     }
-
-    for (const category of parentCategories)
-      validateAndNormalizeCategoryRecord(category);
 
     return parentCategories as CategoryFields[];
   }
 
   async function findAll() {
-    await prepareQueryIfNotPrepared({ queryMethod: "findAll", db });
-
-    const allCategories = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findAll,
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.findAll,
+      statement: preparedQueryStatements.findAll,
     });
 
-    for (const category of allCategories)
-      validateAndNormalizeCategoryRecord(category);
+    const allCategories = await db.executePrepared({
+      name: preparedQueryNames.findAll,
+    });
+
+    for (const categoryRecord of allCategories) {
+      normalize(categoryRecord);
+      validate(categoryRecord);
+    }
 
     return allCategories as CategoryFields[];
   }
 
   async function findByHash(arg: QM_Arguments["findByHash"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "findByHash", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.findByHash,
+      statement: preparedQueryStatements.findByHash,
+    });
 
-    const results = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findByHash,
+    const result = await db.executePrepared({
+      name: preparedQueryNames.findByHash,
       statementArgs: { hash: arg.hash },
     });
 
-    switch (results.length) {
-      case 0:
-        return null;
-      case 1: {
-        const category = results[0];
-        validateAndNormalizeCategoryRecord(category);
-        return category;
-      }
-
-      default:
-        throw new EPP({
-          message: `The database is corrupted. Multiple records with the same hash in table: "${TABLE_NAME}"`,
-          code: "DB_CORRUPTED",
-        });
-    }
+    return processSingleValueReturningQueryResult({
+      result,
+      multipleRecordsErrorMessage: `Multiple records with the same hash in table: "${TABLE_NAME}"`,
+    });
   }
 
   async function insert(category: QM_Arguments["insert"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "insert", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.insert,
+      statement: preparedQueryStatements.insert,
+    });
 
     await db.runPrepared({
-      name: PREPARED_QUERY_NAMES.insert,
+      name: preparedQueryNames.insert,
       statementArgs: {
         ...category,
         id: Number(category.id),
@@ -262,122 +269,47 @@ export default function buildCategoryDatabase(
   }
 
   async function findById(arg: QM_Arguments["findById"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "findById", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryNames.findById,
+      statement: preparedQueryStatements.findById,
+    });
 
-    const results = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findById,
+    const result = await db.executePrepared({
+      name: preparedQueryNames.findById,
       statementArgs: { id: Number(arg.id) },
     });
 
-    switch (results.length) {
-      case 0:
-        return null;
-      case 1: {
-        const category = results[0];
-        validateAndNormalizeCategoryRecord(category);
-        return category;
-      }
-
-      default:
-        throw new EPP({
-          message: `The database is corrupted. Foreign key constraint violation in table: "${TABLE_NAME}"`,
-          code: "DB_CORRUPTED",
-        });
-    }
-  }
-}
-
-function validateAndNormalizeCategoryRecord(
-  record: any
-): asserts record is CategoryFields {
-  if (Number.isInteger(record.id)) record.id = record.id.toString();
-  if (Number.isInteger(record.parentId))
-    record.parentId = record.parentId.toString();
-
-  try {
-    assertValidCategory(record);
-  } catch (ex) {
-    throw new EPP({
-      code: "DB_CORRUPTED",
-      otherInfo: { record },
-      message: `The ${TABLE_NAME} table contains invalid category record(s).`,
+    return processSingleValueReturningQueryResult({
+      result,
+      multipleRecordsErrorMessage: `Foreign key constraint violation in table: "${TABLE_NAME}"`,
     });
   }
 
-  Object.freeze(record);
-}
-
-async function prepareQueryIfNotPrepared(arg: {
-  db: SqliteDatabase;
-  queryMethod: keyof typeof PREPARED_QUERY_STATEMENTS;
-}) {
-  const { queryMethod, db } = arg;
-
-  const isPrepared = await db.isPrepared({
-    name: PREPARED_QUERY_NAMES[queryMethod],
-  });
-
-  if (!isPrepared)
-    await db.prepare({
-      name: PREPARED_QUERY_NAMES[queryMethod],
-      statement: PREPARED_QUERY_STATEMENTS[queryMethod],
-    });
-}
-
-// ---- types for sortCategoryIdsInDepthFirstOrder ------------
-
-interface CategoryNode {
-  id: string;
-  children: CategoryNode[];
-  isRoot: boolean;
-}
-
-interface CategoryTree {
-  [k: string]: CategoryNode;
-}
-
-function sortCategoryIdsInDepthFirstOrder(arg: {
-  categories: Pick<CategoryFields, "id" | "parentId">[];
-}) {
-  const { categories } = arg;
-
-  const tree: CategoryTree = {};
-
-  for (const { id, parentId: pid } of categories) {
-    if (tree[id]) tree[id].isRoot = false;
-    else tree[id] = { isRoot: false, children: [], id };
-
-    const parentId = String(pid);
-    if (!tree[parentId])
-      tree[parentId] = { isRoot: true, children: [], id: parentId };
-    tree[parentId].children.push(tree[id]);
+  function normalize(record: any) {
+    if (Number.isInteger(record.id)) record.id = record.id.toString();
+    if (Number.isInteger(record.parentId))
+      record.parentId = record.parentId.toString();
+    Object.freeze(record);
   }
 
-  const root = tree["null"]
-    ? tree["null"]
-    : Object.values(tree).find((cat) => cat.isRoot);
+  function validate(record: any): asserts record is CategoryFields {
+    try {
+      assertValidCategory(record);
+    } catch (ex) {
+      const errorMessage = `The ${TABLE_NAME} table contains invalid category record(s).`;
 
-  return getCategoryIdsDepthFirstOrder({ parent: root! }).map(Number);
+      notifyDatabaseCorruption({
+        table: TABLE_NAME,
+        message: errorMessage,
+        otherInfo: { record, originalError: ex },
+      });
 
-  // --- Utility function below -----
-  interface GetCategoryIdsDepthFirst_Argument {
-    parent: CategoryNode;
-    result?: string[];
-  }
-
-  function getCategoryIdsDepthFirstOrder(
-    arg: GetCategoryIdsDepthFirst_Argument
-  ): string[] {
-    const { parent, result = [] } = arg;
-
-    if (!parent.children.length) return result;
-
-    for (const child of parent.children) {
-      getCategoryIdsDepthFirstOrder({ parent: child, result });
+      throw new EPP({
+        code: "DB_CORRUPTED",
+        otherInfo: { record, originalError: ex },
+        message: errorMessage,
+      });
     }
-
-    result.push(...parent.children.map(({ id }) => id));
-
-    return result;
   }
 }
