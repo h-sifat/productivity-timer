@@ -210,6 +210,41 @@ describe("prepare, isPrepared, and deletePrepared", () => {
       expect(await globalDb.isPrepared({ name })).toBeFalsy();
     });
   }
+
+  it(`overrides a prepared statement if the "overrideIfExists" is true or not provided`, async () => {
+    const name = "stmt";
+    await globalDb.prepare({ name, statement: `select 1 as value;` });
+    const resultA = await globalDb.executePrepared({ name });
+
+    await globalDb.prepare({ name, statement: `select 2 as value;` });
+    const resultB = await globalDb.executePrepared({ name });
+
+    expect(resultA).not.toEqual(resultB);
+
+    await globalDb.prepare({
+      name,
+      overrideIfExists: true,
+      statement: `select 3 as value;`,
+    });
+    const resultC = await globalDb.executePrepared({ name });
+
+    expect(resultC).not.toEqual(resultB);
+  });
+
+  it(`doesn't override a prepared statement if the "overrideIfExists" flag is false`, async () => {
+    const name = "stmt";
+    await globalDb.prepare({ name, statement: `select 1 as value;` });
+    const resultA = await globalDb.executePrepared({ name });
+
+    await globalDb.prepare({
+      name,
+      overrideIfExists: false,
+      statement: `select 2 as value;`,
+    });
+    const resultB = await globalDb.executePrepared({ name });
+
+    expect(resultA).toEqual(resultB);
+  });
 });
 
 describe("executePrepared", () => {

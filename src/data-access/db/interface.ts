@@ -7,9 +7,9 @@ export interface QueryMethodArguments {
   isPrepared: { name: string };
   backup: { destination: string };
   deletePrepared: { name: string };
-  prepare: { name: string; statement: string };
   runPrepared: { name: string; statementArgs?: object };
   executePrepared: { name: string; statementArgs?: object };
+  prepare: { name: string; statement: string; overrideIfExists?: boolean };
 }
 
 interface NonVoidReturnTypes {

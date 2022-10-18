@@ -53,7 +53,10 @@ module.exports = class __SqliteDb__ {
   prepare(arg) {
     this.#assertDbIsOpen();
 
-    const { name, statement } = arg;
+    const { name, statement, overrideIfExists } = arg;
+
+    if (!overrideIfExists && name in this.#preparedStatements) return;
+
     this.#preparedStatements[name] = this.#db.prepare(statement);
   }
 

@@ -339,10 +339,10 @@ export default class SqliteDatabase extends EventEmitter {
   }
 
   async prepare(arg: QueryArguments["prepare"]) {
-    const { statement, name } = arg;
+    const { statement, name, overrideIfExists = true } = arg;
     return this.#enqueueCommand<Commands["prepare"]>({
       name: "prepare",
-      argument: { statement, name },
+      argument: { statement, name, overrideIfExists },
     });
   }
 
