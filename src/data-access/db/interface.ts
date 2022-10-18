@@ -26,10 +26,20 @@ export type QueryMethodReturnType = Record<
 > &
   NonVoidReturnTypes;
 
-interface Command<Name extends keyof QueryMethodArguments, Argument> {
+export enum CommandType {
+  NORMAL = 1,
+  TRANSACTIONAL,
+  END_TRANSACTION,
+  START_TRANSACTION,
+}
+
+Object.freeze(CommandType);
+
+interface MakeCommand<Name extends keyof QueryMethodArguments, Argument> {
   name: Name;
   reject: Function;
   resolve: Function;
+  type: CommandType;
   argument: Argument;
 }
 
@@ -37,13 +47,15 @@ type MakeCommands<
   _QMA extends QueryMethodArguments,
   methods extends keyof QueryMethodArguments
 > = {
-  [method in methods]: Command<method, _QMA[method]>;
+  [method in methods]: MakeCommand<method, _QMA[method]>;
 };
 
 export type Commands = MakeCommands<
   QueryMethodArguments,
   keyof QueryMethodArguments
 >;
+
+export type Command = Commands[keyof Commands];
 
 export interface DbSubprocessResponse {
   result: any;

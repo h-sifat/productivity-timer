@@ -1,8 +1,10 @@
 import EventEmitter from "events";
 import EPP from "common/util/epp";
 
-import type {
+import {
+  Command,
   Commands,
+  CommandType,
   DbSubProcess,
   MakeDbSubProcess,
   DbSubprocessCommands,
@@ -28,13 +30,17 @@ const DB_SUBPROCESS_CRASHED_ERROR = new EPP({
 });
 
 export default class SqliteDatabase extends EventEmitter {
-  readonly #commandQueue: Commands[keyof Commands][] = [];
+  readonly #normalCommandQueue: Command[] = [];
+  readonly #transactionCommandQueue: Command[] = [];
 
   #dbSubProcess: DbSubProcess;
 
   #isDbKilled = false;
   #isExecutingCommands = false;
   #isDbSubProcessRunning = false;
+  #transaction: Transaction | null = null;
+
+  readonly #END_TRANSACTION_FLAG = Symbol();
 
   readonly #dbCloseTimeoutMsWhenKilling: number;
   readonly #sqliteDbPath: SqliteDatabaseConstructorArgument["sqliteDbPath"];
@@ -56,11 +62,12 @@ export default class SqliteDatabase extends EventEmitter {
     if (this.#isDbKilled) return;
 
     const {
+      type,
       reject,
       resolve,
       argument,
       name: methodName,
-    } = this.#commandQueue.shift()!;
+    } = this.#getCommandQueue().shift()!;
 
     // command execution failed
     if (response.error) {
@@ -72,13 +79,38 @@ export default class SqliteDatabase extends EventEmitter {
         this.emit("open_failed", { path: argument.path, error });
     } else {
       // command executed successfully
-      resolve(response.result);
+      switch (type) {
+        case CommandType.START_TRANSACTION:
+          this.#startTransaction();
+          resolve(this.#transaction);
+          break;
+
+        case CommandType.END_TRANSACTION:
+          this.#stopTransaction();
+          resolve(response.result);
+          break;
+
+        default:
+          resolve(response.result);
+      }
 
       if (methodName === "open") this.emit("open", { path: argument.path });
     }
 
     this.#resumeCommandsExecution();
   };
+
+  #startTransaction() {
+    this.#transaction = new Transaction({
+      enqueueCommand: this.#enqueueCommand,
+      END_TRANSACTION_FLAG: this.#END_TRANSACTION_FLAG,
+    });
+  }
+
+  #stopTransaction() {
+    if (this.#transaction) this.#transaction[this.#END_TRANSACTION_FLAG]();
+    this.#transaction = null;
+  }
 
   #handleDbSubProcessCrash = (code: number | null, signal: string | null) => {
     this.#isDbSubProcessRunning = false;
@@ -133,12 +165,22 @@ export default class SqliteDatabase extends EventEmitter {
     this.#executeCommands();
   }
 
+  #getCommandQueue(): Command[] {
+    return this.#transaction
+      ? this.#transactionCommandQueue
+      : this.#normalCommandQueue;
+  }
+
+  #peekFirstCommand(): Command | undefined {
+    return this.#getCommandQueue()[0];
+  }
+
   #executeCommands() {
     {
       const cannotExecuteCommand =
         this.#isDbKilled ||
         this.#isExecutingCommands ||
-        !this.#commandQueue.length ||
+        !this.#getCommandQueue().length ||
         !this.#isDbSubProcessRunning;
 
       if (cannotExecuteCommand) return;
@@ -146,28 +188,61 @@ export default class SqliteDatabase extends EventEmitter {
 
     this.#isExecutingCommands = true;
 
-    const { name: method, argument = undefined } = this.#commandQueue[0]!;
+    const { name: method, argument = undefined } = this.#peekFirstCommand()!;
     this.#dbSubProcess.send({ method, argument } as DbSubprocessCommands);
   }
 
-  #enqueueCommand<Command extends Commands[keyof Commands]>(arg: {
+  #enqueueCommand = <Command extends Commands[keyof Commands]>(arg: {
+    type?: CommandType;
     name: Command["name"];
     argument: Command["argument"];
-  }): QueryReturnTypes[Command["name"]] {
+  }): QueryReturnTypes[Command["name"]] => {
     // @ts-ignore
     if (this.#isDbKilled) return Promise.reject(DB_KILLED_ERROR);
 
     return new Promise((resolve, reject) => {
-      const command = { ...arg, resolve, reject };
-      this.#commandQueue.push(command as any);
+      const { type = CommandType.NORMAL, name, argument } = arg;
+
+      const command = Object.freeze({
+        name,
+        type,
+        reject,
+        resolve,
+        argument: Object.freeze(argument),
+      });
+
+      switch (type) {
+        case CommandType.NORMAL:
+        case CommandType.START_TRANSACTION:
+          this.#normalCommandQueue.push(command as any);
+          break;
+
+        case CommandType.TRANSACTIONAL:
+        case CommandType.END_TRANSACTION:
+          this.#transactionCommandQueue.push(command as any);
+          break;
+
+        default:
+          throw new EPP({
+            code: "INVALID_COMMAND_TYPE",
+            message: `Invalid command type: "${CommandType[type]}"`,
+          });
+      }
 
       this.#executeCommands();
     }) as QueryReturnTypes[Command["name"]];
-  }
+  };
 
   #rejectAllCommandsWith(error: any) {
-    while (this.#commandQueue.length) {
-      const { reject } = this.#commandQueue.shift()!;
+    this.#stopTransaction();
+
+    while (this.#transactionCommandQueue.length) {
+      const { reject } = this.#transactionCommandQueue.shift()!;
+      reject(error);
+    }
+
+    while (this.#normalCommandQueue.length) {
+      const { reject } = this.#normalCommandQueue.shift()!;
       reject(error);
     }
   }
@@ -212,7 +287,7 @@ export default class SqliteDatabase extends EventEmitter {
       this.#dbSubProcess.on("message", killDbIfItIsStillRunning);
 
       // if the close command takes more than this.#dbCloseTimeoutMsWhenKilling
-      // milliseconds, then this timer will be called an will kill the
+      // milliseconds, then this timer will be called and will kill the
       // subprocess without waiting for the response of the close command.
       killTimeoutId = setTimeout(
         killDbIfItIsStillRunning,
@@ -313,8 +388,93 @@ export default class SqliteDatabase extends EventEmitter {
     });
   }
 
+  async startTransaction(
+    type?: "immediate" | "exclusive" | "deferred"
+  ): Promise<Transaction> {
+    return this.#enqueueCommand<any>({
+      name: "execute",
+      type: CommandType.START_TRANSACTION,
+      argument: { sql: `begin ${type || ""};` },
+    });
+  }
+
   // getters and setters
   get isKilled() {
     return this.#isDbKilled;
+  }
+}
+
+interface Transaction_Argument {
+  enqueueCommand<Command extends Commands[keyof Commands]>(arg: {
+    name: Command["name"];
+    argument: Command["argument"];
+    type?: CommandType;
+  }): QueryReturnTypes[Command["name"]];
+  END_TRANSACTION_FLAG: symbol;
+}
+
+class Transaction {
+  [key: string | symbol]: any;
+
+  #isTransactionRunning = true;
+  readonly #__enqueueCommand__: Transaction_Argument["enqueueCommand"];
+
+  constructor(arg: Transaction_Argument) {
+    this.#__enqueueCommand__ = arg.enqueueCommand;
+
+    this[arg.END_TRANSACTION_FLAG] = () => {
+      this.#isTransactionRunning = false;
+    };
+  }
+
+  #enqueueCommand: Transaction_Argument["enqueueCommand"] = (arg: any) => {
+    if (!this.#isTransactionRunning)
+      throw new EPP({
+        code: "TRANSACTION_OVER",
+        message: `This transaction is already over.`,
+      });
+
+    return this.#__enqueueCommand__(arg);
+  };
+
+  async executePrepared(arg: QueryArguments["executePrepared"]) {
+    const { name, statementArgs = {} } = arg;
+
+    return this.#enqueueCommand<Commands["executePrepared"]>({
+      name: "executePrepared",
+      argument: { name, statementArgs },
+      type: CommandType.TRANSACTIONAL,
+    });
+  }
+
+  async runPrepared(arg: QueryArguments["runPrepared"]) {
+    const { name, statementArgs = {} } = arg;
+
+    return this.#enqueueCommand<Commands["runPrepared"]>({
+      name: "runPrepared",
+      argument: { name, statementArgs },
+      type: CommandType.TRANSACTIONAL,
+    });
+  }
+
+  async execute(arg: QueryArguments["execute"]) {
+    const { sql } = arg;
+    return this.#enqueueCommand<Commands["execute"]>({
+      name: "execute",
+      argument: { sql },
+      type: CommandType.TRANSACTIONAL,
+    });
+  }
+
+  async end(command: "commit" | "rollback") {
+    const promise = this.#enqueueCommand<any>({
+      name: "execute",
+      argument: { sql: command + ";" },
+      type: CommandType.END_TRANSACTION,
+    });
+
+    this.#isTransactionRunning = false;
+
+    return promise;
   }
 }

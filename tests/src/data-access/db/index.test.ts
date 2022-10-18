@@ -525,7 +525,7 @@ describe("Handling SubProcess Crash", () => {
     it(`emits the "${event}" if the db sub_process crashes`, (done) => {
       const mockMakeDbSubProcess = jest
         .fn()
-        .mockImplementation(() => makeDbSubProcess());
+        .mockImplementation(() => new FakeDbSubProcess());
 
       const testDb = new SqliteDatabase({
         sqliteDbPath: IN_MEMORY_DB_PATH,
@@ -555,10 +555,10 @@ describe("Handling SubProcess Crash", () => {
 
   {
     const errorCode = "DB_SUBPROCESS_CRASHED";
-    it(`rejects all existing queries with ewc "${errorCode}" if the sub process crashes`, (done) => {
+    it(`rejects all existing normal queries with ewc "${errorCode}" if the sub process crashes`, (done) => {
       const mockMakeDbSubProcess = jest
         .fn()
-        .mockImplementation(() => makeDbSubProcess());
+        .mockImplementation(() => new FakeDbSubProcess());
 
       const testDb = new SqliteDatabase({
         sqliteDbPath: IN_MEMORY_DB_PATH,
@@ -581,6 +581,41 @@ describe("Handling SubProcess Crash", () => {
 
       // simulating db sub_process crash
       currentlyActiveSubProcess.kill();
+    });
+  }
+
+  {
+    const errorCode = "DB_SUBPROCESS_CRASHED";
+    it(`rejects all existing transactional queries with ewc "${errorCode}" if the sub process crashes`, (done) => {
+      const mockMakeDbSubProcess = jest
+        .fn()
+        .mockImplementation(makeDbSubProcess);
+
+      const testDb = new SqliteDatabase({
+        sqliteDbPath: IN_MEMORY_DB_PATH,
+        makeDbSubProcess: mockMakeDbSubProcess,
+      });
+
+      testDb.open({ path: IN_MEMORY_DB_PATH }).then(async () => {
+        const transaction = await testDb.startTransaction();
+
+        transaction.execute({ sql: "select 2;" }).catch(async (error) => {
+          try {
+            expect(error.code).toBe(errorCode);
+            await testDb.kill();
+
+            done();
+          } catch (ex) {
+            done(ex);
+          }
+        });
+
+        const currentlyActiveSubProcess =
+          mockMakeDbSubProcess.mock.results[0].value;
+
+        // simulating db sub_process crash
+        currentlyActiveSubProcess.kill();
+      }); // end of testDb.open
     });
   }
 
@@ -662,3 +697,116 @@ describe("Handling SubProcess Crash", () => {
     });
   }
 });
+
+describe("transaction", () => {
+  it(`creates and rolls back a transaction`, async () => {
+    const tableName = "test";
+    await globalDb.execute({ sql: `create table ${tableName} (x);` });
+
+    const stmtName = "findAll";
+    await globalDb.prepare({
+      name: stmtName,
+      statement: `select * from ${tableName};`,
+    });
+
+    {
+      const allEntries = await globalDb.executePrepared({ name: "findAll" });
+      expect(allEntries).toHaveLength(0);
+    }
+
+    // ----- transaction start -------------
+    const transaction = await globalDb.startTransaction();
+
+    await transaction.execute({ sql: `insert into ${tableName} values (1);` });
+    {
+      const allEntries = await transaction.executePrepared({ name: "findAll" });
+      expect(allEntries).toEqual([{ x: 1 }]);
+    }
+
+    await transaction.end("rollback");
+    // ----- transaction rollback -------------
+
+    {
+      const allEntries = await globalDb.executePrepared({ name: "findAll" });
+      expect(allEntries).toHaveLength(0);
+    }
+  });
+
+  it(`doesn't execute any other commands while a transaction is running`, (done) => {
+    const finishedExecuting: string[] = [];
+
+    const endTest = () => {
+      if (finishedExecuting.length !== 2) return;
+
+      try {
+        expect(finishedExecuting).toEqual(["transaction.end", "isPrepared"]);
+        done();
+      } catch (ex) {
+        done(ex);
+      }
+    };
+
+    globalDb.startTransaction().then((transaction) => {
+      globalDb.isPrepared({ name: "findAll" }).then(() => {
+        finishedExecuting.push("isPrepared");
+        endTest();
+      });
+
+      // though transaction.end is called later it should
+      // execute before isPrepare
+      transaction.end("commit").then(() => {
+        finishedExecuting.push("transaction.end");
+        endTest();
+      });
+    });
+  });
+
+  {
+    const errorCode = "DB_NOT_INITIALIZED";
+    it(`throws ewc "${errorCode}" if we attempt to create a transaction when db is not open`, async () => {
+      expect.assertions(2);
+
+      await globalDb.close();
+      expect(await globalDb.isOpen()).toBeFalsy();
+
+      try {
+        await globalDb.startTransaction();
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
+
+  {
+    const errorCode = "TRANSACTION_OVER";
+    it(`throws ewc "${errorCode}" if any transaction method is invoked after it's over`, async () => {
+      expect.assertions(1);
+
+      const transaction = await globalDb.startTransaction();
+      await transaction.end("commit");
+
+      try {
+        await transaction.execute({ sql: "select 1;" });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
+
+  {
+    const errorCode = "TRANSACTION_OVER";
+    it(`throws ewc "${errorCode}" if any transaction method is invoked after db is killed`, async () => {
+      expect.assertions(1);
+
+      const transaction = await globalDb.startTransaction();
+
+      await globalDb.kill();
+
+      try {
+        await transaction.execute({ sql: "select 1;" });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
+}); // describe
