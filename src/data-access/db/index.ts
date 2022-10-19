@@ -42,4 +42,5 @@ export async function initializeDatabase(db: SqliteDatabase) {
 
   await db.execute({ sql: dbConfig.tables.categories });
   await db.execute({ sql: dbConfig.tables.projects });
+  await db.execute({ sql: dbConfig.tables.work_sessions });
 }
