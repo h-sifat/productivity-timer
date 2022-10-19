@@ -4,7 +4,6 @@ import type {
   UnixMsTimestampToUsLocaleDateString,
 } from "common/interfaces/date-time";
 import type { WorkSessionFields } from "entities/work-session/work-session";
-import type { QueryMethodArguments } from "use-cases/interfaces/work-session-db";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 
 import EPP from "common/util/epp";
@@ -24,9 +23,10 @@ export default function buildListWorkSessionsByDateRange(
   const assertValidUSLocaleDateString: AssertValidUSLocaleDateString =
     builderArg.assertValidUSLocaleDateString;
 
-  return async function listWorkSessionsByDateRange(
-    arg: QueryMethodArguments["findByDateRange"]
-  ): Promise<WorkSessionFields[]> {
+  return async function listWorkSessionsByDateRange(arg: {
+    from: string;
+    to?: string;
+  }): Promise<WorkSessionFields[]> {
     const {
       from = required("from"),
       to = unixMsTimestampToUsLocaleDateString(currentTimeMs()),
