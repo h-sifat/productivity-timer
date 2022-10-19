@@ -1,8 +1,7 @@
-import type { WorkSessionRecord } from "./interface";
+import type { WorkSessionJSONRecord } from "./interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
 import { deepFreeze } from "common/util/other";
-import WorkSession from "entities/work-session";
 import { DeepFreezeTypeMapper } from "common/interfaces/other";
 import { unixMsTimestampToUsLocaleDateString } from "common/util/date-time";
 
@@ -22,8 +21,8 @@ const eventNamesShortToLong = Object.freeze({
 
 export function normalizeDocumentToRecord(
   document: WorkSessionFields | DeepFreezeTypeMapper<WorkSessionFields>
-): WorkSessionRecord {
-  const record: Partial<WorkSessionRecord> = {};
+): WorkSessionJSONRecord {
+  const record: Partial<WorkSessionJSONRecord> = {};
 
   record.id = Number(document.id);
   record.targetDuration = document.targetDuration;
@@ -41,11 +40,11 @@ export function normalizeDocumentToRecord(
     timestamp,
   }));
 
-  return record as WorkSessionRecord;
+  return record as WorkSessionJSONRecord;
 }
 
 export function normalizeRecordToDocument(
-  record: WorkSessionRecord
+  record: WorkSessionJSONRecord
 ): WorkSessionFields {
   const document: Partial<WorkSessionFields> = {};
 

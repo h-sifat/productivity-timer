@@ -115,7 +115,7 @@ export default function buildCategoryDatabase(
       notifyDatabaseCorruption,
     });
 
-  const categoryDb: CategoryDatabaseInterface = {
+  const categoryDb: CategoryDatabaseInterface = Object.freeze({
     insert,
     findAll,
     findById,
@@ -124,7 +124,7 @@ export default function buildCategoryDatabase(
     updateById,
     findSubCategories,
     findParentCategories,
-  };
+  });
   return categoryDb;
 
   // -------------- db methods ----------------------------------------
