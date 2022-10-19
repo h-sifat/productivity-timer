@@ -44,7 +44,9 @@ export function normalizeDocumentToRecord(
   return record as WorkSessionRecord;
 }
 
-export function normalizeRecordToDocument(record: WorkSessionRecord) {
+export function normalizeRecordToDocument(
+  record: WorkSessionRecord
+): WorkSessionFields {
   const document: Partial<WorkSessionFields> = {};
 
   document.id = record.id.toString();
@@ -65,8 +67,6 @@ export function normalizeRecordToDocument(record: WorkSessionRecord) {
     timestamp,
     name: eventNamesShortToLong[name],
   }));
-
-  <any>WorkSession.validator.validate(document);
 
   deepFreeze(document);
 

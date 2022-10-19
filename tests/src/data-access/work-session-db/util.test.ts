@@ -27,15 +27,4 @@ describe("normalizeRecordToDocument", () => {
     expect(document).toEqual(SAMPLE_WORK_SESSION);
     expect(Object.isFrozen(document)).toBeTruthy();
   });
-
-  it(`throws error if record contains invalid event name`, () => {
-    const record = normalizeDocumentToRecord(SAMPLE_WORK_SESSION);
-
-    // @ts-expect-error
-    record.events[0] = { ...record.events[0], name: "x" };
-
-    expect(() => {
-      normalizeRecordToDocument(record);
-    }).toThrowError();
-  });
 });
