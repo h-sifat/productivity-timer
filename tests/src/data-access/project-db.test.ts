@@ -12,7 +12,11 @@ beforeEach(async () => {
   await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
   await initializeDatabase(_internalDb_);
 
-  if (!projectDb) projectDb = buildProjectDatabase({ db: _internalDb_ });
+  if (!projectDb)
+    projectDb = buildProjectDatabase({
+      db: _internalDb_,
+      notifyDatabaseCorruption: () => {},
+    });
 });
 
 afterEach(async () => {

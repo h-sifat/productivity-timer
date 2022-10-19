@@ -5,6 +5,7 @@ import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
+import { makeProcessSingleValueReturningQueryResult } from "./util";
 
 const assertValidProject: ProjectValidator["validate"] =
   Project.validator.validate;
@@ -44,9 +45,16 @@ const PREPARED_QUERY_STATEMENTS: {
 
 export default function buildProjectDatabase(builderArg: {
   db: SqliteDatabase;
-  // @ts-ignore
+  notifyDatabaseCorruption: (arg: any) => void;
 }): ProjectDatabaseInterface {
-  const { db } = builderArg;
+  const { db, notifyDatabaseCorruption } = builderArg;
+  const processSingleValueReturningQueryResult =
+    makeProcessSingleValueReturningQueryResult<ProjectFields>({
+      normalize,
+      validate,
+      tableName: TABLE_NAME,
+      notifyDatabaseCorruption,
+    });
 
   const projectDatabase: ProjectDatabaseInterface = Object.freeze({
     insert,
@@ -60,20 +68,30 @@ export default function buildProjectDatabase(builderArg: {
 
   // ---------------- Query Functions ----------------
   async function findAll() {
-    await prepareQueryIfNotPrepared({ queryMethod: "findAll", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.findAll,
+      statement: PREPARED_QUERY_STATEMENTS.findAll,
+    });
 
     const allCategories = await db.executePrepared({
       name: PREPARED_QUERY_NAMES.findAll,
     });
 
-    for (const category of allCategories)
-      validateAndNormalizeProjectRecord(category);
+    for (const category of allCategories) {
+      normalize(category);
+      validate(category);
+    }
 
     return allCategories as ProjectFields[];
   }
 
   async function deleteById(arg: QM_Arguments["deleteById"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "deleteById", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.deleteById,
+      statement: PREPARED_QUERY_STATEMENTS.deleteById,
+    });
 
     await db.runPrepared({
       name: PREPARED_QUERY_NAMES.deleteById,
@@ -82,7 +100,11 @@ export default function buildProjectDatabase(builderArg: {
   }
 
   async function updateById(arg: QM_Arguments["updateById"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "updateById", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.updateById,
+      statement: PREPARED_QUERY_STATEMENTS.updateById,
+    });
 
     await db.runPrepared({
       name: PREPARED_QUERY_NAMES.updateById,
@@ -91,57 +113,47 @@ export default function buildProjectDatabase(builderArg: {
   }
 
   async function findById(arg: QM_Arguments["findById"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "findById", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.findById,
+      statement: PREPARED_QUERY_STATEMENTS.findById,
+    });
 
-    const results = await db.executePrepared({
+    const result = await db.executePrepared({
       name: PREPARED_QUERY_NAMES.findById,
       statementArgs: { id: Number(arg.id) },
     });
 
-    switch (results.length) {
-      case 0:
-        return null;
-      case 1: {
-        const project = results[0];
-        validateAndNormalizeProjectRecord(project);
-        return project;
-      }
-
-      default:
-        throw new EPP({
-          code: "DB_CORRUPTED",
-          message: `The database is corrupted. Foreign key constraint violation in table: "${TABLE_NAME}"`,
-        });
-    }
+    return processSingleValueReturningQueryResult({
+      result,
+      multipleRecordsErrorMessage: `The database is corrupted. Foreign key constraint violation in table: "${TABLE_NAME}".`,
+    });
   }
 
   async function findByName(arg: QM_Arguments["findByName"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "findByName", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.findByName,
+      statement: PREPARED_QUERY_STATEMENTS.findByName,
+    });
 
-    const results = await db.executePrepared({
+    const result = await db.executePrepared({
       name: PREPARED_QUERY_NAMES.findByName,
       statementArgs: { name: arg.name },
     });
 
-    switch (results.length) {
-      case 0:
-        return null;
-      case 1: {
-        const project = results[0];
-        validateAndNormalizeProjectRecord(project);
-        return project;
-      }
-
-      default:
-        throw new EPP({
-          code: "DB_CORRUPTED",
-          message: `The database is corrupted. Multiple projects with the same name.`,
-        });
-    }
+    return processSingleValueReturningQueryResult({
+      result,
+      multipleRecordsErrorMessage: `The database is corrupted (unique constraint violation). Multiple projects with the same name.`,
+    });
   }
 
   async function insert(project: QM_Arguments["insert"]) {
-    await prepareQueryIfNotPrepared({ queryMethod: "insert", db });
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.insert,
+      statement: PREPARED_QUERY_STATEMENTS.insert,
+    });
 
     await db.runPrepared({
       name: PREPARED_QUERY_NAMES.insert,
@@ -152,41 +164,32 @@ export default function buildProjectDatabase(builderArg: {
       },
     });
   }
-}
 
-function validateAndNormalizeProjectRecord(
-  record: any
-): asserts record is ProjectFields {
-  if (Number.isInteger(record.id)) record.id = record.id.toString();
-  if (Number.isInteger(record.categoryId))
-    record.categoryId = record.categoryId.toString();
+  function normalize(record: any) {
+    if (Number.isInteger(record.id)) record.id = record.id.toString();
+    if (Number.isInteger(record.categoryId))
+      record.categoryId = record.categoryId.toString();
 
-  try {
-    assertValidProject(record);
-  } catch (ex) {
-    throw new EPP({
-      code: "DB_CORRUPTED",
-      otherInfo: { record },
-      message: `The ${TABLE_NAME} table contains invalid projects record(s).`,
-    });
+    Object.freeze(record);
   }
 
-  Object.freeze(record);
-}
+  function validate(record: any): asserts record is ProjectFields {
+    try {
+      assertValidProject(record);
+    } catch (ex) {
+      const errorMessage = `The ${TABLE_NAME} table contains invalid category record(s).`;
 
-async function prepareQueryIfNotPrepared(arg: {
-  db: SqliteDatabase;
-  queryMethod: keyof typeof PREPARED_QUERY_STATEMENTS;
-}) {
-  const { queryMethod, db } = arg;
+      notifyDatabaseCorruption({
+        table: TABLE_NAME,
+        message: errorMessage,
+        otherInfo: { record, originalError: ex },
+      });
 
-  const isPrepared = await db.isPrepared({
-    name: PREPARED_QUERY_NAMES[queryMethod],
-  });
-
-  if (!isPrepared)
-    await db.prepare({
-      name: PREPARED_QUERY_NAMES[queryMethod],
-      statement: PREPARED_QUERY_STATEMENTS[queryMethod],
-    });
+      throw new EPP({
+        code: "DB_CORRUPTED",
+        otherInfo: { record, originalError: ex },
+        message: errorMessage,
+      });
+    }
+  }
 }
