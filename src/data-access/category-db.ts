@@ -2,6 +2,7 @@ import type {
   CategoryFields,
   CategoryValidator,
 } from "entities/category/category";
+import type { MakeGetMaxId } from "./interface";
 import type SqliteDatabase from "./db/mainprocess-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/category-db";
@@ -14,10 +15,12 @@ const assertValidCategory: CategoryValidator["validate"] =
   Category.validator.validate;
 
 const TABLE_NAME = "categories";
+const MAX_ID_COLUMN_NAME = "max_id";
 
-const preparedQueryNames = Object.freeze({
+const PREPARED_QUERY_NAMES = Object.freeze({
   insert: "cat/insert",
   findAll: "cat/findAll",
+  getMaxId: "cat/getMaxId",
   findById: "cat/findById",
   updateById: "cat/updateById",
   findByHash: "cat/findByHash",
@@ -26,14 +29,14 @@ const preparedQueryNames = Object.freeze({
   findParentCategories: "cat/findParentCategories",
 });
 
-const preparedQueryStatements: {
-  [key in keyof typeof preparedQueryNames]: string;
+const PREPARED_QUERY_STATEMENTS: {
+  [key in keyof typeof PREPARED_QUERY_NAMES]: string;
 } = Object.freeze({
   findAll: `select * from ${TABLE_NAME};`,
   findById: `select * from ${TABLE_NAME} where id=$id;`,
   findByHash: `select * from ${TABLE_NAME} where hash=$hash;`,
-
   deleteById: `delete from ${TABLE_NAME} where id = ($id);`,
+  getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
 
   insert: `insert into ${TABLE_NAME}
   ( id, name, hash, parentId, createdAt, description)
@@ -101,12 +104,13 @@ const preparedQueryStatements: {
 
 interface BuildCategoryDatabase_Argument {
   db: SqliteDatabase;
+  makeGetMaxId: MakeGetMaxId;
   notifyDatabaseCorruption: (arg: any) => void;
 }
 export default function buildCategoryDatabase(
   builderArg: BuildCategoryDatabase_Argument
 ): CategoryDatabaseInterface {
-  const { db, notifyDatabaseCorruption } = builderArg;
+  const { db, notifyDatabaseCorruption, makeGetMaxId } = builderArg;
   const processSingleValueReturningQueryResult =
     makeProcessSingleValueReturningQueryResult<CategoryFields>({
       validate,
@@ -115,10 +119,18 @@ export default function buildCategoryDatabase(
       notifyDatabaseCorruption,
     });
 
+  const getMaxId = makeGetMaxId({
+    db,
+    maxIdColumnName: MAX_ID_COLUMN_NAME,
+    preparedQueryName: PREPARED_QUERY_NAMES.getMaxId,
+    preparedQueryStatement: PREPARED_QUERY_STATEMENTS.getMaxId,
+  });
+
   const categoryDb: CategoryDatabaseInterface = Object.freeze({
     insert,
     findAll,
     findById,
+    getMaxId,
     deleteById,
     findByHash,
     updateById,
@@ -133,21 +145,21 @@ export default function buildCategoryDatabase(
 
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.updateById,
-      statement: preparedQueryStatements.updateById,
+      name: PREPARED_QUERY_NAMES.updateById,
+      statement: PREPARED_QUERY_STATEMENTS.updateById,
     });
 
     await db.runPrepared({
       statementArgs: { ...edited, id },
-      name: preparedQueryNames.updateById,
+      name: PREPARED_QUERY_NAMES.updateById,
     });
   }
 
   async function deleteById(arg: QM_Arguments["deleteById"]) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.deleteById,
-      statement: preparedQueryStatements.deleteById,
+      name: PREPARED_QUERY_NAMES.deleteById,
+      statement: PREPARED_QUERY_STATEMENTS.deleteById,
     });
 
     const { id } = arg;
@@ -163,7 +175,7 @@ export default function buildCategoryDatabase(
     const subCategories = await findSubCategories({ parentId: id });
 
     await db.runPrepared({
-      name: preparedQueryNames.deleteById,
+      name: PREPARED_QUERY_NAMES.deleteById,
       statementArgs: { id },
     });
 
@@ -173,12 +185,12 @@ export default function buildCategoryDatabase(
   async function findSubCategories(arg: QM_Arguments["findSubCategories"]) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.findSubCategories,
-      statement: preparedQueryStatements.findSubCategories,
+      name: PREPARED_QUERY_NAMES.findSubCategories,
+      statement: PREPARED_QUERY_STATEMENTS.findSubCategories,
     });
 
     const subCategories = await db.executePrepared({
-      name: preparedQueryNames.findSubCategories,
+      name: PREPARED_QUERY_NAMES.findSubCategories,
       statementArgs: { parentId: Number(arg.parentId) },
     });
 
@@ -195,12 +207,12 @@ export default function buildCategoryDatabase(
   ) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.findParentCategories,
-      statement: preparedQueryStatements.findParentCategories,
+      name: PREPARED_QUERY_NAMES.findParentCategories,
+      statement: PREPARED_QUERY_STATEMENTS.findParentCategories,
     });
 
     const parentCategories = await db.executePrepared({
-      name: preparedQueryNames.findParentCategories,
+      name: PREPARED_QUERY_NAMES.findParentCategories,
       statementArgs: { id: Number(arg.id) },
     });
 
@@ -215,12 +227,12 @@ export default function buildCategoryDatabase(
   async function findAll() {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.findAll,
-      statement: preparedQueryStatements.findAll,
+      name: PREPARED_QUERY_NAMES.findAll,
+      statement: PREPARED_QUERY_STATEMENTS.findAll,
     });
 
     const allCategories = await db.executePrepared({
-      name: preparedQueryNames.findAll,
+      name: PREPARED_QUERY_NAMES.findAll,
     });
 
     for (const categoryRecord of allCategories) {
@@ -234,12 +246,12 @@ export default function buildCategoryDatabase(
   async function findByHash(arg: QM_Arguments["findByHash"]) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.findByHash,
-      statement: preparedQueryStatements.findByHash,
+      name: PREPARED_QUERY_NAMES.findByHash,
+      statement: PREPARED_QUERY_STATEMENTS.findByHash,
     });
 
     const result = await db.executePrepared({
-      name: preparedQueryNames.findByHash,
+      name: PREPARED_QUERY_NAMES.findByHash,
       statementArgs: { hash: arg.hash },
     });
 
@@ -252,12 +264,12 @@ export default function buildCategoryDatabase(
   async function insert(category: QM_Arguments["insert"]) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.insert,
-      statement: preparedQueryStatements.insert,
+      name: PREPARED_QUERY_NAMES.insert,
+      statement: PREPARED_QUERY_STATEMENTS.insert,
     });
 
     await db.runPrepared({
-      name: preparedQueryNames.insert,
+      name: PREPARED_QUERY_NAMES.insert,
       statementArgs: {
         ...category,
         id: Number(category.id),
@@ -271,12 +283,12 @@ export default function buildCategoryDatabase(
   async function findById(arg: QM_Arguments["findById"]) {
     await db.prepare({
       overrideIfExists: false,
-      name: preparedQueryNames.findById,
-      statement: preparedQueryStatements.findById,
+      name: PREPARED_QUERY_NAMES.findById,
+      statement: PREPARED_QUERY_STATEMENTS.findById,
     });
 
     const result = await db.executePrepared({
-      name: preparedQueryNames.findById,
+      name: PREPARED_QUERY_NAMES.findById,
       statementArgs: { id: Number(arg.id) },
     });
 

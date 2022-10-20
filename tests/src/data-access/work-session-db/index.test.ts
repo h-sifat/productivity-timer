@@ -10,6 +10,7 @@ import {
 } from "data-access/work-session-db/util";
 import Category from "entities/category";
 import { deepFreeze } from "common/util/other";
+import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
 import buildCategoryDatabase from "data-access/category-db";
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
@@ -37,6 +38,7 @@ beforeEach(async () => {
 
   if (!categoryDb)
     categoryDb = buildCategoryDatabase({
+      makeGetMaxId,
       db: _internalDb_,
       notifyDatabaseCorruption: () => {},
     });

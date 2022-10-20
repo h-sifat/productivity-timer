@@ -12,6 +12,7 @@ export interface QueryMethodArguments {
 }
 
 export default interface CategoryDatabaseInterface {
+  getMaxId(): Promise<number>;
   findAll(): Promise<CategoryFields[]>;
   insert(arg: QueryMethodArguments["insert"]): Promise<CategoryFields>;
   deleteById(

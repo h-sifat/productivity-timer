@@ -5,6 +5,7 @@ import { CategoryFields } from "entities/category/category";
 import _internalDb_ from "data-access/db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import { initializeDatabase } from "data-access/init-db";
+import { makeGetMaxId } from "data-access/util";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
@@ -27,6 +28,7 @@ beforeEach(async () => {
 
   if (!categoryDb)
     categoryDb = buildCategoryDatabase({
+      makeGetMaxId,
       db: _internalDb_,
       notifyDatabaseCorruption: () => {},
     });
@@ -40,6 +42,26 @@ afterAll(async () => {
   await _internalDb_.kill();
 });
 // -----    Test setup -----------------
+
+describe("getMaxId", () => {
+  it(`returns 1 if db is empty`, async () => {
+    // currently our db is empty
+    const maxId = await categoryDb.getMaxId();
+    expect(maxId).toBe(1);
+  });
+
+  it(`returns the maxId (i.e., lastInsertRowId)`, async () => {
+    const id = 123;
+    const category = (() => {
+      return { ...Category.make({ name: "a" }), id: id.toString() };
+    })();
+
+    await categoryDb.insert(category);
+
+    const maxId = await categoryDb.getMaxId();
+    expect(maxId).toBe(id);
+  });
+});
 
 describe("findById", () => {
   it(`returns null if no category is found with the given id`, async () => {
