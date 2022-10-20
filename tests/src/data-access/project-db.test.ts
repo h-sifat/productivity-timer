@@ -1,6 +1,7 @@
 import Project from "entities/project";
+import _internalDb_ from "data-access/db";
+import { initializeDatabase } from "data-access/init-db";
 import buildProjectDatabase from "data-access/project-db";
-import _internalDb_, { initializeDatabase } from "data-access/db";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";

@@ -2,8 +2,9 @@ import Category from "entities/category";
 import SqliteDatabase from "data-access/db/mainprocess-db";
 import buildCategoryDatabase from "data-access/category-db";
 import { CategoryFields } from "entities/category/category";
-import _internalDb_, { initializeDatabase } from "data-access/db";
+import _internalDb_ from "data-access/db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import { initializeDatabase } from "data-access/init-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {

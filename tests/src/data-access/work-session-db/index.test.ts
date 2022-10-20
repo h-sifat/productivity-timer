@@ -1,19 +1,20 @@
-import _internalDb_, { initializeDatabase } from "data-access/db";
+import _internalDb_ from "data-access/db";
 
 import buildWorkSessionDatabase, {
   TABLE_NAME as WORK_SESSION_TABLE_NAME,
 } from "data-access/work-session-db";
 
-import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
-import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 import {
   normalizeDocumentToRecord,
   normalizeRecordToDocument,
 } from "data-access/work-session-db/util";
-import buildCategoryDatabase from "data-access/category-db";
-import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import Category from "entities/category";
 import { deepFreeze } from "common/util/other";
+import { initializeDatabase } from "data-access/init-db";
+import buildCategoryDatabase from "data-access/category-db";
+import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
+import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const notifyDatabaseCorruption = jest.fn();
