@@ -1,30 +1,37 @@
 import Category from "entities/category";
-import CategoryDatabase from "fixtures/use-case/category-db";
 import makeListCategories from "use-cases/category/list-categories";
 
-const db = new CategoryDatabase();
+const db = Object.freeze({
+  findAll: jest.fn(),
+});
 
 const listCategories = makeListCategories({ db });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Functionality", () => {
   it(`returns empty array if no category exists in db`, async () => {
+    db.findAll.mockResolvedValueOnce([]);
+
     const result = await listCategories();
 
     expect(result).toEqual([]);
+
+    expect(db.findAll).toHaveBeenCalledTimes(1);
   });
 
   it(`lists all the categories`, async () => {
-    const categoryRecord = Category.make({ name: "study" });
+    const category = Category.make({ name: "study" });
 
-    await db.insert(categoryRecord);
+    db.findAll.mockResolvedValueOnce([category]);
 
     const categories = await listCategories();
 
     expect(categories).toHaveLength(1);
-    expect(categories.pop()).toEqual(categoryRecord);
+    expect(categories.pop()).toEqual(category);
+
+    expect(db.findAll).toHaveBeenCalledTimes(1);
   });
 });
