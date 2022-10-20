@@ -37,7 +37,7 @@ function configureFakeCurrentTimeMsForChangingTimestamps(
 }
 
 const assertValidRef = jest.fn();
-const DEFAULT_CONSTRUCTOR_ARGUMENT = Object.freeze({
+const VALID_CONSTRUCTOR_ARGUMENT = Object.freeze({
   assertValidRef,
   TICK_INTERVAL_MS,
   MAX_ALLOWED_TICK_DIFF_MS,
@@ -47,7 +47,7 @@ const DEFAULT_CONSTRUCTOR_ARGUMENT = Object.freeze({
   getDateFromTimeMs: fakeGetDateFromTimeMs,
 });
 
-const timer = new CountDownTimer(DEFAULT_CONSTRUCTOR_ARGUMENT);
+const timer = new CountDownTimer(VALID_CONSTRUCTOR_ARGUMENT);
 
 const INITIAL_TIMER_INFO = Object.freeze({
   logs: Object.freeze([]),
@@ -663,23 +663,48 @@ describe("Constructor_Argument Validation", () => {
     {
       errorCode: "INVALID_TICK_INTERVAL_MS",
       case: "The TICK_INTERVAL_MS is not a positive integer",
-      arg: { ...DEFAULT_CONSTRUCTOR_ARGUMENT, TICK_INTERVAL_MS: 23423.23423 },
+      arg: { ...VALID_CONSTRUCTOR_ARGUMENT, TICK_INTERVAL_MS: 23423.23423 },
+    },
+    {
+      errorCode: "INVALID_MIN_ALLOWED_TICK_DIFF_MS",
+      case: "The MIN_ALLOWED_TICK_DIFF_MS is not a positive integer",
+      arg: {
+        ...VALID_CONSTRUCTOR_ARGUMENT,
+        MIN_ALLOWED_TICK_DIFF_MS: 312.423412,
+      },
+    },
+    {
+      errorCode: "INVALID_MIN_ALLOWED_TICK_DIFF_MS",
+      case: "The MIN_ALLOWED_TICK_DIFF_MS is greater than TICK_INTERVAL_MS",
+      arg: {
+        ...VALID_CONSTRUCTOR_ARGUMENT,
+        MIN_ALLOWED_TICK_DIFF_MS:
+          VALID_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS + 1,
+      },
+    },
+    {
+      errorCode: "INVALID_MIN_ALLOWED_TICK_DIFF_MS",
+      case: "The MIN_ALLOWED_TICK_DIFF_MS is equal to TICK_INTERVAL_MS",
+      arg: {
+        ...VALID_CONSTRUCTOR_ARGUMENT,
+        MIN_ALLOWED_TICK_DIFF_MS: VALID_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS,
+      },
     },
     {
       errorCode: "INVALID_MAX_ALLOWED_TICK_DIFF_MS",
       case: "The MAX_ALLOWED_TICK_DIFF_MS is less than the TICK_INTERVAL_MS",
       arg: {
-        ...DEFAULT_CONSTRUCTOR_ARGUMENT,
+        ...VALID_CONSTRUCTOR_ARGUMENT,
         MAX_ALLOWED_TICK_DIFF_MS:
-          DEFAULT_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS - 1,
+          VALID_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS - 1,
       },
     },
     {
       errorCode: "INVALID_MAX_ALLOWED_TICK_DIFF_MS",
       case: "The MAX_ALLOWED_TICK_DIFF_MS is equal to the TICK_INTERVAL_MS",
       arg: {
-        ...DEFAULT_CONSTRUCTOR_ARGUMENT,
-        MAX_ALLOWED_TICK_DIFF_MS: DEFAULT_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS,
+        ...VALID_CONSTRUCTOR_ARGUMENT,
+        MAX_ALLOWED_TICK_DIFF_MS: VALID_CONSTRUCTOR_ARGUMENT.TICK_INTERVAL_MS,
       },
     },
   ])(`throws ewc "$errorCode" if $case`, ({ arg, errorCode }) => {

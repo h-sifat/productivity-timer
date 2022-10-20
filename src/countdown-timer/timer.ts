@@ -55,10 +55,11 @@ export interface Constructor_Argument<RefType> {
   currentTimeMs(): number;
   TICK_INTERVAL_MS: number;
   MAX_ALLOWED_TICK_DIFF_MS: number;
+  MIN_ALLOWED_TICK_DIFF_MS?: number;
+  clearInterval(timerId: any): void;
   getDateFromTimeMs(time: number): string;
-  clearInterval(timerId: NodeJS.Timer): void;
   assertValidRef(ref: unknown): asserts ref is RefType;
-  setInterval(arg: { interval: number; callback: Function }): NodeJS.Timer;
+  setInterval(arg: { interval: number; callback: Function }): any;
 }
 
 export const DEFAULT_TIMER_DURATION = 25 * 60 * 1000; // 25 minutes
@@ -85,6 +86,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
   #data: TimerData<RefType> = { ...getDefaultTimerData() };
 
   #tickIntervalId: NodeJS.Timer | null = null;
+  readonly #MIN_ALLOWED_TICK_DIFF_MS: number;
   readonly #setInterval: Constructor_Argument<RefType>["setInterval"];
   readonly #clearInterval: Constructor_Argument<RefType>["clearInterval"];
   readonly #currentTimeMs: Constructor_Argument<RefType>["currentTimeMs"];
@@ -108,6 +110,21 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     });
 
     this.#TICK_INTERVAL_MS = arg.TICK_INTERVAL_MS;
+
+    if ("MIN_ALLOWED_TICK_DIFF_MS" in arg) {
+      assert<number>("positive_integer", arg.MIN_ALLOWED_TICK_DIFF_MS, {
+        name: "MIN_ALLOWED_TICK_DIFF_MS",
+        code: "INVALID_MIN_ALLOWED_TICK_DIFF_MS",
+      });
+
+      if (arg.MIN_ALLOWED_TICK_DIFF_MS >= this.#TICK_INTERVAL_MS)
+        throw new EPP({
+          code: "INVALID_MIN_ALLOWED_TICK_DIFF_MS",
+          message: `The MIN_ALLOWED_TICK_DIFF_MS must be less the TICK_INTERVAL_MS.`,
+        });
+
+      this.#MIN_ALLOWED_TICK_DIFF_MS = arg.MIN_ALLOWED_TICK_DIFF_MS;
+    } else this.#MIN_ALLOWED_TICK_DIFF_MS = this.#TICK_INTERVAL_MS - 10; // 10ms
 
     if (arg.MAX_ALLOWED_TICK_DIFF_MS <= this.#TICK_INTERVAL_MS)
       throw new EPP({
@@ -229,7 +246,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     if (this.#data.lastTick) {
       const tickDiff = callTimestamp - this.#data.lastTick;
 
-      if (tickDiff < this.#TICK_INTERVAL_MS) {
+      if (tickDiff < this.#MIN_ALLOWED_TICK_DIFF_MS) {
         this.#pauseUrgently(this.#data.lastTick);
         this.emit("err:time_decrement", this.#getEventArgument());
 
