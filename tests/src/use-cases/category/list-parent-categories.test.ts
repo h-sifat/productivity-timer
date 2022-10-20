@@ -1,15 +1,17 @@
 import Category from "entities/category";
 import { isValid as isValidId } from "common/util/id";
-import { CategoryFields } from "entities/category/category";
-import CategoryDatabase from "fixtures/use-case/category-db";
 import makeListParentCategories from "use-cases/category/list-parent-categories";
 
-const db = new CategoryDatabase();
+const db = Object.freeze({
+  findById: jest.fn(),
+  findParentCategories: jest.fn(),
+});
+const dbMethodsCount = Object.keys(db).length;
 
 const listParentCategories = makeListParentCategories({ db, isValidId });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Validation", () => {
@@ -17,7 +19,7 @@ describe("Validation", () => {
     const errorCode = "MISSING_ID";
 
     it(`throws ewc "${errorCode}" if id is missing`, async () => {
-      expect.assertions(1);
+      expect.assertions(1 + dbMethodsCount);
 
       try {
         // @ts-ignore
@@ -25,6 +27,9 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
     });
   }
 
@@ -32,7 +37,7 @@ describe("Validation", () => {
     const errorCode = "INVALID_ID";
 
     it(`it throws ewc "${errorCode}" if id is not valid`, async () => {
-      expect.assertions(2);
+      expect.assertions(2 + dbMethodsCount);
 
       const invalidId = "non_numeric_string";
       expect(isValidId(invalidId)).toBeFalsy();
@@ -42,6 +47,9 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
     });
   }
 
@@ -49,68 +57,67 @@ describe("Validation", () => {
     const errorCode = "NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if the category with the given id doesn't exist`, async () => {
-      expect.assertions(1);
+      expect.assertions(4);
+
+      const id = "100";
+
+      // meaning on category was found with the given id
+      db.findById.mockReturnValueOnce(null);
 
       try {
         // currently the db is empty so no category should
         // exist with the given id
-        await listParentCategories({ id: "100" });
+        await listParentCategories({ id });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(db.findParentCategories).not.toHaveBeenCalled();
+      expect(db.findById).toHaveBeenCalledTimes(1);
+      expect(db.findById).toHaveBeenCalledWith({ id });
     });
   }
 });
 
 describe("Functionality", () => {
-  const categoryIdSortPredicate = (
-    catA: CategoryFields,
-    catB: CategoryFields
-  ) => +catA.id - +catB.id;
-
-  const study = Category.make({ name: "study" });
-  const programming = Category.make({
-    name: "programming",
-    parentId: study.id,
-  });
-  const backend = Category.make({ name: "Backend", parentId: programming.id });
-
-  const PARENT_CATEGORIES = [study, programming, backend].sort(
-    categoryIdSortPredicate
-  );
-
-  const CHILD_CATEGORY = Category.make({
-    name: "Node.js",
-    parentId: backend.id,
-  });
-
-  /*
-   * Category structure:
-   *
-   * study
-   *    |--- programming
-   *            |--- Backend
-   *                    |--- Node.js
-   * */
-
   it(`returns an empty array if category has no parent. i.e. parentId = null`, async () => {
     const category = Category.make({ name: "study" });
     expect(category.parentId).toBeNull();
 
-    // inserting manually
-    await db.insert(category);
+    // inserting category manually
+    db.findById.mockReturnValueOnce(category);
+    // return an empty array
+    db.findParentCategories.mockResolvedValueOnce([]);
 
     const parents = await listParentCategories({ id: category.id });
     expect(parents).toEqual([]);
+
+    expect(db.findById).toHaveBeenCalledTimes(1);
+
+    // because the parentId is null
+    expect(db.findParentCategories).not.toHaveBeenCalled();
+
+    expect(db.findById).toHaveBeenCalledWith({ id: category.id });
   });
 
-  it(`returns all the parents recursively`, async () => {
-    await db.insertMany([...PARENT_CATEGORIES, CHILD_CATEGORY]);
+  it(`returns whatever the db.findParentCategories returns without validation`, async () => {
+    const category = Category.make({ name: "study", parentId: "23423423" });
+    expect(category.parentId).not.toBeNull();
 
-    const parents = await listParentCategories({ id: CHILD_CATEGORY.id });
+    // inserting category manually
+    db.findById.mockReturnValueOnce(category);
 
-    expect(parents).toHaveLength(3);
+    const parentCategories = Object.freeze(["Mom", "Dad", "Grandfather"]);
+    // return an empty array
+    db.findParentCategories.mockResolvedValueOnce(parentCategories);
 
-    expect(parents.sort(categoryIdSortPredicate)).toEqual(PARENT_CATEGORIES);
+    const parents = await listParentCategories({ id: category.id });
+    expect(parents).toEqual(parentCategories);
+
+    expect(db.findById).toHaveBeenCalledTimes(1);
+    expect(db.findParentCategories).toHaveBeenCalledTimes(1);
+
+    expect(db.findById).toHaveBeenCalledWith({ id: category.id });
+    expect(db.findParentCategories).toHaveBeenCalledWith({ id: category.id });
   });
 });
