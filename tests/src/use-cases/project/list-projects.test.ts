@@ -1,29 +1,23 @@
-import Project from "entities/project";
-import ProjectDatabase from "fixtures/use-case/project-db";
 import makeListProjects from "use-cases/project/list-projects";
 
-const db = new ProjectDatabase();
+const db = Object.freeze({
+  findAll: jest.fn(),
+});
 
 const listProjects = makeListProjects({ db });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Functionality", () => {
-  it(`returns empty array if db is empty`, async () => {
+  it(`returns whatever the db.findAll returns without validation`, async () => {
+    const projects = Object.freeze(["Dang TODO that's taking a long time"]);
+    db.findAll.mockResolvedValueOnce(projects);
+
     const result = await listProjects();
-    expect(result).toEqual([]);
-  });
+    expect(result).toEqual(projects);
 
-  it(`returns all the projects records`, async () => {
-    const inserted = Project.make({ name: "todo" });
-
-    await db.insert(inserted);
-
-    const projects = await listProjects();
-
-    expect(projects).toHaveLength(1);
-    expect(projects[0]).toEqual(inserted);
+    expect(db.findAll).toHaveBeenCalledTimes(1);
   });
 });
