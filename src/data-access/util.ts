@@ -1,4 +1,5 @@
 import EPP from "common/util/epp";
+import { MakeGetMaxId_Argument } from "./interface";
 
 interface MakeProcessSingleValueReturningQueryResult_Argument {
   tableName: string;
@@ -42,5 +43,27 @@ export function makeProcessSingleValueReturningQueryResult<DocType>(
     validate(document);
 
     return document;
+  };
+}
+
+export function makeGetMaxId(builderArg: MakeGetMaxId_Argument) {
+  const { db, maxIdColumnName, preparedQueryName, preparedQueryStatement } =
+    builderArg;
+
+  return async function getMaxId(): Promise<number> {
+    await db.prepare({
+      overrideIfExists: false,
+      name: preparedQueryName,
+      statement: preparedQueryStatement,
+    });
+
+    const result = (await db.executePrepared({
+      name: preparedQueryName,
+    })) as any;
+
+    // result should be [ { [maxIdColumnName]: maxId } ]
+    const maxId = result[0][maxIdColumnName];
+
+    return Number(maxId) || 1;
   };
 }
