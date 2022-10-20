@@ -1,16 +1,19 @@
 import getID from "src/data-access/id";
 import Category from "entities/category";
-import { CategoryFields } from "entities/category/category";
-import CategoryDatabase from "fixtures/use-case/category-db";
 import makeListSubCategories from "use-cases/category/list-sub-categories";
 
-const db = new CategoryDatabase();
+const db = Object.freeze({
+  findById: jest.fn(),
+  findSubCategories: jest.fn(),
+});
+
+const dbMethodsCount = Object.keys(db).length;
 const Id = getID({ entity: "category" });
 
 const listSubCategories = makeListSubCategories({ Id, db });
 
-beforeEach(async () => {
-  await db.clearDb();
+beforeEach(() => {
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Validation", () => {
@@ -18,7 +21,7 @@ describe("Validation", () => {
     const errorCode = "INVALID_PARENT_ID";
 
     it(`returns ewc "${errorCode} if parentId is not valid" `, async () => {
-      expect.assertions(2);
+      expect.assertions(2 + dbMethodsCount);
 
       const invalidParentId = "0"; // not a positive integer
       expect(Id.isValid(invalidParentId)).toBeFalsy();
@@ -29,86 +32,55 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "PARENT_NOT_FOUND";
+
+    it(`throws ewc "${errorCode}" if the parent category does not exist`, async () => {
+      expect.assertions(4);
+
+      const parentId = "23423";
+
+      // meaning the parent category with the given id doesn't exist
+      db.findById.mockResolvedValueOnce(null);
+
+      try {
+        await listSubCategories({ parentId });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      expect(db.findById).toHaveBeenCalledTimes(1);
+      expect(db.findById).toHaveBeenCalledWith({ id: parentId });
+      expect(db.findSubCategories).not.toHaveBeenCalled();
     });
   }
 });
 
 describe("Functionality", () => {
-  const categoryIdSortPredicate = (
-    catA: CategoryFields,
-    catB: CategoryFields
-  ) => +catA.id - +catB.id;
+  it(`returns whatever the db.findSubCategories returns`, async () => {
+    const category = Category.make({ name: "Alex" });
 
-  const PARENT_CATEGORY = Category.make({ name: "study" });
+    const parentId = category.id;
 
-  const SUB_CATEGORIES = (() => {
-    const programming = Category.make({
-      name: "programming",
-      parentId: PARENT_CATEGORY.id,
-    });
+    db.findById.mockResolvedValueOnce(category);
 
-    const academic = Category.make({
-      name: "academic",
-      parentId: PARENT_CATEGORY.id,
-    });
+    const subCategories = Object.freeze(["Blex", "Clex"]);
+    db.findSubCategories.mockResolvedValueOnce(subCategories);
 
-    const levelTwoSubCategories = [
-      { name: "DSA", parentId: programming.id },
-      { name: "Backend", parentId: programming.id },
+    const result = await listSubCategories({ parentId });
 
-      { name: "math", parentId: academic.id },
-      { name: "english", parentId: academic.id },
-    ].map((arg) => Category.make(arg));
+    expect(result).toEqual(subCategories);
 
-    return [programming, academic, ...levelTwoSubCategories];
-  })();
-  /*
-   * Category structure:
-   *
-   * study
-   *    |--- programming
-   *    |       |--- DSA
-   *    |       |--- Backend
-   *    |--- academic
-   *            |--- math
-   *            |--- english
-   * */
+    expect(db.findById).toHaveBeenCalledTimes(1);
+    expect(db.findSubCategories).toHaveBeenCalledTimes(1);
 
-  it(`returns an empty array for the children field if no child is found for the given parentId`, async () => {
-    await db.insert(PARENT_CATEGORY);
-    // right now no direct sub category should exist in db
-
-    const children = await listSubCategories({ parentId: PARENT_CATEGORY.id });
-
-    expect(children).toEqual([]);
-  });
-
-  it(`returns only the direct sub categories for the given parentId if "recursive" flag is false`, async () => {
-    // populate the db manually
-    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
-
-    const subCategories = await listSubCategories({
-      parentId: PARENT_CATEGORY.id,
-    });
-
-    const expectedSubCategories = SUB_CATEGORIES.filter(
-      (cat) => cat.parentId === PARENT_CATEGORY.id
-    );
-
-    expect(subCategories).toEqual(expectedSubCategories);
-  });
-
-  it(`returns all children recursively if the "recursive" flag is true`, async () => {
-    // populate the db manually
-    await db.insertMany([PARENT_CATEGORY, ...SUB_CATEGORIES]);
-
-    const subCategories = await listSubCategories({
-      recursive: true,
-      parentId: PARENT_CATEGORY.id,
-    });
-
-    expect(subCategories.sort(categoryIdSortPredicate)).toEqual(
-      SUB_CATEGORIES.sort(categoryIdSortPredicate)
-    );
+    expect(db.findById).toHaveBeenCalledWith({ id: parentId });
+    expect(db.findSubCategories).toHaveBeenCalledWith({ parentId });
   });
 });
