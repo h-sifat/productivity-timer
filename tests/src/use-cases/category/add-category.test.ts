@@ -1,11 +1,15 @@
-import CategoryDatabase from "fixtures/use-case/category-db";
+import Category from "entities/category";
 import makeAddCategory from "use-cases/category/add-category";
 
-const db = new CategoryDatabase();
+const db = Object.freeze({
+  insert: jest.fn(),
+  findById: jest.fn(),
+  findByHash: jest.fn(),
+});
 const addCategory = makeAddCategory({ db });
 
 beforeEach(async () => {
-  await db.clearDb();
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Insertion", () => {
@@ -22,10 +26,17 @@ describe("Insertion", () => {
       hash: expect.any(String),
       createdAt: expect.any(Number),
     });
+
+    expect(db.findById).not.toHaveBeenCalled();
+    expect(db.insert).toHaveBeenCalledTimes(1);
+    expect(db.findByHash).toHaveBeenCalledTimes(1);
+
+    expect(db.insert).toHaveBeenCalledWith(inserted);
+    expect(db.findByHash).toHaveBeenCalledWith({ hash: inserted.hash });
   });
 
   it("throws error if category info is invalid", async () => {
-    expect.assertions(1);
+    expect.assertions(4);
 
     try {
       // @ts-expect-error name field is missing
@@ -33,35 +44,63 @@ describe("Insertion", () => {
     } catch (ex: any) {
       expect(ex.code).toBe("MISSING_NAME");
     }
+
+    for (const method of Object.values(db))
+      expect(method).not.toHaveBeenCalled();
   });
 
-  it(`doesn't insert the same category twice if name and parentId is the same`, async () => {
-    const name = "study";
-    const descriptionBefore = "Before";
-    const descriptionAfter = "After";
+  {
+    const errorCode = "CATEGORY_EXISTS";
 
-    const insertedBefore = await addCategory({
-      categoryInfo: { name, description: descriptionBefore },
-    });
-    const insertedAfter = await addCategory({
-      // adding some whitespace in name
-      categoryInfo: { name: `    ${name}  `, description: descriptionAfter },
-    });
+    it(`throws ewc "${errorCode}" if another category with the same name and parentId already exists`, async () => {
+      expect.assertions(3);
 
-    expect(insertedBefore).toEqual(insertedAfter);
-  });
+      const name = "study";
+      const category = Category.make({ name });
+
+      // if findByHash returns a category then it means another category
+      // with the same name parentId already exists
+      db.findByHash.mockResolvedValueOnce(category);
+
+      try {
+        await addCategory({ categoryInfo: { name } });
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      expect(db.insert).not.toHaveBeenCalled();
+      expect(db.findById).not.toHaveBeenCalled();
+    });
+  }
 
   {
     const errorCode = "PARENT_NOT_FOUND";
 
     it(`throws ewc "${errorCode}" if a category has a non null parentId and that parent doesn't exist`, async () => {
-      expect.assertions(1);
+      expect.assertions(6);
+
+      const categoryInfo = Object.freeze({ name: "a", parentId: "100" });
+
+      // meaning no category with the same name and parent exists
+      db.findByHash.mockReturnValueOnce(null);
+
+      // db.findById is called to make sure the parent exists
+      // receiving null means the parent doesn't exist
+      db.findById.mockResolvedValueOnce(null);
 
       try {
-        await addCategory({ categoryInfo: { name: "a", parentId: "100" } });
+        await addCategory({ categoryInfo });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(db.insert).not.toHaveBeenCalled();
+
+      expect(db.findByHash).toHaveBeenCalledTimes(1);
+      expect(db.findById).toHaveBeenCalledTimes(1);
+
+      expect(db.findByHash).toHaveBeenCalledWith({ hash: expect.any(String) });
+      expect(db.findById).toHaveBeenCalledWith({ id: categoryInfo.parentId });
     });
   }
 });

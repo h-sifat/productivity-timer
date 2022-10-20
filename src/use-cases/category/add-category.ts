@@ -30,7 +30,13 @@ export default function makeAddCategory(arg: MakeAddCategory_Argument) {
         hash: insertingCategory.hash,
       });
 
-      if (existingCategory) return existingCategory;
+      if (existingCategory) {
+        const { name, parentId } = existingCategory;
+        throw new EPP({
+          code: "CATEGORY_EXISTS",
+          message: `Another category with the name: ${name} and parentId: ${parentId} already exits.`,
+        });
+      }
     }
 
     if (insertingCategory.parentId) {
