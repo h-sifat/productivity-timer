@@ -9,6 +9,7 @@ export interface QueryMethodArguments {
 }
 
 export default interface ProjectDatabaseInterface {
+  getMaxId(): Promise<number>;
   findByName(
     arg: QueryMethodArguments["findByName"]
   ): Promise<ProjectFields | null>;

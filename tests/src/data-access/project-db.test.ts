@@ -1,5 +1,6 @@
 import Project from "entities/project";
 import _internalDb_ from "data-access/db";
+import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
 import buildProjectDatabase from "data-access/project-db";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
@@ -15,6 +16,7 @@ beforeEach(async () => {
 
   if (!projectDb)
     projectDb = buildProjectDatabase({
+      makeGetMaxId,
       db: _internalDb_,
       notifyDatabaseCorruption: () => {},
     });
@@ -28,6 +30,25 @@ afterAll(async () => {
   await _internalDb_.kill();
 });
 // -----    Test setup -----------------
+describe("getMaxId", () => {
+  it(`returns 1 if db is empty`, async () => {
+    // currently our db is empty
+    const maxId = await projectDb.getMaxId();
+    expect(maxId).toBe(1);
+  });
+
+  it(`returns the maxId (i.e., lastInsertRowId)`, async () => {
+    const id = 123;
+    const project = (() => {
+      return { ...Project.make({ name: "a" }), id: id.toString() };
+    })();
+
+    await projectDb.insert(project);
+
+    const maxId = await projectDb.getMaxId();
+    expect(maxId).toBe(id);
+  });
+});
 
 describe("findById", () => {
   it(`returns null if no project is found with the given id`, async () => {

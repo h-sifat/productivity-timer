@@ -6,18 +6,21 @@ import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/
 import EPP from "common/util/epp";
 import Project from "entities/project";
 import { makeProcessSingleValueReturningQueryResult } from "./util";
+import { MakeGetMaxId } from "./interface";
 
 const assertValidProject: ProjectValidator["validate"] =
   Project.validator.validate;
 
 const TABLE_NAME = "projects";
+const MAX_ID_COLUMN_NAME = "max_id";
 
 const PREPARED_QUERY_NAMES = Object.freeze({
   insert: "project/insert",
   findAll: "project/findAll",
   findById: "project/findById",
-  findByName: "project/findByName",
+  getMaxId: "project/getMaxId",
   deleteById: "project/deleteById",
+  findByName: "project/findByName",
   updateById: "project/updateById",
 });
 
@@ -28,6 +31,7 @@ const PREPARED_QUERY_STATEMENTS: {
   findById: `select * from ${TABLE_NAME} where id = $id;`,
   findByName: `select * from ${TABLE_NAME} where name = $name;`,
   deleteById: `delete from ${TABLE_NAME} where id = $id;`,
+  getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
 
   insert: `insert into projects
   (id, name, status, deadline, createdAt, categoryId, description)
@@ -45,9 +49,10 @@ const PREPARED_QUERY_STATEMENTS: {
 
 export default function buildProjectDatabase(builderArg: {
   db: SqliteDatabase;
+  makeGetMaxId: MakeGetMaxId;
   notifyDatabaseCorruption: (arg: any) => void;
 }): ProjectDatabaseInterface {
-  const { db, notifyDatabaseCorruption } = builderArg;
+  const { db, notifyDatabaseCorruption, makeGetMaxId } = builderArg;
   const processSingleValueReturningQueryResult =
     makeProcessSingleValueReturningQueryResult<ProjectFields>({
       normalize,
@@ -56,9 +61,17 @@ export default function buildProjectDatabase(builderArg: {
       notifyDatabaseCorruption,
     });
 
+  const getMaxId = makeGetMaxId({
+    db,
+    maxIdColumnName: MAX_ID_COLUMN_NAME,
+    preparedQueryName: PREPARED_QUERY_NAMES.getMaxId,
+    preparedQueryStatement: PREPARED_QUERY_STATEMENTS.getMaxId,
+  });
+
   const projectDatabase: ProjectDatabaseInterface = Object.freeze({
     insert,
     findAll,
+    getMaxId,
     findById,
     findByName,
     deleteById,
