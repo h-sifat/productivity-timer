@@ -1,4 +1,6 @@
-import { makeGetMaxId } from "data-access/util";
+import db from "data-access/db";
+import { getAllTableNames, makeGetMaxId } from "data-access/util";
+import { typeNames } from "handy-types";
 
 describe("makeGetMaxId", () => {
   const db = Object.freeze({
@@ -48,5 +50,41 @@ describe("makeGetMaxId", () => {
 
     const result = await getMaxId();
     expect(result).toBe(1);
+  });
+});
+
+describe("getAllTableNames", () => {
+  const IN_MEMORY_DB_PATH = ":memory:";
+
+  beforeEach(async () => {
+    await db.open({ path: IN_MEMORY_DB_PATH });
+  });
+
+  afterEach(async () => {
+    await db.close();
+  });
+
+  afterAll(async () => {
+    db.kill();
+  });
+
+  it(`returns an empty array if the db is empty`, async () => {
+    const tables = await getAllTableNames({ db, preparedQueryName: "query" });
+    expect(tables).toEqual([]);
+  });
+
+  it(`returns all the table names`, async () => {
+    const TABLE_NAME = "tbl";
+    const INDEX_NAME = `${TABLE_NAME}_idx`;
+
+    await db.execute({
+      sql: `create table ${TABLE_NAME}(x);
+      create index ${INDEX_NAME} on ${TABLE_NAME} (x);`,
+    });
+
+    const tables = await getAllTableNames({ db, preparedQueryName: "query" });
+
+    // the index name should not show up
+    expect(tables).toEqual([TABLE_NAME]);
   });
 });

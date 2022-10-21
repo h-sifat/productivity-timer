@@ -1,5 +1,6 @@
 import EPP from "common/util/epp";
-import { MakeGetMaxId_Argument } from "./interface";
+import type SqliteDatabase from "./db/mainprocess-db";
+import type { MakeGetMaxId_Argument } from "./interface";
 
 interface MakeProcessSingleValueReturningQueryResult_Argument {
   tableName: string;
@@ -66,4 +67,23 @@ export function makeGetMaxId(builderArg: MakeGetMaxId_Argument) {
 
     return Number(maxId) || 1;
   };
+}
+
+interface GetAllTableNames_Argument {
+  db: Pick<SqliteDatabase, "prepare" | "executePrepared">;
+  preparedQueryName: string;
+}
+export async function getAllTableNames(
+  arg: GetAllTableNames_Argument
+): Promise<string[]> {
+  const { db, preparedQueryName } = arg;
+
+  await db.prepare({
+    name: preparedQueryName,
+    statement: `select name from sqlite_master where type = 'table';`,
+  });
+
+  const rows = await db.executePrepared({ name: preparedQueryName });
+
+  return rows.map((row: any) => row.name);
 }
