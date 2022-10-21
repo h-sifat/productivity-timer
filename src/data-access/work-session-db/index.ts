@@ -17,11 +17,13 @@ import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/
 import EPP from "common/util/epp";
 import WorkSession from "entities/work-session";
 import { DeepFreezeTypeMapper } from "common/interfaces/other";
+import { MakeGetMaxId } from "data-access/interface";
 
 const assertValidWorkSession: WorkSessionValidator["validate"] =
   WorkSession.validator.validate;
 
 export const TABLE_NAME = "work_sessions";
+const MAX_ID_COLUMN_NAME = "max_id";
 const WS_JSON_RESULT_COLUMN_NAME = "work_session";
 const SELECT_WS_AS_JSON_QUERY_PREFIX = `select json_object(
     'id', ws.id,
@@ -59,6 +61,7 @@ const SELECT_WS_AS_JSON_QUERY_PREFIX = `select json_object(
 // no semi-colon at the end so that other clauses can be appended to it
 
 const PREPARED_QUERY_NAMES = Object.freeze({
+  getMaxId: "ws/getMaxId",
   insert_work_session: "ws/insert_work_session",
   insert_work_session_elapsed_time_by_date:
     "ws/insert_work_session_elapsed_time_by_date",
@@ -69,6 +72,7 @@ const PREPARED_QUERY_NAMES = Object.freeze({
 const PREPARED_QUERY_STATEMENTS: {
   [key in keyof typeof PREPARED_QUERY_NAMES]: string;
 } = Object.freeze({
+  getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
   insert_work_session: `insert into work_sessions
   (id, startedAt, targetDuration, totalElapsedTime, projectId, categoryId)
   values ($id, $startedAt, $targetDuration, $totalElapsedTime, $projectId, $categoryId);`,
@@ -88,6 +92,7 @@ const PREPARED_QUERY_STATEMENTS: {
 
 interface BuildWorkSessionDatabase_Argument {
   db: SqliteDatabase;
+  makeGetMaxId: MakeGetMaxId;
   notifyDatabaseCorruption: (arg: any) => void;
   normalizeRecordToDocument(record: WorkSessionJSONRecord): WorkSessionFields;
   normalizeDocumentToRecord(
@@ -100,13 +105,22 @@ export default function buildWorkSessionDatabase(
 ): WorkSessionDatabaseInterface {
   const {
     db,
+    makeGetMaxId,
     notifyDatabaseCorruption,
     normalizeDocumentToRecord,
     normalizeRecordToDocument: __normalizeRecordToDocument__,
   } = builderArg;
 
+  const getMaxId = makeGetMaxId({
+    db,
+    maxIdColumnName: MAX_ID_COLUMN_NAME,
+    preparedQueryName: PREPARED_QUERY_NAMES.getMaxId,
+    preparedQueryStatement: PREPARED_QUERY_STATEMENTS.getMaxId,
+  });
+
   const workSessionDb: WorkSessionDatabaseInterface = Object.freeze({
     insert,
+    getMaxId,
     findByDateRange,
   });
 

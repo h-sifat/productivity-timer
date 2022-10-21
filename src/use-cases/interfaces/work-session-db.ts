@@ -7,6 +7,7 @@ export interface QueryMethodArguments {
 }
 
 export default interface WorkSessionDatabaseInterface {
+  getMaxId(): Promise<number>;
   findByDateRange(
     arg: QueryMethodArguments["findByDateRange"]
   ): Promise<WorkSessionFields[]>;

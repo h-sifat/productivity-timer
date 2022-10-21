@@ -31,6 +31,7 @@ beforeEach(async () => {
   if (!workSessionDb)
     workSessionDb = buildWorkSessionDatabase({
       db: _internalDb_,
+      makeGetMaxId,
       notifyDatabaseCorruption,
       normalizeDocumentToRecord,
       normalizeRecordToDocument,
@@ -53,6 +54,30 @@ afterAll(async () => {
   await _internalDb_.kill();
 });
 // -----    Test setup -----------------
+describe("getMaxId", () => {
+  it(`returns 1 if db is empty`, async () => {
+    // currently our db is empty
+    const maxId = await workSessionDb.getMaxId();
+    expect(maxId).toBe(1);
+  });
+
+  it(`returns the maxId (i.e., lastInsertRowId)`, async () => {
+    const id = 123;
+
+    const category = Category.make({ name: "study" });
+    const workSession = {
+      ...SAMPLE_WORK_SESSION,
+      id: id.toString(),
+      ref: { id: category.id, type: "category" } as const,
+    };
+
+    await categoryDb.insert(category);
+    await workSessionDb.insert(workSession);
+
+    const maxId = await workSessionDb.getMaxId();
+    expect(maxId).toBe(id);
+  });
+});
 
 describe("insert", () => {
   it.each([
