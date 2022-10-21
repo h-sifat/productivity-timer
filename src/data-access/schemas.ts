@@ -1,4 +1,4 @@
-export const tableSchemas = Object.freeze({
+export const TABLE_SCHEMAS = Object.freeze({
   categories: `create table if not exists categories (
       id integer primary key check(typeof(id) = 'integer'),
       name text not null check(typeof(name) = 'text'),
@@ -56,9 +56,9 @@ export const tableSchemas = Object.freeze({
         (projectId is null and categoryId is not null) or
         (projectId is not null and categoryId is null)
       )
-    );
+    );`,
 
-    create table if not exists work_session_elapsed_time_by_date (
+  work_session_elapsed_time_by_date: `create table if not exists work_session_elapsed_time_by_date (
       date integer not null check(typeof(date) == 'integer'),
       elapsed_time_ms integer not null check(typeof(elapsed_time_ms) == 'integer'),
 
@@ -67,10 +67,9 @@ export const tableSchemas = Object.freeze({
         references work_sessions(id)
         on update cascade
         on delete cascade
-    );
+    );`,
 
-
-    create table if not exists work_session_timer_events (
+  work_session_timer_events: `create table if not exists work_session_timer_events (
       name text not null check(typeof(name) == 'text'),
       timestamp integer not null check(typeof(timestamp) == 'integer'),
 
@@ -81,3 +80,17 @@ export const tableSchemas = Object.freeze({
         on delete cascade
     );`,
 });
+
+/**
+ * Defines the table creation order. This order is necessary because some tables
+ * references other table(s) in their column definition. If a referencing table
+ * doesn't exist then the db will throw an error.
+ */
+export const TABLE_SCHEMA_ORDER: Readonly<Array<keyof typeof TABLE_SCHEMAS>> =
+  Object.freeze([
+    "categories",
+    "projects",
+    "work_sessions",
+    "work_session_timer_events",
+    "work_session_elapsed_time_by_date",
+  ]);

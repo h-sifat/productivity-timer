@@ -1,17 +1,23 @@
 import type SqliteDatabase from "./db/mainprocess-db";
 
-import { tableSchemas } from "./schemas";
+import EPP from "common/util/epp";
 import { getDbConfig } from "src/config";
+import { getAllTableNames } from "./util";
+import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER } from "./schemas";
 
 const dbConfig = getDbConfig();
+export const QUERY_NAME_GET_ALL_TBL_NAMES = "init/getAllTableNames";
 
-// @TODO still have to do a lot of error handling and checking
-// I'm just trying to set up the db to develop the categoryDb and ProjectsDb
-export async function initializeDatabase(db: SqliteDatabase) {
+export async function initializeDatabase(
+  db: Pick<SqliteDatabase, "pragma" | "prepare" | "execute" | "executePrepared">
+) {
   {
     const result = await db.pragma({ command: "integrity_check" });
     if (String(result).toLowerCase() !== "ok")
-      throw new Error(`Database is corrupted: ${result}`);
+      throw new EPP({
+        code: "DB_CORRUPTED:INTEGRITY_VIOLATION",
+        message: `Database is corrupted. ${result}`,
+      });
   }
 
   for (const [pragma, value] of Object.entries(dbConfig.pragmas)) {
@@ -21,12 +27,33 @@ export async function initializeDatabase(db: SqliteDatabase) {
   {
     const table = await db.pragma({ command: "foreign_key_check" });
     if (table)
-      throw new Error(
-        `Database is corrupted: foreign key constraint violated in table: "${table}"`
-      );
+      throw new EPP({
+        code: "DB_CORRUPTED:F_KEY_VIOLATION",
+        message: `Database is corrupted. Foreign key constraint violation in table: "${table}"`,
+      });
   }
 
-  await db.execute({ sql: tableSchemas.categories });
-  await db.execute({ sql: tableSchemas.projects });
-  await db.execute({ sql: tableSchemas.work_sessions });
+  const existingTables = await getAllTableNames({
+    db,
+    preparedQueryName: QUERY_NAME_GET_ALL_TBL_NAMES,
+  });
+
+  if (!existingTables.length) {
+    for (const table of TABLE_SCHEMA_ORDER)
+      await db.execute({ sql: TABLE_SCHEMAS[table] });
+  } else {
+    for (const table of TABLE_SCHEMA_ORDER)
+      if (!existingTables.includes(table))
+        throw new EPP({
+          code: "DB_CORRUPTED:TABLE_DELETED",
+          message: `Database is corrupted. The table "${table}" has been deleted.`,
+        });
+
+    for (const table of existingTables)
+      if (!(table in TABLE_SCHEMAS))
+        throw new EPP({
+          code: "DB_CORRUPTED:UNKNOWN_TABLE",
+          message: `Database is corrupted. Unknown table ("${table}").`,
+        });
+  }
 }
