@@ -1,5 +1,6 @@
 import type { ID } from "common/interfaces/id";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 
@@ -8,14 +9,12 @@ interface MakeRemoveProject_Argument {
   db: Pick<ProjectDatabaseInterface, "deleteById" | "findById">;
 }
 
-interface RemoveProject_Argument {
-  id: string;
-}
+export default function makeRemoveProject(
+  builderArg: MakeRemoveProject_Argument
+): ProjectServiceInterface["removeProject"] {
+  const { isValidId, db } = builderArg;
 
-export default function makeRemoveProject(arg: MakeRemoveProject_Argument) {
-  const { isValidId, db } = arg;
-
-  return async function removeProject(arg: RemoveProject_Argument) {
+  return async function removeProject(arg) {
     const { id } = arg;
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 

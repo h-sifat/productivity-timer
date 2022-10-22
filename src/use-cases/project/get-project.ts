@@ -1,6 +1,6 @@
 import type { ID } from "common/interfaces/id";
-import type { ProjectFields } from "entities/project/project";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 
@@ -9,15 +9,12 @@ interface MakeGetProject_Argument {
   db: Pick<ProjectDatabaseInterface, "findById">;
 }
 
-interface GetProject_Argument {
-  id: string;
-}
+export default function makeGetProject(
+  builderArg: MakeGetProject_Argument
+): ProjectServiceInterface["getProject"] {
+  const { db, isValidId } = builderArg;
 
-export default function makeGetProject(arg: MakeGetProject_Argument) {
-  const { db, isValidId } = arg;
-  return async function getProject(
-    arg: GetProject_Argument
-  ): Promise<ProjectFields | null> {
+  return async function getProject(arg) {
     const { id } = arg;
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");

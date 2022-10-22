@@ -1,5 +1,5 @@
-import type { MakeProject_Argument } from "entities/project/project";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 import Project from "entities/project";
@@ -8,14 +8,12 @@ interface MakeAddProject_Argument {
   db: Pick<ProjectDatabaseInterface, "findByName" | "insert">;
 }
 
-interface AddProject_Argument {
-  projectInfo: MakeProject_Argument;
-}
+export default function makeAddProject(
+  builderArg: MakeAddProject_Argument
+): ProjectServiceInterface["addProject"] {
+  const { db } = builderArg;
 
-export default function makeAddProject(arg: MakeAddProject_Argument) {
-  const { db } = arg;
-
-  return async function addProject(arg: AddProject_Argument) {
+  return async function addProject(arg) {
     const { projectInfo } = arg;
 
     const project = Project.make(projectInfo);
