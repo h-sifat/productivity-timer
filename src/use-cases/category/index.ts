@@ -4,6 +4,7 @@ import makeEditCategory from "./edit-category";
 import makeGetCategoryMaxId from "./get-max-id";
 import makeListCategories from "./list-categories";
 import makeRemoveCategory from "./remove-category";
+import makeGetCategoryById from "./get-category-by-id";
 import makeListSubCategories from "./list-sub-categories";
 import makeListParentCategories from "./list-parent-categories";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
@@ -27,6 +28,7 @@ export default function makeCategoryService(
     editCategory: makeEditCategory({ db, isValidId }),
     listSubCategories: makeListSubCategories({ db, Id }),
     removeCategory: makeRemoveCategory({ db, isValidId }),
+    getCategoryById: makeGetCategoryById({ db, isValidId }),
     listParentCategories: makeListParentCategories({ db, isValidId }),
   });
 

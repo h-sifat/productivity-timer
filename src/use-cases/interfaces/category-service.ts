@@ -15,6 +15,7 @@ export interface EditCategory_Argument {
 
 export interface CategoryServiceInterface {
   getMaxId(): Promise<number>;
+  getCategoryById(arg: { id: string }): Promise<CategoryFields | null>;
   listParentCategories(
     arg: QueryMethodArguments["findParentCategories"]
   ): ReturnType<CategoryDatabaseInterface["findParentCategories"]>;
