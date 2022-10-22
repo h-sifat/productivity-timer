@@ -1,27 +1,20 @@
-import type {
-  CategoryFields,
-  MakeCategory_Argument,
-} from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 // end of type imports
 
 import EPP from "common/util/epp";
 import Category from "entities/category";
 // end of concrete imports
 
-export interface AddCategory_Argument {
-  categoryInfo: MakeCategory_Argument;
-}
-
 interface MakeAddCategory_Argument {
   db: Pick<CategoryDatabaseInterface, "findByHash" | "findById" | "insert">;
 }
-export default function makeAddCategory(arg: MakeAddCategory_Argument) {
+export default function makeAddCategory(
+  arg: MakeAddCategory_Argument
+): CategoryServiceInterface["addCategory"] {
   const { db } = arg;
 
-  return async function addCategory(
-    arg: AddCategory_Argument
-  ): Promise<Readonly<CategoryFields>> {
+  return async function addCategory(arg) {
     const { categoryInfo } = arg;
     const insertingCategory = Category.make(categoryInfo);
 

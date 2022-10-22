@@ -1,6 +1,7 @@
 import type { ID } from "common/interfaces/id";
+import type { Edit_Argument } from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import type { CategoryFields, Edit_Argument } from "entities/category/category";
+import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 
 import EPP from "common/util/epp";
 import Category from "entities/category";
@@ -12,17 +13,12 @@ export interface MakeEditCategory_Argument {
   db: Pick<CategoryDatabaseInterface, "findById" | "updateById">;
 }
 
-export interface EditCategory_Argument {
-  id: string;
-  changes: Edit_Argument["changes"];
-}
+export default function makeEditCategory(
+  builderArg: MakeEditCategory_Argument
+): CategoryServiceInterface["editCategory"] {
+  const { db, isValidId } = builderArg;
 
-export default function makeEditCategory(arg: MakeEditCategory_Argument) {
-  const { db, isValidId } = arg;
-
-  return async function editCategory(
-    arg: EditCategory_Argument
-  ): Promise<Readonly<CategoryFields>> {
+  return async function editCategory(arg) {
     const { id = required("id"), changes = required("changes") } = arg;
 
     if (!isValidId(id)) throw new EPP(`Invalid id: ${id}`, "INVALID_ID");

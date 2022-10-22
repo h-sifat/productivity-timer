@@ -1,9 +1,8 @@
 import type { ID } from "common/interfaces/id";
-import type { CategoryFields } from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 
 import EPP from "common/util/epp";
-import { QueryMethodArguments } from "use-cases/interfaces/category-db";
 
 interface MakeListSubCategories_Argument {
   Id: ID;
@@ -11,13 +10,11 @@ interface MakeListSubCategories_Argument {
 }
 
 export default function makeListSubCategories(
-  arg: MakeListSubCategories_Argument
-) {
-  const { Id, db } = arg;
+  builderArg: MakeListSubCategories_Argument
+): CategoryServiceInterface["listSubCategories"] {
+  const { Id, db } = builderArg;
 
-  return async function listSubCategories(
-    arg: QueryMethodArguments["findSubCategories"]
-  ): Promise<CategoryFields[]> {
+  return async function listSubCategories(arg) {
     const { parentId } = arg;
 
     if (!Id.isValid(parentId))

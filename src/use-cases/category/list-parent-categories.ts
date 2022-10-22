@@ -1,7 +1,9 @@
 import { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
 import required from "common/util/required";
-import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 
 interface MakeListParentCategories_Argument {
   isValidId: ID["isValid"];
@@ -9,11 +11,11 @@ interface MakeListParentCategories_Argument {
 }
 
 export default function makeListParentCategories(
-  arg: MakeListParentCategories_Argument
-) {
-  const { isValidId, db } = arg;
+  builderArg: MakeListParentCategories_Argument
+): CategoryServiceInterface["listParentCategories"] {
+  const { isValidId, db } = builderArg;
 
-  return async function listParentCategories(arg: { id: string }) {
+  return async function listParentCategories(arg) {
     const { id = required("id") } = arg;
 
     if (!isValidId(id))
