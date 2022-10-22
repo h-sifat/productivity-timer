@@ -3,7 +3,7 @@ import {
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
-import buildListWorkSessionsByDateRange from "use-cases/work-session/list-by-date-range";
+import makeListWorkSessionsByDateRange from "use-cases/work-session/list-by-date-range";
 
 const db = Object.freeze({
   findByDateRange: jest.fn(),
@@ -18,8 +18,7 @@ const builderArg = Object.freeze({
   unixMsTimestampToUsLocaleDateString,
 });
 
-const listWorkSessionsByDateRange =
-  buildListWorkSessionsByDateRange(builderArg);
+const listWorkSessionsByDateRange = makeListWorkSessionsByDateRange(builderArg);
 
 beforeEach(() => {
   currentTimeMs.mockClear();

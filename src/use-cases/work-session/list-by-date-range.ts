@@ -3,30 +3,27 @@ import type {
   AssertValidUSLocaleDateString,
   UnixMsTimestampToUsLocaleDateString,
 } from "common/interfaces/date-time";
-import type { WorkSessionFields } from "entities/work-session/work-session";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
+import type { WorkSessionServiceInterface } from "use-cases/interfaces/work-session-service";
 
 import EPP from "common/util/epp";
 import required from "common/util/required";
 
-interface BuildListWorkSessionsByDateRange_Argument {
+interface makeListWorkSessionsByDateRange_Argument {
   currentTimeMs: CurrentTimeMs;
   db: Pick<WorkSessionDatabaseInterface, "findByDateRange">;
   assertValidUSLocaleDateString: AssertValidUSLocaleDateString;
   unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateString;
 }
 
-export default function buildListWorkSessionsByDateRange(
-  builderArg: BuildListWorkSessionsByDateRange_Argument
-) {
+export default function makeListWorkSessionsByDateRange(
+  builderArg: makeListWorkSessionsByDateRange_Argument
+): WorkSessionServiceInterface["listWorkSessionsByDateRange"] {
   const { db, currentTimeMs, unixMsTimestampToUsLocaleDateString } = builderArg;
   const assertValidUSLocaleDateString: AssertValidUSLocaleDateString =
     builderArg.assertValidUSLocaleDateString;
 
-  return async function listWorkSessionsByDateRange(arg: {
-    from: string;
-    to?: string;
-  }): Promise<WorkSessionFields[]> {
+  return async function listWorkSessionsByDateRange(arg) {
     const {
       from = required("from"),
       to = unixMsTimestampToUsLocaleDateString(currentTimeMs()),

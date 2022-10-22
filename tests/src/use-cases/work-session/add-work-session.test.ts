@@ -1,11 +1,11 @@
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
-import buildAddWorkSession from "use-cases/work-session/add-work-session";
+import makeAddWorkSession from "use-cases/work-session/add-work-session";
 
 const db = Object.freeze({
   insert: jest.fn(),
 });
 
-const addWorkSession = buildAddWorkSession({ db });
+const addWorkSession = makeAddWorkSession({ db });
 
 beforeEach(() => {
   Object.values(db).forEach((fn) => fn.mockReset());

@@ -1,22 +1,18 @@
-import type { DeepFreezeTypeMapper } from "common/interfaces/other";
-import type { WorkSessionFields } from "entities/work-session/work-session";
-import type { QueryMethodArguments } from "use-cases/interfaces/work-session-db";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
+import type { WorkSessionServiceInterface } from "use-cases/interfaces/work-session-service";
 
 import WorkSession from "entities/work-session";
 
-interface BuildAddWorkSession_Argument {
+interface MakeAddWorkSession_Argument {
   db: Pick<WorkSessionDatabaseInterface, "insert">;
 }
 
-export default function buildAddWorkSession(
-  builderArg: BuildAddWorkSession_Argument
-) {
+export default function makeAddWorkSession(
+  builderArg: MakeAddWorkSession_Argument
+): WorkSessionServiceInterface["addWorkSession"] {
   const { db } = builderArg;
 
-  return async function addWorkSession(
-    arg: QueryMethodArguments["insert"]
-  ): Promise<DeepFreezeTypeMapper<WorkSessionFields>> {
+  return async function addWorkSession(arg) {
     const workSession = WorkSession.make(arg);
 
     await db.insert(workSession);
