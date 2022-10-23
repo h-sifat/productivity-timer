@@ -7,6 +7,7 @@ import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session
 import type { WorkSessionServiceInterface } from "use-cases/interfaces/work-session-service";
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import required from "common/util/required";
 
 interface makeListWorkSessionsByDateRange_Argument {
@@ -24,6 +25,11 @@ export default function makeListWorkSessionsByDateRange(
     builderArg.assertValidUSLocaleDateString;
 
   return async function listWorkSessionsByDateRange(arg) {
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "ListWorkSessionsByDateRange argument",
+    });
+
     const {
       from = required("from"),
       to = unixMsTimestampToUsLocaleDateString(currentTimeMs()),

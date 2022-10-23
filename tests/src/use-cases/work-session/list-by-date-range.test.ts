@@ -8,6 +8,7 @@ import makeListWorkSessionsByDateRange from "use-cases/work-session/list-by-date
 const db = Object.freeze({
   findByDateRange: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
 
 const currentTimeMs = jest.fn(() => Date.now());
 
@@ -26,6 +27,23 @@ beforeEach(() => {
 });
 
 describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await listWorkSessionsByDateRange(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
   it.each([
     {
       arg: {},

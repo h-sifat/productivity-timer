@@ -2,10 +2,14 @@ import type { QueryMethodArguments } from "./work-session-db";
 import type { DeepFreezeTypeMapper } from "common/interfaces/other";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
+interface AddWorkSession_Argument {
+  workSessionInfo: QueryMethodArguments["insert"];
+}
+
 export interface WorkSessionServiceInterface {
   getMaxId(): Promise<number>;
   addWorkSession(
-    arg: QueryMethodArguments["insert"]
+    arg: AddWorkSession_Argument
   ): Promise<DeepFreezeTypeMapper<WorkSessionFields>>;
   listWorkSessionsByDateRange(arg: {
     from: string;
