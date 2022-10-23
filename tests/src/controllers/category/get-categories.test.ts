@@ -24,7 +24,7 @@ const defaultRequest: Request = deepFreeze({
   path: "categories",
 });
 
-const fakeCategory = Object.freeze([{ name: "study", id: 1 }]);
+const fakeCategory = Object.freeze({ name: "study", id: 1 });
 
 describe("Validation", () => {
   it.each([
