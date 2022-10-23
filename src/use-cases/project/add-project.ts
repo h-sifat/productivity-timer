@@ -2,7 +2,9 @@ import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import Project from "entities/project";
+import required from "common/util/required";
 
 interface MakeAddProject_Argument {
   db: Pick<ProjectDatabaseInterface, "findByName" | "insert">;
@@ -14,7 +16,13 @@ export default function makeAddProject(
   const { db } = builderArg;
 
   return async function addProject(arg) {
-    const { projectInfo } = arg;
+    assert("plain_object", arg, {
+      name: "AddProject argument",
+      code: "INVALID_ARGUMENT_TYPE",
+    });
+
+    const { projectInfo = required("projectInfo", "MISSING_PROJECT_INFO") } =
+      arg;
 
     const project = Project.make(projectInfo);
 

@@ -3,6 +3,8 @@ import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
+import required from "common/util/required";
 
 interface MakeRemoveProject_Argument {
   isValidId: ID["isValid"];
@@ -15,7 +17,12 @@ export default function makeRemoveProject(
   const { isValidId, db } = builderArg;
 
   return async function removeProject(arg) {
-    const { id } = arg;
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "RemoveProject argument",
+    });
+
+    const { id = required("id") } = arg;
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 
     const project = await db.findById({ id });

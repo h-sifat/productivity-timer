@@ -3,7 +3,9 @@ import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import Project from "entities/project";
+import required from "common/util/required";
 
 interface MakeEditProject_Argument {
   isValidId: ID["isValid"];
@@ -16,7 +18,16 @@ export default function makeEditProject(
   const { isValidId, db } = builderArg;
 
   return async function editProject(arg) {
-    const { id, changes } = arg;
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "EditProject argument",
+    });
+
+    const { id = required("id"), changes = required("changes") } = arg;
+    assert("plain_object", changes, {
+      code: "INVALID_CHANGES",
+      name: "Argument.changes",
+    });
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 

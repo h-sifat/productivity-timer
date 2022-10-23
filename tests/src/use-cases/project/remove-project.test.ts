@@ -6,15 +6,50 @@ const db = Object.freeze({
   findById: jest.fn(),
   deleteById: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
 
 const removeProject = makeRemoveProject({ db, isValidId });
 
 beforeEach(() => {
-  db.findById.mockReset();
-  db.deleteById.mockReset();
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await removeProject(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "MISSING_ID";
+
+    it(`throws ewc "${errorCode}" if id is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error missing id
+        await removeProject({});
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
   {
     const errorCode = "INVALID_ID";
 

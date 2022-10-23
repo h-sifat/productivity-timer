@@ -5,15 +5,51 @@ const db = Object.freeze({
   findByName: jest.fn(),
   insert: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
 
 const addProject = makeAddProject({ db });
 
 beforeEach(() => {
-  db.findByName.mockReset();
-  db.insert.mockReset();
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-ignore
+        await addProject([]);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const property = "projectInfo";
+    const errorCode = "MISSING_PROJECT_INFO";
+
+    it(`throws ewc "${errorCode}" is the "${property}" property is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error projectInfo is missing
+        await addProject({});
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
   it(`throws error if any project field is not valid`, async () => {
     expect.assertions(2);
 

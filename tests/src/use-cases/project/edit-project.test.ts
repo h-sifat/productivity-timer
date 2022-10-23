@@ -6,13 +6,86 @@ const db = Object.freeze({
   findById: jest.fn(),
   updateById: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
+
+const editProject = makeEditProject({ isValidId, db });
 
 beforeEach(() => {
-  db.findById.mockReset();
-  db.updateById.mockReset();
+  Object.values(db).forEach((method) => method.mockReset());
 });
 
 describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await editProject(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "MISSING_ID";
+
+    it(`throws ewc "${errorCode}" if id is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-ignore
+        await editProject({ changes: {} });
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "MISSING_CHANGES";
+
+    it(`throws ewc "${errorCode}" if the "changes" object is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-ignore
+        await editProject({ id: "123" });
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "INVALID_CHANGES";
+
+    it(`throws ewc "${errorCode}" if the property "changes" is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error changes is not a plain object
+        await editProject({ id: "123", changes: [] });
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
   {
     const errorCode = "INVALID_ID";
 
@@ -37,8 +110,6 @@ describe("Validation", () => {
 
   {
     const errorCode = "NOT_FOUND";
-
-    const editProject = makeEditProject({ isValidId, db });
 
     it(`throws ewc "${errorCode}" if the project with the given id doesn't exist`, async () => {
       expect.assertions(4);

@@ -4,6 +4,8 @@ import makeGetProject from "use-cases/project/get-project";
 const db = Object.freeze({
   findById: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
+
 const getProject = makeGetProject({ db, isValidId });
 
 beforeEach(() => {
@@ -11,6 +13,40 @@ beforeEach(() => {
 });
 
 describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await getProject(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+  {
+    const errorCode = "MISSING_ID";
+
+    it(`throws ewc "${errorCode}" if id is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error missing id
+        await getProject({});
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
   {
     const errorCode = "INVALID_ID";
 
