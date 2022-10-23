@@ -1,6 +1,7 @@
 import { deepFreeze } from "common/util/other";
 import { Request } from "src/controllers/interface";
 import makePatchCategory from "src/controllers/category/patch-category";
+import EPP from "common/util/epp";
 
 const categoryService = Object.freeze({
   editCategory: jest.fn(),
@@ -12,7 +13,6 @@ beforeEach(() => {
   Object.values(categoryService).forEach((method) => method.mockReset());
 });
 
-const fakeCategory = Object.freeze({ name: "study", id: 1 });
 const validRequestObject: Request = deepFreeze({
   body: {},
   query: {},
@@ -75,5 +75,30 @@ describe("Functionality", () => {
       error: null,
       body: fakeEditCategoryResponse,
     });
+
+    expect(categoryService.editCategory).toHaveBeenCalledTimes(1);
+    expect(categoryService.editCategory).toHaveBeenCalledWith({ id, changes });
+  });
+
+  it(`returns the error thrown by categoryService.editCategory`, async () => {
+    const id = "1";
+    const changes = Object.freeze({ name: "study_hard" });
+    const request = {
+      ...validRequestObject,
+      params: { id },
+      body: { changes },
+    };
+
+    const error = new EPP(`No category exists with id: "${id}"`, "NOT_FOUND");
+    categoryService.editCategory.mockRejectedValueOnce(error);
+
+    const response = await patchCategory(request);
+    expect(response).toEqual({
+      body: {},
+      error: { message: error.message, code: error.code },
+    });
+
+    expect(categoryService.editCategory).toHaveBeenCalledTimes(1);
+    expect(categoryService.editCategory).toHaveBeenCalledWith({ id, changes });
   });
 });
