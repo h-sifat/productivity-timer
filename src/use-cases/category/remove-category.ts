@@ -1,8 +1,10 @@
-import EPP from "common/util/epp";
-import { ID } from "common/interfaces/id";
-
+import type { ID } from "common/interfaces/id";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
+
+import EPP from "common/util/epp";
+import { assert } from "handy-types";
+import required from "common/util/required";
 
 interface MakeRemoveCategory_Argument {
   isValidId: ID["isValid"];
@@ -19,7 +21,12 @@ export default function makeRemoveCategory(
   const { db, isValidId } = builderArg;
 
   return async function removeCategory(arg) {
-    const { id } = arg;
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "RemoveCategory argument",
+    });
+
+    const { id = required("id") } = arg;
 
     if (!isValidId(id)) throw new EPP(`Invalid id: "${id}"`, "INVALID_ID");
 

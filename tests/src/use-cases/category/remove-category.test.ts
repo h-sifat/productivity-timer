@@ -12,6 +12,45 @@ describe("Validation", () => {
       isValidId,
       db: { deleteById: forbiddenDeleteById },
     });
+
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1);
+
+      try {
+        // @ts-expect-error
+        await removeCategory(["NOT_PLAIN_OBJECT"]);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
+
+  {
+    const errorCode = "MISSING_ID";
+
+    const removeCategory = makeRemoveCategory({
+      isValidId,
+      db: { deleteById: forbiddenDeleteById },
+    });
+
+    it(`throws ewc "${errorCode}" if id is missing`, async () => {
+      expect.assertions(1);
+
+      try {
+        // @ts-ignore
+        await removeCategory({});
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+    });
+  }
+
+  {
+    const removeCategory = makeRemoveCategory({
+      isValidId,
+      db: { deleteById: forbiddenDeleteById },
+    });
     const errorCode = "INVALID_ID";
 
     it(`throws ewc "${errorCode}" if the given id is invalid`, async () => {

@@ -1,6 +1,7 @@
 import { ID } from "common/interfaces/id";
 import EPP from "common/util/epp";
 import required from "common/util/required";
+import { assert } from "handy-types";
 
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
@@ -16,10 +17,14 @@ export default function makeListParentCategories(
   const { isValidId, db } = builderArg;
 
   return async function listParentCategories(arg) {
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "ListParentCategories argument",
+    });
+
     const { id = required("id") } = arg;
 
-    if (!isValidId(id))
-      throw new EPP(`Invalid category id: ${id}`, "INVALID_ID");
+    if (!isValidId(id)) throw new EPP(`Invalid id: ${id}`, "INVALID_ID");
 
     const category = await db.findById({ id });
 

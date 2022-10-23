@@ -14,6 +14,23 @@ beforeEach(async () => {
 
 describe("Validation", () => {
   {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await getCategoryById([]);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
     const errorCode = "INVALID_ID";
 
     it(`it throws ewc "${errorCode}" if id is not valid`, async () => {

@@ -3,7 +3,9 @@ import type { CategoryServiceInterface } from "use-cases/interfaces/category-ser
 // end of type imports
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import Category from "entities/category";
+import required from "common/util/required";
 // end of concrete imports
 
 interface MakeAddCategory_Argument {
@@ -15,7 +17,14 @@ export default function makeAddCategory(
   const { db } = arg;
 
   return async function addCategory(arg) {
-    const { categoryInfo } = arg;
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "AddCategory argument",
+    });
+
+    const { categoryInfo = required("categoryInfo", "MISSING_CATEGORY_INFO") } =
+      arg;
+
     const insertingCategory = Category.make(categoryInfo);
 
     {

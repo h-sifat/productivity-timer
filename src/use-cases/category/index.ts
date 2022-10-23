@@ -26,9 +26,9 @@ export default function makeCategoryService(
     getMaxId: makeGetCategoryMaxId({ db }),
     listCategories: makeListCategories({ db }),
     editCategory: makeEditCategory({ db, isValidId }),
-    listSubCategories: makeListSubCategories({ db, Id }),
     removeCategory: makeRemoveCategory({ db, isValidId }),
     getCategoryById: makeGetCategoryById({ db, isValidId }),
+    listSubCategories: makeListSubCategories({ db, isValidId }),
     listParentCategories: makeListParentCategories({ db, isValidId }),
   });
 

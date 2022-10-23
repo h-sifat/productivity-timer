@@ -18,6 +18,23 @@ beforeEach(async () => {
 
 describe("Validation", () => {
   {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await editCategory(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
     const errorCode = "MISSING_ID";
 
     it(`throws ewc "${errorCode}" if id is missing`, async () => {
@@ -44,6 +61,24 @@ describe("Validation", () => {
       try {
         // @ts-ignore
         await editCategory({ id: "123" });
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "INVALID_CHANGES";
+
+    it(`throws ewc "${errorCode}" if the property "changes" is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error changes is not a plain object
+        await editCategory({ id: "123", changes: [] });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
@@ -86,6 +121,32 @@ describe("Validation", () => {
         // currently the db is empty so no category should
         // exist with the given id
         await editCategory({ id: Id.makeId(), changes: {} });
+      } catch (ex: any) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      expect(db.findById).toHaveBeenCalledTimes(1);
+      expect(db.updateById).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "INVALID_PARENT_ID";
+
+    it(`throws ewc "${errorCode}" if the changes.parentId is not valid`, async () => {
+      expect.assertions(3);
+
+      const category = Category.make({ name: "a" });
+
+      // meaning a category exists with the given id
+      db.findById.mockResolvedValueOnce(category);
+
+      try {
+        await editCategory({
+          id: category.id,
+          // @ts-expect-error invalid parentId
+          changes: { parentId: ["duck"] },
+        });
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }

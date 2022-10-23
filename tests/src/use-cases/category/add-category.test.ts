@@ -6,10 +6,49 @@ const db = Object.freeze({
   findById: jest.fn(),
   findByHash: jest.fn(),
 });
+const dbMethodsCount = Object.keys(db).length;
+
 const addCategory = makeAddCategory({ db });
 
 beforeEach(async () => {
   Object.values(db).forEach((method) => method.mockReset());
+});
+
+describe("Validation", () => {
+  {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await addCategory(null);
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "MISSING_CATEGORY_INFO";
+
+    it(`throws ewc "${errorCode}" is the "categoryInfo" property is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error
+        await addCategory({});
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
 });
 
 describe("Insertion", () => {

@@ -1,6 +1,6 @@
-import getID from "src/data-access/id";
 import Category from "entities/category";
 import makeListSubCategories from "use-cases/category/list-sub-categories";
+import { isValid as isValidId } from "common/util/id";
 
 const db = Object.freeze({
   findById: jest.fn(),
@@ -8,9 +8,8 @@ const db = Object.freeze({
 });
 
 const dbMethodsCount = Object.keys(db).length;
-const Id = getID({ entity: "category" });
 
-const listSubCategories = makeListSubCategories({ Id, db });
+const listSubCategories = makeListSubCategories({ isValidId, db });
 
 beforeEach(() => {
   Object.values(db).forEach((method) => method.mockReset());
@@ -18,13 +17,48 @@ beforeEach(() => {
 
 describe("Validation", () => {
   {
+    const errorCode = "INVALID_ARGUMENT_TYPE";
+    it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error arg is not a plain object
+        await listSubCategories(() => {});
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
+    const errorCode = "MISSING_PARENT_ID";
+
+    it(`throws ewc "${errorCode}" if parentId is missing`, async () => {
+      expect.assertions(1 + dbMethodsCount);
+
+      try {
+        // @ts-expect-error missing parentId
+        await listSubCategories({});
+      } catch (ex) {
+        expect(ex.code).toBe(errorCode);
+      }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+    });
+  }
+
+  {
     const errorCode = "INVALID_PARENT_ID";
 
     it(`returns ewc "${errorCode} if parentId is not valid" `, async () => {
       expect.assertions(2 + dbMethodsCount);
 
       const invalidParentId = "0"; // not a positive integer
-      expect(Id.isValid(invalidParentId)).toBeFalsy();
+      expect(isValidId(invalidParentId)).toBeFalsy();
 
       try {
         // @ts-ignore

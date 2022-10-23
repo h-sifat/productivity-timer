@@ -4,6 +4,7 @@ import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 
 import EPP from "common/util/epp";
+import { assert } from "handy-types";
 import Category from "entities/category";
 import required from "common/util/required";
 import { FIELDS_ALLOWED_TO_CHANGE } from "entities/category/category";
@@ -19,7 +20,16 @@ export default function makeEditCategory(
   const { db, isValidId } = builderArg;
 
   return async function editCategory(arg) {
+    assert("plain_object", arg, {
+      code: "INVALID_ARGUMENT_TYPE",
+      name: "EditCategory argument",
+    });
+
     const { id = required("id"), changes = required("changes") } = arg;
+    assert("plain_object", changes, {
+      code: "INVALID_CHANGES",
+      name: "Argument.changes",
+    });
 
     if (!isValidId(id)) throw new EPP(`Invalid id: ${id}`, "INVALID_ID");
 
@@ -32,6 +42,12 @@ export default function makeEditCategory(
       });
 
     if (changes.parentId) {
+      if (!isValidId(changes.parentId))
+        throw new EPP({
+          code: "INVALID_PARENT_ID",
+          message: `Invalid parentId: ${changes.parentId}`,
+        });
+
       const parent = await db.findById({ id: changes.parentId });
 
       if (!parent)
