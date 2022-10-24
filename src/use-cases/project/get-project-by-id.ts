@@ -13,7 +13,7 @@ interface MakeGetProject_Argument {
 
 export default function makeGetProject(
   builderArg: MakeGetProject_Argument
-): ProjectServiceInterface["getProject"] {
+): ProjectServiceInterface["getProjectById"] {
   const { db, isValidId } = builderArg;
 
   return async function getProject(arg) {

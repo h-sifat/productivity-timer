@@ -1,5 +1,5 @@
 import { isValid as isValidId } from "common/util/id";
-import makeGetProject from "use-cases/project/get-project";
+import makeGetProject from "use-cases/project/get-project-by-id";
 
 const db = Object.freeze({
   findById: jest.fn(),

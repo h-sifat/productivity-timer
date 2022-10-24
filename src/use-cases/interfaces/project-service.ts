@@ -18,7 +18,7 @@ export interface ProjectServiceInterface {
   listProjects(): Promise<ProjectFields[]>;
   editProject(arg: EditProject_Argument): Promise<ProjectFields>;
   addProject(arg: AddProject_Argument): Promise<Readonly<ProjectFields>>;
-  getProject(
+  getProjectById(
     arg: QueryMethodArguments["findById"]
   ): Promise<ProjectFields | null>;
   removeProject(
