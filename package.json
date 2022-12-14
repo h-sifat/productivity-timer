@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^7.6.2",
+    "express-ipc": "^1.0.1",
     "handy-types": "^2.0.0",
     "node-notifier": "^10.0.1"
   }
