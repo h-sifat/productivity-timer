@@ -1,11 +1,10 @@
 import type SqliteDatabase from "./db/mainprocess-db";
 
 import EPP from "common/util/epp";
-import { getDbConfig } from "src/config";
+import { dbPragmas } from "src/config";
 import { getAllTableNames } from "./util";
 import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER } from "./schemas";
 
-const dbConfig = getDbConfig();
 export const QUERY_NAME_GET_ALL_TBL_NAMES = "init/getAllTableNames";
 
 export async function initializeDatabase(
@@ -20,7 +19,7 @@ export async function initializeDatabase(
       });
   }
 
-  for (const [pragma, value] of Object.entries(dbConfig.pragmas)) {
+  for (const [pragma, value] of Object.entries(dbPragmas)) {
     await db.pragma({ command: `${pragma}=${value}` });
   }
 
