@@ -1,5 +1,5 @@
 import { Controller } from "../interface";
 
 export interface WorkSessionControllerInterface {
-  getWorkSessions: Controller;
+  get: Controller;
 }

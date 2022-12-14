@@ -12,7 +12,7 @@ export default function makeGetWorkSessionController(
   const { workSessionService } = builderArg;
 
   const workSessionController = Object.freeze({
-    getWorkSessions: makeGetWorkSessions({ workSessionService }),
+    get: makeGetWorkSessions({ workSessionService }),
   });
 
   return workSessionController;

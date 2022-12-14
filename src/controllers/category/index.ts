@@ -14,10 +14,10 @@ export default function makeCategoryController(
   builderArg: MakeCategoryController_Argument
 ): CategoryControllerInterface {
   const categoryController = Object.freeze({
-    postCategory: makePostCategory(builderArg),
-    patchCategory: makePatchCategory(builderArg),
-    getCategories: makeGetCategories(builderArg),
-    deleteCategory: makeDeleteCategory(builderArg),
+    get: makeGetCategories(builderArg),
+    post: makePostCategory(builderArg),
+    patch: makePatchCategory(builderArg),
+    delete: makeDeleteCategory(builderArg),
   });
 
   return categoryController;
