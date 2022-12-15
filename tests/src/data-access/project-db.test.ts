@@ -1,12 +1,19 @@
 import Project from "entities/project";
-import _internalDb_ from "data-access/db";
 import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
 import buildProjectDatabase from "data-access/project-db";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import { makeDbSubProcess } from "data-access/db";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 let projectDb: ProjectDatabaseInterface;
+
+const _internalDb_ = new SqliteDatabase({
+  makeDbSubProcess,
+  dbCloseTimeoutMsWhenKilling: 30,
+  sqliteDbPath: IN_MEMORY_DB_PATH,
+});
 
 // -----    Test setup -----------------
 

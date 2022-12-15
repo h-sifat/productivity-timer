@@ -3,12 +3,13 @@ import {
   normalizeRecordToDocument,
 } from "./work-session-db/util";
 
-import db from "./db";
 import { makeGetMaxId } from "./util";
+import { getConfig } from "src/config";
+import { makeDbSubProcess } from "./db";
 import { initializeDatabase } from "./init-db";
 import buildProjectDatabase from "./project-db";
+import SqliteDatabase from "./db/mainprocess-db";
 import buildCategoryDatabase from "./category-db";
-import type SqliteDatabase from "./db/mainprocess-db";
 import buildWorkSessionDatabase from "./work-session-db";
 import { setInitialId, setInitialId_Argument } from "./id";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
@@ -29,16 +30,27 @@ export async function makeAllDatabase(
   builderArg: MakeAllDatabase_Argument
 ): Promise<AllDatabases> {
   const { notifyDatabaseCorruption } = builderArg;
-  await initializeDatabase(db);
+
+  const config = getConfig();
+
+  const database = new SqliteDatabase({
+    makeDbSubProcess,
+    sqliteDbPath: config.DB_PATH,
+    dbCloseTimeoutMsWhenKilling: config.DB_CLOSE_TIMEOUT_WHEN_KILLING,
+  });
+
+  await database.open({ path: config.DB_PATH });
+
+  await initializeDatabase(database);
 
   const commonArg = {
-    db,
+    db: database,
     makeGetMaxId,
     notifyDatabaseCorruption,
   };
 
   const allDatabases: AllDatabases = {
-    database: db,
+    database,
     project: buildProjectDatabase(commonArg),
     category: buildCategoryDatabase(commonArg),
     workSession: buildWorkSessionDatabase({

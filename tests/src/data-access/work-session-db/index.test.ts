@@ -1,4 +1,4 @@
-import _internalDb_ from "data-access/db";
+import { makeDbSubProcess } from "data-access/db";
 
 import buildWorkSessionDatabase, {
   TABLE_NAME as WORK_SESSION_TABLE_NAME,
@@ -16,12 +16,19 @@ import buildCategoryDatabase from "data-access/category-db";
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const notifyDatabaseCorruption = jest.fn();
 
 let workSessionDb: WorkSessionDatabaseInterface;
 let categoryDb: CategoryDatabaseInterface;
+
+const _internalDb_ = new SqliteDatabase({
+  makeDbSubProcess,
+  dbCloseTimeoutMsWhenKilling: 30,
+  sqliteDbPath: IN_MEMORY_DB_PATH,
+});
 
 // -----    Test setup -----------------
 beforeEach(async () => {

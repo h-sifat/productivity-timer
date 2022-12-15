@@ -136,6 +136,7 @@ export default class SqliteDatabase extends EventEmitter {
       this.#resumeCommandsExecution();
 
       // try to open the sqlite db in the newly created db sub_process
+      // this.#dbSubProcess.send({method: "open", argument: {path: this.#sqliteDbPath}})
       this.open({ path: this.#sqliteDbPath })
         .catch(() => {})
         .finally(() => {

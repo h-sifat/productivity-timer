@@ -1,7 +1,15 @@
-import database from "data-access/db";
+import { makeDbSubProcess } from "data-access/db";
 import { getAllTableNames } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER } from "data-access/schemas";
+
+const IN_MEMORY_DB_PATH = ":memory:";
+const database = new SqliteDatabase({
+  makeDbSubProcess,
+  dbCloseTimeoutMsWhenKilling: 30,
+  sqliteDbPath: IN_MEMORY_DB_PATH,
+});
 
 beforeEach(async () => {
   await database.open({ path: ":memory:" });

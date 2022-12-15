@@ -2,10 +2,10 @@ import Category from "entities/category";
 import SqliteDatabase from "data-access/db/mainprocess-db";
 import buildCategoryDatabase from "data-access/category-db";
 import { CategoryFields } from "entities/category/category";
-import _internalDb_ from "data-access/db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import { initializeDatabase } from "data-access/init-db";
 import { makeGetMaxId } from "data-access/util";
+import { makeDbSubProcess } from "data-access/db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
@@ -18,6 +18,12 @@ const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
 })();
 const CATEGORY_SORT_PREDICATE = (a: CategoryFields, b: CategoryFields) =>
   +a.id - +b.id;
+
+const _internalDb_ = new SqliteDatabase({
+  makeDbSubProcess,
+  dbCloseTimeoutMsWhenKilling: 30,
+  sqliteDbPath: IN_MEMORY_DB_PATH,
+});
 
 let categoryDb: CategoryDatabaseInterface;
 
