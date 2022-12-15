@@ -16,19 +16,15 @@ export interface makeControllers_Argument {
 export function makeControllers(factoryArg: makeControllers_Argument) {
   const { services } = factoryArg;
 
-  const ProjectController = makeProjectController({
+  const project = makeProjectController({
     projectService: services.project,
   });
-  const CategoryController = makeCategoryController({
+  const category = makeCategoryController({
     categoryService: services.category,
   });
-  const WorkSessionController = makeGetWorkSessionController({
+  const workSession = makeGetWorkSessionController({
     workSessionService: services.workSession,
   });
 
-  return Object.freeze({
-    ProjectController,
-    CategoryController,
-    WorkSessionController,
-  } as const);
+  return Object.freeze({ project, category, workSession } as const);
 }

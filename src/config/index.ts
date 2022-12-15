@@ -1,6 +1,8 @@
 import path from "path";
+import { homedir } from "os";
 
 export interface ConfigInterface {
+  [key: string]: any;
   // category
   CATEGORY_MAX_NAME_LENGTH: number;
   CATEGORY_VALID_NAME_PATTERN: RegExp;
@@ -19,10 +21,33 @@ export interface ConfigInterface {
 
   // db
   DB_PATH: string;
-  DB_BACKUP_PATH: string;
+  DB_FILE_NAME: string;
+  DB_BACKUP_DIR: string;
+  DB_BACKUP_FILE_NAME: string;
+  DB_BACKUP_TEMP_FILE_NAME: string;
   DB_SUB_PROCESS_MODULE_PATH: string;
   DB_CLOSE_TIMEOUT_WHEN_KILLING: number;
+
+  // other
+  DATA_DIR: string;
+  MPLAYER_PATH: string;
+  CONFIG_FILE_NAME: string;
+  SOCKET_PIPE_NAME: string;
+  BEEP_DURATION_MS: number;
+
+  // api
+  API_PROJECT_PATH: string;
+  API_CATEGORY_PATH: string;
+  API_WORK_SESSION_PATH: string;
 }
+
+const DATA_DIR = path.join(homedir(), ".p-timer");
+const DB_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
+
+const DB_FILE_NAME = "p-timer.db";
+const CONFIG_FILE_NAME = "config.json";
+const DB_BACKUP_FILE_NAME = "p-timer.bak.db";
+const DB_BACKUP_TEMP_FILE_NAME = "p-timer.bak-temp.db";
 
 const config: ConfigInterface = Object.seal({
   // category
@@ -44,14 +69,40 @@ const config: ConfigInterface = Object.seal({
   WORK_SESSION_MAX_ALLOWED_ELAPSED_TIME_DIFF: 20_000, // 20 seconds
 
   // db
-  DB_BACKUP_PATH: "",
+  DB_FILE_NAME,
+  DB_BACKUP_DIR,
+  DB_BACKUP_FILE_NAME,
   DB_PATH: ":memory:",
+  DB_BACKUP_TEMP_FILE_NAME,
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
   DB_SUB_PROCESS_MODULE_PATH: path.join(
     process.cwd(),
     "src/data-access/db/subprocess-db.js"
   ),
+
+  // other
+  DATA_DIR,
+  CONFIG_FILE_NAME,
+  MPLAYER_PATH: "mplayer",
+  BEEP_DURATION_MS: 60_0000, // 1 minute
+
+  // api
+  API_PROJECT_PATH: "/project",
+  API_CATEGORY_PATH: "/category",
+  API_WORK_SESSION_PATH: "/work-session",
+  SOCKET_PIPE_NAME: "pt_by_sifat_api_v1_0_0",
 });
+
+export interface modifyConfig_Argument {
+  changes: Partial<ConfigInterface>;
+}
+export function modifyConfig(arg: modifyConfig_Argument) {
+  const { changes } = arg;
+
+  for (const [key, value] of Object.entries(changes))
+    if (key in config && typeof config[key] === typeof value)
+      config[key] = value;
+}
 
 export function getConfig(): ConfigInterface {
   return Object.freeze({ ...config });

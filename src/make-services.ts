@@ -6,7 +6,7 @@ import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 
-export interface makeUseCases_Argument {
+export interface makeServices_Argument {
   databases: {
     project: ProjectDatabaseInterface;
     category: CategoryDatabaseInterface;
@@ -14,18 +14,14 @@ export interface makeUseCases_Argument {
   };
 }
 
-export function makeUseCases(factoryArg: makeUseCases_Argument) {
+export function makeServices(factoryArg: makeServices_Argument) {
   const { databases } = factoryArg;
 
-  const ProjectService = makeProjectService({ db: databases.project });
-  const CategoryService = makeCategoryService({ database: databases.category });
-  const WorkSessionService = makeWorkSessionService({
+  const project = makeProjectService({ db: databases.project });
+  const category = makeCategoryService({ database: databases.category });
+  const workSession = makeWorkSessionService({
     db: databases.workSession,
   });
 
-  return Object.freeze({
-    ProjectService,
-    CategoryService,
-    WorkSessionService,
-  } as const);
+  return Object.freeze({ project, category, workSession } as const);
 }
