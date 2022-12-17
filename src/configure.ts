@@ -61,8 +61,14 @@ export async function configureApplication(arg: configureApplication_Argument) {
     );
 
     const DB_PATH = path.join(fileConfig.DATA_DIR, initialConfig.DB_FILE_NAME);
+    const MPLAYER_AUDIO_PATH = path.join(__dirname, "alarm.mp3");
     modifyConfig({
-      changes: { ...fileConfig, DB_PATH, DB_SUB_PROCESS_MODULE_PATH },
+      changes: {
+        ...fileConfig,
+        DB_PATH,
+        MPLAYER_AUDIO_PATH,
+        DB_SUB_PROCESS_MODULE_PATH,
+      },
     });
   }
 

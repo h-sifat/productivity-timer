@@ -25,19 +25,22 @@ export interface ConfigInterface {
   DB_FILE_NAME: string;
   LOG_FILE_NAME: string;
   DB_BACKUP_DIR: string;
+  CONFIG_FILE_PATH: string;
   DB_BACKUP_FILE_NAME: string;
   DB_BACKUP_TEMP_FILE_NAME: string;
   DB_SUB_PROCESS_MODULE_PATH: string;
   DB_CLOSE_TIMEOUT_WHEN_KILLING: number;
 
-  // other
+  // speaker
   MPLAYER_PATH: string;
-  CONFIG_FILE_PATH: string;
-  SOCKET_PIPE_NAME: string;
   BEEP_DURATION_MS: number;
+  MPLAYER_AUDIO_PATH: string;
+
+  // other
   NOTIFICATION_TITLE: string;
 
-  // api
+  // server
+  SOCKET_PIPE_NAME: string;
   API_PROJECT_PATH: string;
   API_CATEGORY_PATH: string;
   API_WORK_SESSION_PATH: string;
@@ -76,6 +79,7 @@ const config: ConfigInterface = Object.seal({
   // db
   DB_FILE_NAME,
   LOG_FILE_NAME,
+  CONFIG_FILE_PATH,
   DB_BACKUP_FILE_NAME,
   DB_PATH: ":memory:",
   DB_BACKUP_TEMP_FILE_NAME,
@@ -88,9 +92,10 @@ const config: ConfigInterface = Object.seal({
   ),
 
   // other
-  CONFIG_FILE_PATH,
   MPLAYER_PATH: "mplayer",
+  MPLAYER_AUDIO_PATH: "",
   BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
+
   NOTIFICATION_TITLE: "Productivity Timer",
 
   // api

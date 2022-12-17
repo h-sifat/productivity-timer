@@ -7,6 +7,7 @@
     "build": "webpack",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --passWithNoTests --watch",
+    "postbuild": "cp ./src/speaker/alarm.mp3 ./dist",
     "test:coverage": "jest --passWithNoTests --coverage",
     "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\"",
     "prepare": "husky install"
