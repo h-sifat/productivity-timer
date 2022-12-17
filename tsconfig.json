@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "lib": ["es2015"],
-    "module": "nodenext",
+    "module": "NodeNext",
     "moduleResolution": "node",
 
     "allowJs": true,
