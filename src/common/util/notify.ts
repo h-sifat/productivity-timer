@@ -1,11 +1,7 @@
+import { Notify } from "common/interfaces/other";
 import { notify as __notify__ } from "node-notifier";
 
-export interface notify_Argument {
-  title: string;
-  message: string;
-}
-
-export function notify(arg: notify_Argument) {
+export const notify: Notify = function _notify(arg) {
   const { title, message } = arg;
   __notify__({ title, message });
-}
+};

@@ -1,9 +1,8 @@
-import { DeepFreeze, DeepFreezeTypeMapper } from "common/interfaces/other";
 import { createHash } from "crypto";
-import { is } from "handy-types";
+import { DeepFreezeTypeMapper } from "common/interfaces/other";
 
 export function createMD5Hash(arg: string): string {
-  return createHash("md5").update(String(arg)).digest("hex");
+  return createHash("md5").update(String(arg)).digest("base64");
 }
 
 export function makeReadonlyProxy<Type extends object>(object: Type): Type {
@@ -21,16 +20,16 @@ export function makeReadonlyProxy<Type extends object>(object: Type): Type {
 export function deepFreeze<Type>(
   object: Type
 ): Type extends object ? DeepFreezeTypeMapper<Type> : Type {
-  // @ts-ignore
-  if (!is<object>("non_null_object", object)) return object;
+  {
+    const freezable =
+      (typeof object === "object" || typeof object === "function") &&
+      object !== null;
 
-  if (Array.isArray(object))
-    // @ts-ignore
-    return Object.freeze(object.map((element) => deepFreeze(element)));
+    if (!freezable) return object as any;
+  }
 
-  for (const [property, value] of Object.entries(object))
-    (object as any)[property] = deepFreeze(value);
+  if (!Object.isFrozen(object)) Object.freeze(object);
+  for (const key of Object.keys(object)) deepFreeze((<any>object)[key]);
 
-  // @ts-ignore
-  return Object.freeze(object);
+  return object as any;
 }
