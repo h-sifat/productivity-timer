@@ -24,6 +24,7 @@ const PREPARED_QUERY_NAMES = Object.freeze({
   findById: "cat/findById",
   updateById: "cat/updateById",
   findByHash: "cat/findByHash",
+  findByName: "cat/findByName",
   deleteById: "cat/deleteById",
   findSubCategories: "cat/findSubCategories",
   findParentCategories: "cat/findParentCategories",
@@ -35,6 +36,7 @@ const PREPARED_QUERY_STATEMENTS: {
   findAll: `select * from ${TABLE_NAME};`,
   findById: `select * from ${TABLE_NAME} where id=$id;`,
   findByHash: `select * from ${TABLE_NAME} where hash=$hash;`,
+  findByName: `select * from ${TABLE_NAME} where name=$name;`,
   deleteById: `delete from ${TABLE_NAME} where id = ($id);`,
   getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
 
@@ -133,6 +135,7 @@ export default function buildCategoryDatabase(
     getMaxId,
     deleteById,
     findByHash,
+    findByName,
     updateById,
     findSubCategories,
     findParentCategories,
@@ -259,6 +262,26 @@ export default function buildCategoryDatabase(
       result,
       multipleRecordsErrorMessage: `Multiple records with the same hash in table: "${TABLE_NAME}"`,
     });
+  }
+
+  async function findByName(arg: QM_Arguments["findByName"]) {
+    await db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.findByName,
+      statement: PREPARED_QUERY_STATEMENTS.findByName,
+    });
+
+    const categories = await db.executePrepared({
+      name: PREPARED_QUERY_NAMES.findByName,
+      statementArgs: { name: arg.name },
+    });
+
+    categories.forEach((category) => {
+      normalize(category);
+      validate(category);
+    });
+
+    return categories as CategoryFields[];
   }
 
   async function insert(category: QM_Arguments["insert"]) {

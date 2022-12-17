@@ -1,7 +1,7 @@
 export const TABLE_SCHEMAS = Object.freeze({
   categories: `create table if not exists categories (
       id integer primary key check(typeof(id) = 'integer'),
-      name text not null check(typeof(name) = 'text'),
+      name text not null collate nocase check(typeof(name) = 'text'),
       hash text not null unique check(typeof(hash) = 'text'),
       createdAt integer not null check(typeof(createdAt) = 'integer'),
 

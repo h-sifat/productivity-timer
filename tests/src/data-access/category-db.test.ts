@@ -107,6 +107,24 @@ describe("findByHash", () => {
   });
 });
 
+fdescribe("findByName", () => {
+  it(`returns an empty array if no categories are found`, async () => {
+    const categories = await categoryDb.findByName({ name: "study" });
+    expect(categories).toEqual([]);
+  });
+
+  it(`returns the found category based on case-insensitive search`, async () => {
+    const name = "study";
+    const category = Category.make({ name });
+    await categoryDb.insert(category);
+
+    const categories = await categoryDb.findByName({
+      name: name.toUpperCase(),
+    });
+    expect(categories).toEqual([category]);
+  });
+});
+
 describe("findAll", () => {
   it(`returns an empty array if no category exists`, async () => {
     const categories = await categoryDb.findAll();

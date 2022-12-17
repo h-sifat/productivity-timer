@@ -6,6 +6,7 @@ export interface QueryMethodArguments {
   deleteById: { id: string };
   findById: { id: string };
   findByHash: { hash: string };
+  findByName: { name: string };
   findParentCategories: { id: string };
   updateById: { id: string; edited: Partial<ProjectFields> };
   findSubCategories: { parentId: string };
@@ -31,4 +32,7 @@ export default interface CategoryDatabaseInterface {
     arg: QueryMethodArguments["findSubCategories"]
   ): Promise<CategoryFields[]>;
   updateById(arg: QueryMethodArguments["updateById"]): Promise<void>;
+  findByName(
+    arg: QueryMethodArguments["findByName"]
+  ): Promise<CategoryFields[]>;
 }
