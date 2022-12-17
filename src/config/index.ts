@@ -21,6 +21,7 @@ export interface ConfigInterface {
 
   // db
   DB_PATH: string;
+  DATA_DIR: string;
   DB_FILE_NAME: string;
   DB_BACKUP_DIR: string;
   DB_BACKUP_FILE_NAME: string;
@@ -29,11 +30,11 @@ export interface ConfigInterface {
   DB_CLOSE_TIMEOUT_WHEN_KILLING: number;
 
   // other
-  DATA_DIR: string;
   MPLAYER_PATH: string;
-  CONFIG_FILE_NAME: string;
+  CONFIG_FILE_PATH: string;
   SOCKET_PIPE_NAME: string;
   BEEP_DURATION_MS: number;
+  NOTIFICATION_TITLE: string;
 
   // api
   API_PROJECT_PATH: string;
@@ -41,13 +42,15 @@ export interface ConfigInterface {
   API_WORK_SESSION_PATH: string;
 }
 
-const DATA_DIR = path.join(homedir(), ".p-timer");
-const DB_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
+export const DEFAULT_MPLAYER_PATH = "mplayer";
+export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
+export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
 
 const DB_FILE_NAME = "p-timer.db";
-const CONFIG_FILE_NAME = "config.json";
 const DB_BACKUP_FILE_NAME = "p-timer.bak.db";
 const DB_BACKUP_TEMP_FILE_NAME = "p-timer.bak-temp.db";
+const CONFIG_FILE_PATH = path.join(homedir(), ".ptrc.json");
+export const DEFAULT_BEEP_DURATION_MS = 60_0000;
 
 const config: ConfigInterface = Object.seal({
   // category
@@ -70,10 +73,11 @@ const config: ConfigInterface = Object.seal({
 
   // db
   DB_FILE_NAME,
-  DB_BACKUP_DIR,
   DB_BACKUP_FILE_NAME,
   DB_PATH: ":memory:",
   DB_BACKUP_TEMP_FILE_NAME,
+  DATA_DIR: DEFAULT_DATA_DIR,
+  DB_BACKUP_DIR: DEFAULT_BACKUP_DIR,
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
   DB_SUB_PROCESS_MODULE_PATH: path.join(
     process.cwd(),
@@ -81,10 +85,10 @@ const config: ConfigInterface = Object.seal({
   ),
 
   // other
-  DATA_DIR,
-  CONFIG_FILE_NAME,
+  CONFIG_FILE_PATH,
   MPLAYER_PATH: "mplayer",
-  BEEP_DURATION_MS: 60_0000, // 1 minute
+  BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
+  NOTIFICATION_TITLE: "Productivity Timer",
 
   // api
   API_PROJECT_PATH: "/project",
