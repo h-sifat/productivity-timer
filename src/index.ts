@@ -1,4 +1,7 @@
+import path from "path";
+import * as fs from "fs";
 import { getConfig } from "./config";
+import { notify } from "common/util/notify";
 import { makeServices } from "./make-services";
 import { makeAllDatabase } from "./data-access";
 import { Server } from "express-ipc/dist/server";
@@ -6,29 +9,82 @@ import { configureApplication } from "./configure";
 import { makeControllers } from "./make-controllers";
 import { makeExpressIPCMiddleware } from "./server/util";
 
-async function initApplication() {
-  await configureApplication({ log: async (arg) => console.log(arg) });
-  const config = getConfig();
+import { AllDatabases } from "./data-access";
 
-  function notifyDatabaseCorruption(arg: any) {
-    console.dir(arg, { depth: null });
+interface initApplication_Argument {
+  log(...args: any[]): Promise<void>;
+}
+async function initApplication(arg: initApplication_Argument) {
+  const { log } = arg;
+
+  try {
+    await configureApplication({ log });
+  } catch (ex) {
+    await log(ex.message);
+    process.exit(1);
   }
 
-  const databases = await makeAllDatabase({ notifyDatabaseCorruption });
+  const config = getConfig();
+  const server = new Server();
+  let databases: AllDatabases;
 
-  databases.database.on("db_subprocess:crashed", (arg) => {
-    console.log("db subprocess crashed");
-    console.dir(arg, { depth: null });
-  });
+  const closeApplication = async () => {
+    if (databases) await databases.internalDatabase.close();
+    if (server.socketPath) server.close();
+    process.exit(1);
+  };
 
-  databases.database.on("db_subprocess:re_spawned", async () => {
-    console.log("Db subprocess re_spawned");
-  });
+  const FileLogger = (() => {
+    const LOG_PATH = path.join(config.DATA_DIR, config.LOG_FILE_NAME);
+    const writeStream = fs.createWriteStream(LOG_PATH, { flags: "a+" });
+
+    return new console.Console(writeStream);
+  })();
+
+  async function notifyDatabaseCorruption(error: any) {
+    notify({
+      title: config.NOTIFICATION_TITLE,
+      message: `Database corrupted, Closing server. Please see logs.`,
+    });
+
+    FileLogger.log(Date.now(), error);
+    await closeApplication();
+  }
+
+  try {
+    await log("Initializing database.");
+    databases = await makeAllDatabase({ notifyDatabaseCorruption });
+    await log("\tDatabase initialized");
+  } catch (ex) {
+    await log(`\tError: ${ex.message}`);
+    process.exit(1);
+  }
 
   const services = makeServices({ databases });
   const controllers = makeControllers({ services });
 
-  const server = new Server();
+  databases.internalDatabase.on("db_subprocess:crashed", () => {
+    notify({
+      title: config.NOTIFICATION_TITLE,
+      message: `Database sub-process died. Trying to respawn.`,
+    });
+  });
+
+  databases.internalDatabase.on("db_subprocess:re_spawned", () => {
+    notify({
+      title: config.NOTIFICATION_TITLE,
+      message: `Database sub-process respawned.`,
+    });
+  });
+
+  databases.internalDatabase.on("db_subprocess:re_spawn_failed", async () => {
+    notify({
+      title: config.NOTIFICATION_TITLE,
+      message: `Database sub-process respawn failed. Closing app.`,
+    });
+
+    await closeApplication();
+  });
 
   for (const method of ["get", "post", "patch", "delete"] as const) {
     const controllerAndPathPairs = [
@@ -50,9 +106,8 @@ async function initApplication() {
   server.listen({
     deleteSocketBeforeListening: true,
     path: { namespace: "pt_by_sifat", id: "v1_0_0" },
-    callback: () =>
-      console.log(`server running at socket: "${server.socketPath}"`),
+    callback: () => log(`server running at socket: "${server.socketPath}"`),
   });
 }
 
-initApplication();
+initApplication({ log: console.log as any });

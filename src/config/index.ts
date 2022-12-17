@@ -23,6 +23,7 @@ export interface ConfigInterface {
   DB_PATH: string;
   DATA_DIR: string;
   DB_FILE_NAME: string;
+  LOG_FILE_NAME: string;
   DB_BACKUP_DIR: string;
   DB_BACKUP_FILE_NAME: string;
   DB_BACKUP_TEMP_FILE_NAME: string;
@@ -47,6 +48,7 @@ export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
 export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
 
 const DB_FILE_NAME = "p-timer.db";
+const LOG_FILE_NAME = "logs.txt";
 const DB_BACKUP_FILE_NAME = "p-timer.bak.db";
 const DB_BACKUP_TEMP_FILE_NAME = "p-timer.bak-temp.db";
 const CONFIG_FILE_PATH = path.join(homedir(), ".ptrc.json");
@@ -73,6 +75,7 @@ const config: ConfigInterface = Object.seal({
 
   // db
   DB_FILE_NAME,
+  LOG_FILE_NAME,
   DB_BACKUP_FILE_NAME,
   DB_PATH: ":memory:",
   DB_BACKUP_TEMP_FILE_NAME,

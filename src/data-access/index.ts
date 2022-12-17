@@ -17,7 +17,7 @@ import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 
 export interface AllDatabases {
-  database: SqliteDatabase;
+  internalDatabase: SqliteDatabase;
   project: ProjectDatabaseInterface;
   category: CategoryDatabaseInterface;
   workSession: WorkSessionDatabaseInterface;
@@ -50,7 +50,7 @@ export async function makeAllDatabase(
   };
 
   const allDatabases: AllDatabases = {
-    database,
+    internalDatabase: database,
     project: buildProjectDatabase(commonArg),
     category: buildCategoryDatabase(commonArg),
     workSession: buildWorkSessionDatabase({
