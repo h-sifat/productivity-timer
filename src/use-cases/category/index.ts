@@ -2,6 +2,7 @@ import getID from "data-access/id";
 import makeAddCategory from "./add-category";
 import makeEditCategory from "./edit-category";
 import makeGetCategoryMaxId from "./get-max-id";
+import { makeFindByName } from "./find-by-name";
 import makeListCategories from "./list-categories";
 import makeRemoveCategory from "./remove-category";
 import makeGetCategoryById from "./get-category-by-id";
@@ -25,6 +26,7 @@ export default function makeCategoryService(
     addCategory: makeAddCategory({ db }),
     getMaxId: makeGetCategoryMaxId({ db }),
     listCategories: makeListCategories({ db }),
+    findByName: makeFindByName({ database: db }),
     editCategory: makeEditCategory({ db, isValidId }),
     removeCategory: makeRemoveCategory({ db, isValidId }),
     getCategoryById: makeGetCategoryById({ db, isValidId }),

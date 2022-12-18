@@ -28,4 +28,5 @@ export interface CategoryServiceInterface {
   addCategory(arg: AddCategory_Argument): Promise<CategoryFields>;
   editCategory(arg: EditCategory_Argument): Promise<CategoryFields>;
   listCategories(): ReturnType<CategoryDatabaseInterface["findAll"]>;
+  findByName: CategoryDatabaseInterface["findByName"];
 }
