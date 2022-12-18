@@ -28,7 +28,7 @@ describe("Functionality", () => {
     categoryService.addCategory.mockResolvedValueOnce(fakeCategory);
 
     const response = await postCategory(validRequestObject);
-    expect(response).toEqual({ error: null, body: fakeCategory });
+    expect(response).toEqual({ body: { success: true, data: fakeCategory } });
 
     expect(categoryService.addCategory).toHaveBeenCalledTimes(1);
     expect(categoryService.addCategory).toHaveBeenCalledWith({
@@ -42,10 +42,9 @@ describe("Functionality", () => {
 
     const response = await postCategory(validRequestObject);
     expect(response).toEqual({
-      body: {},
-      error: {
-        code: error.code,
-        message: error.message,
+      body: {
+        success: false,
+        error: { code: error.code, message: error.message },
       },
     });
 

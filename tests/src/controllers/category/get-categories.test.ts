@@ -50,8 +50,10 @@ describe("Validation", () => {
   ])(`throws ewc "$errorCode" if $case`, async ({ request, errorCode }) => {
     const response = await getCategories(request);
     expect(response).toEqual({
-      body: {},
-      error: { message: expect.any(String), code: errorCode },
+      body: {
+        success: false,
+        error: { message: expect.any(String), code: errorCode },
+      },
     });
   });
 });
@@ -64,7 +66,7 @@ describe("Functionality", () => {
     categoryService.listCategories.mockResolvedValueOnce(fakeCategories);
 
     const response = await getCategories(request);
-    expect(response).toEqual({ error: null, body: fakeCategories });
+    expect(response).toEqual({ body: { success: true, data: fakeCategories } });
 
     expect(categoryService.listCategories).toHaveBeenCalledTimes(1);
 
@@ -124,7 +126,9 @@ describe("Functionality", () => {
       );
 
       const response = await getCategories(request);
-      expect(response).toEqual({ error: null, body: fakeServiceResponse });
+      expect(response).toEqual({
+        body: { success: true, data: fakeServiceResponse },
+      });
 
       // @ts-ignore
       expect(categoryService[expectedServiceToCall]).toHaveBeenCalledTimes(1);

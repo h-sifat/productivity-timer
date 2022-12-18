@@ -15,9 +15,11 @@ export default function makePostProject(
 
     try {
       const project = await projectService.addProject({ projectInfo });
-      return { error: null, body: project };
+      return { body: { success: true, data: project } };
     } catch (ex) {
-      return { body: {}, error: { message: ex.message, code: ex.code } };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

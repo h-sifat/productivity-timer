@@ -28,7 +28,9 @@ describe("Functionality", () => {
     projectService.addProject.mockResolvedValueOnce(fakeProject);
 
     const response = await postProject(validRequestObject);
-    expect(response).toEqual({ error: null, body: fakeProject });
+    expect(response).toEqual({
+      body: { success: true, data: fakeProject },
+    });
 
     expect(projectService.addProject).toHaveBeenCalledTimes(1);
     expect(projectService.addProject).toHaveBeenCalledWith({
@@ -42,10 +44,9 @@ describe("Functionality", () => {
 
     const response = await postProject(validRequestObject);
     expect(response).toEqual({
-      body: {},
-      error: {
-        code: error.code,
-        message: error.message,
+      body: {
+        success: false,
+        error: { code: error.code, message: error.message },
       },
     });
 

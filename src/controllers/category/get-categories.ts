@@ -1,5 +1,5 @@
 import EPP from "common/util/epp";
-import { assert, is } from "handy-types";
+import { assert } from "handy-types";
 
 import type { Controller } from "../interface";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
@@ -35,7 +35,12 @@ export default function makeGetCategories(
       let result: any;
 
       if (!("id" in request.params))
-        return { error: null, body: await categoryService.listCategories() };
+        return {
+          body: {
+            success: true,
+            data: await categoryService.listCategories(),
+          },
+        };
 
       const id: any = request.params.id;
       const lookup = request.query.lookup;
@@ -65,9 +70,11 @@ export default function makeGetCategories(
           });
       }
 
-      return { error: null, body: result };
+      return { body: { success: true, data: result as any } };
     } catch (ex) {
-      return { error: { message: ex.message, code: ex.code }, body: {} };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

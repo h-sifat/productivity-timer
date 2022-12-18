@@ -23,9 +23,11 @@ export default function makePatchProject(
         request.body;
 
       const edited = await projectService.editProject({ id, changes });
-      return { error: null, body: edited };
+      return { body: { success: true, data: edited } };
     } catch (ex) {
-      return { error: { message: ex.message, code: ex.code }, body: {} };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

@@ -61,9 +61,14 @@ export default function makeGetProjects(
           break;
       }
 
-      return { body: { data: result }, error: null };
+      return { body: { success: true, data: result } };
     } catch (ex) {
-      return { body: {}, error: { message: ex.message, code: ex.code } };
+      return {
+        body: {
+          success: false,
+          error: { message: ex.message, code: ex.code },
+        },
+      };
     }
   };
 }

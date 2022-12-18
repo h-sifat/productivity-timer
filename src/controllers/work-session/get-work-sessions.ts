@@ -38,9 +38,11 @@ export default function makeGetWorkSessions(
         listByDateRangeArgument
       );
 
-      return { body: workSessions, error: null };
+      return { body: { success: true, data: workSessions } };
     } catch (ex) {
-      return { error: { message: ex.message, code: ex.code }, body: {} };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

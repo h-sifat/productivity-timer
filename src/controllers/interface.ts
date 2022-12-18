@@ -14,8 +14,12 @@ export interface Request {
 
 export interface Response {
   headers?: Headers;
-  body: object | object[];
-  error: null | { message: string; code?: string };
+  body:
+    | { success: true; data: any }
+    | {
+        success: false;
+        error: { message: string; code?: string; [key: string]: any };
+      };
 }
 
 export type Controller = (request: Request) => Promise<Response>;

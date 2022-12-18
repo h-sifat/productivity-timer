@@ -1,4 +1,3 @@
-import EPP from "common/util/epp";
 import { deepFreeze } from "common/util/other";
 import type { Request } from "src/controllers/interface";
 import makeGetProjects from "src/controllers/project/get-projects";
@@ -56,8 +55,10 @@ describe("Validation", () => {
     const response = await getProjects(request);
 
     expect(response).toEqual({
-      body: {},
-      error: { message: expect.any(String), code: "INVALID_QUERY" },
+      body: {
+        success: false,
+        error: { message: expect.any(String), code: "INVALID_QUERY" },
+      },
     });
 
     Object.values(projectService).forEach((service) => {
@@ -100,8 +101,7 @@ describe("Functionality", () => {
 
       const response = await getProjects(request);
       expect(response).toEqual({
-        error: null,
-        body: { data: fakeServiceResponse },
+        body: { success: true, data: fakeServiceResponse },
       });
 
       expect(service).toHaveBeenCalledTimes(1);

@@ -45,8 +45,10 @@ describe("Validation", () => {
   ])(`returns ewc "$errorCode" if $case`, async ({ errorCode, request }) => {
     const response = await patchCategory(request);
     expect(response).toEqual({
-      body: {},
-      error: { message: expect.any(String), code: errorCode },
+      body: {
+        success: false,
+        error: { message: expect.any(String), code: errorCode },
+      },
     });
 
     Object.values(categoryService).forEach((method) => {
@@ -72,8 +74,7 @@ describe("Functionality", () => {
 
     const response = await patchCategory(request);
     expect(response).toEqual({
-      error: null,
-      body: fakeEditCategoryResponse,
+      body: { success: true, data: fakeEditCategoryResponse },
     });
 
     expect(categoryService.editCategory).toHaveBeenCalledTimes(1);
@@ -94,8 +95,10 @@ describe("Functionality", () => {
 
     const response = await patchCategory(request);
     expect(response).toEqual({
-      body: {},
-      error: { message: error.message, code: error.code },
+      body: {
+        success: false,
+        error: { message: error.message, code: error.code },
+      },
     });
 
     expect(categoryService.editCategory).toHaveBeenCalledTimes(1);

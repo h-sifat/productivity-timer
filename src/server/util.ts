@@ -27,16 +27,16 @@ export function makeExpressIPCMiddleware(
         for (const [key, value] of Object.entries(controllerResponse.headers))
           (res.headers as any)[key] = value;
 
-      res.send(
-        { data: controllerResponse.body, error: controllerResponse.error },
-        { isError: Boolean(controllerResponse.error) }
-      );
+      res.send(controllerResponse.body);
     } catch (ex) {
       debug(ex);
-      res.send(
-        { data: null, error: { message: `Internal server error.` } },
-        { isError: true }
-      );
+      res.send({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Internal server error.`,
+        },
+      });
     }
   };
 }

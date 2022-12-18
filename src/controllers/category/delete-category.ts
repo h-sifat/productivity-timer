@@ -20,9 +20,11 @@ export default function makeDeleteCategory(
       const { id = required("params.id", "MISSING_ID") } = request.params;
 
       const deletedCategories = await categoryService.removeCategory({ id });
-      return { error: null, body: deletedCategories };
+      return { body: { success: true, data: deletedCategories } };
     } catch (ex) {
-      return { error: { message: ex.message, code: ex.code }, body: {} };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

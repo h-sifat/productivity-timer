@@ -31,10 +31,9 @@ describe("makeExpressIPCMiddleware", () => {
     res.isSent = false;
   });
 
-  it(`sends the response from the controller`, async () => {
+  fit(`sends the response from the controller`, async () => {
     const fakeControllerResponse = deepFreeze({
-      error: null,
-      body: { data: 1 },
+      body: { success: false, data: { name: "a" } },
       headers: { "Content-Type": "application/json" },
     });
     controller.mockResolvedValueOnce(fakeControllerResponse);
@@ -48,13 +47,8 @@ describe("makeExpressIPCMiddleware", () => {
     }
 
     expect(res.send).toHaveBeenCalledTimes(1);
-    expect(res.send).toHaveBeenCalledWith(
-      {
-        data: fakeControllerResponse.body,
-        error: fakeControllerResponse.error,
-      },
-      { isError: Boolean(fakeControllerResponse.error) }
-    );
+    expect(res.send).toHaveBeenCalledWith(fakeControllerResponse.body);
+    expect(res.headers).toEqual(fakeControllerResponse.headers);
   });
 
   it(`returns an error response if the controller throws exception or rejects a promise`, async () => {
@@ -62,9 +56,9 @@ describe("makeExpressIPCMiddleware", () => {
 
     await middleware({ req, res, next }, undefined);
     expect(res.send).toHaveBeenCalledTimes(1);
-    expect(res.send).toHaveBeenCalledWith(
-      { data: null, error: { message: expect.any(String) } },
-      { isError: true }
-    );
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      error: { message: expect.any(String), code: "INTERNAL_SERVER_ERROR" },
+    });
   });
 });

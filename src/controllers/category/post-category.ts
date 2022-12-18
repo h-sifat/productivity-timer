@@ -15,9 +15,11 @@ export default function makePostCategory(
 
     try {
       const category = await categoryService.addCategory({ categoryInfo });
-      return { error: null, body: category };
+      return { body: { success: true, data: category } };
     } catch (ex) {
-      return { body: {}, error: { message: ex.message, code: ex.code } };
+      return {
+        body: { success: false, error: { message: ex.message, code: ex.code } },
+      };
     }
   };
 }

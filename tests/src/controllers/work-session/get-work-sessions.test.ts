@@ -31,8 +31,10 @@ describe("Validation", () => {
 
       const response = await getWorkSessions(request);
       expect(response).toEqual({
-        body: {},
-        error: { message: expect.any(String), code: errorCode },
+        body: {
+          success: false,
+          error: { message: expect.any(String), code: errorCode },
+        },
       });
 
       for (const service of Object.values(workSessionService))
@@ -56,7 +58,9 @@ describe("Functionality", () => {
       const request = { ...defaultRequest, query };
       const response = await getWorkSessions(request);
 
-      expect(response).toEqual({ error: null, body: fakeServiceResponse });
+      expect(response).toEqual({
+        body: { success: true, data: fakeServiceResponse },
+      });
 
       expect(
         workSessionService.listWorkSessionsByDateRange
@@ -80,8 +84,10 @@ describe("Functionality", () => {
     const request = { ...defaultRequest, query: { fromDate: "1/1/2022" } };
     const response = await getWorkSessions(request);
     expect(response).toEqual({
-      body: {},
-      error: { code: error.code, message: error.message },
+      body: {
+        success: false,
+        error: { code: error.code, message: error.message },
+      },
     });
   });
 });
