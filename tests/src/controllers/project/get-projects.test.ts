@@ -4,8 +4,9 @@ import type { Request } from "src/controllers/interface";
 import makeGetProjects from "src/controllers/project/get-projects";
 
 const projectService = Object.freeze({
-  getProjectById: jest.fn(),
+  findByName: jest.fn(),
   listProjects: jest.fn(),
+  getProjectById: jest.fn(),
 });
 
 const getProjects = makeGetProjects({ projectService });
@@ -24,96 +25,94 @@ const validRequestObject: Request = deepFreeze({
   path: "/projects",
 });
 
-describe("get /projects", () => {
-  it(`calls the projectService.listProjects service if no id parameter is provide`, async () => {
-    const fakeServiceResponse = Object.freeze([fakeProject]);
-    projectService.listProjects.mockResolvedValueOnce(fakeServiceResponse);
+describe("Validation", () => {
+  it.each([
+    {
+      query: {},
+      case: "the lookup property is missing",
+    },
+    {
+      query: { lookup: "not_valid" },
+      case: "the lookup property is invalid",
+    },
+    {
+      query: { lookup: "not_valid" },
+      case: "the lookup property is invalid",
+    },
+    {
+      query: { lookup: "all", unknown: "value" },
+      case: "query contains unknown properties",
+    },
+    {
+      query: { lookup: "byId" },
+      case: `id is from "byId" lookup query`,
+    },
+    {
+      query: { lookup: "byName" },
+      case: `name is from "byName" lookup query`,
+    },
+  ])(`returns error if $case`, async ({ query }) => {
+    const request = { ...validRequestObject, query };
+    const response = await getProjects(request);
 
-    const response = await getProjects({ ...validRequestObject, params: {} });
-    expect(response).toEqual({ body: fakeServiceResponse, error: null });
-
-    expect(projectService.listProjects).toHaveBeenCalledTimes(1);
-    expect(projectService.getProjectById).not.toHaveBeenCalled();
-  });
-
-  it(`returns the error thrown by projectService.listProjects`, async () => {
-    const error = new EPP({
-      code: "DB_CORRUPTED",
-      message: "The db is corrupted. (by you of course!)",
-    });
-    projectService.listProjects.mockRejectedValueOnce(error);
-
-    const response = await getProjects({ ...validRequestObject, params: {} });
     expect(response).toEqual({
       body: {},
-      error: { code: error.code, message: error.message },
+      error: { message: expect.any(String), code: "INVALID_QUERY" },
     });
 
-    expect(projectService.listProjects).toHaveBeenCalledTimes(1);
-    expect(projectService.getProjectById).not.toHaveBeenCalled();
+    Object.values(projectService).forEach((service) => {
+      expect(service).not.toHaveBeenCalled();
+    });
   });
 });
 
-describe("get /projects:id", () => {
-  it(`calls the projectService.getProjectById service if an id parameter is provide`, async () => {
-    projectService.getProjectById.mockResolvedValueOnce(fakeProject);
+describe("Functionality", () => {
+  it.each([
+    {
+      query: { lookup: "all" },
+      expectedServiceCallArgs: undefined,
+      fakeServiceResponse: [fakeProject],
+      expectedServiceToCall: "listProjects",
+    },
+    {
+      query: { lookup: "byId", id: "a" },
+      expectedServiceCallArgs: { id: "a" },
+      fakeServiceResponse: fakeProject,
+      expectedServiceToCall: "getProjectById",
+    },
+    {
+      query: { lookup: "byName", name: "a" },
+      expectedServiceCallArgs: { name: "a" },
+      fakeServiceResponse: fakeProject,
+      expectedServiceToCall: "findByName",
+    },
+  ])(
+    `returns the response of "$expectedServiceToCall" service if query is: $query`,
+    async ({
+      query,
+      fakeServiceResponse,
+      expectedServiceToCall,
+      expectedServiceCallArgs,
+    }) => {
+      const request = { ...validRequestObject, query };
+      const service = (projectService as any)[expectedServiceToCall];
+      service.mockResolvedValueOnce(fakeServiceResponse);
 
-    const id = fakeProject.id;
-
-    const response = await getProjects({
-      ...validRequestObject,
-      params: { id },
-    });
-    expect(response).toEqual({ body: fakeProject, error: null });
-
-    expect(projectService.getProjectById).toHaveBeenCalledTimes(1);
-    expect(projectService.getProjectById).toHaveBeenCalledWith({ id });
-    expect(projectService.listProjects).not.toHaveBeenCalled();
-  });
-
-  {
-    const errorCode = "NOT_FOUND";
-
-    it(`returns an error response with code "${errorCode}" if no project is found with the given id`, async () => {
-      // null meaning no project exists with the given id
-      projectService.getProjectById.mockResolvedValueOnce(null);
-
-      const id = fakeProject.id;
-
-      const response = await getProjects({
-        ...validRequestObject,
-        params: { id },
-      });
-
+      const response = await getProjects(request);
       expect(response).toEqual({
-        body: {},
-        error: { message: expect.any(String), code: errorCode },
+        error: null,
+        body: { data: fakeServiceResponse },
       });
 
-      expect(projectService.getProjectById).toHaveBeenCalledTimes(1);
-      expect(projectService.getProjectById).toHaveBeenCalledWith({ id });
-      expect(projectService.listProjects).not.toHaveBeenCalled();
-    });
-  }
+      expect(service).toHaveBeenCalledTimes(1);
+      if (expectedServiceCallArgs)
+        expect(service).toHaveBeenCalledWith(expectedServiceCallArgs);
 
-  it(`returns an error response if projectService.getProjectById throws an error`, async () => {
-    const error = new EPP(`Invalid id`, "INVALID_ID");
-    projectService.getProjectById.mockRejectedValueOnce(error);
+      Object.entries(projectService).forEach(([name, service]) => {
+        if (name === expectedServiceToCall) return;
 
-    const id = fakeProject.id;
-
-    const response = await getProjects({
-      ...validRequestObject,
-      params: { id },
-    });
-
-    expect(response).toEqual({
-      body: {},
-      error: { message: error.message, code: error.code },
-    });
-
-    expect(projectService.getProjectById).toHaveBeenCalledTimes(1);
-    expect(projectService.getProjectById).toHaveBeenCalledWith({ id });
-    expect(projectService.listProjects).not.toHaveBeenCalled();
-  });
+        expect(service).not.toHaveBeenCalled();
+      });
+    }
+  );
 });

@@ -1,12 +1,25 @@
+import { z } from "zod";
 import type { Controller } from "../interface";
+import { formatError } from "common/validator/zod";
+import { ProjectFields } from "entities/project/project";
 import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 export interface MakeGetProjects_Argument {
   projectService: Pick<
     ProjectServiceInterface,
-    "getProjectById" | "listProjects"
+    "getProjectById" | "listProjects" | "findByName"
   >;
 }
+
+const QuerySchema = z.discriminatedUnion("lookup", [
+  z.object({ lookup: z.literal("all") }).strict(),
+  z
+    .object({ lookup: z.literal("byId"), id: z.string().trim().min(1) })
+    .strict(),
+  z
+    .object({ lookup: z.literal("byName"), name: z.string().trim().min(1) })
+    .strict(),
+]);
 
 export default function makeGetProjects(
   builderArg: MakeGetProjects_Argument
@@ -17,26 +30,38 @@ export default function makeGetProjects(
   /**
    * RequestURL | Method to use
    * ---------- | ------
-   * get /projects | listProjects()
-   * get /projects/`:id` | getProjectById(`id`)
+   * get /projects?lookup="all" | listProjects()
+   * get /projects?lookup="byId"&id=<id> | getProjectById
+   * get /projects?lookup="byName"&name=<name> | findByName
    * */
   return async function GetProjects(request) {
     try {
-      if (!("id" in request.params))
-        return { body: await projectService.listProjects(), error: null };
+      const query = (() => {
+        const result = QuerySchema.safeParse(request.query);
+        if (!result.success) {
+          const message = formatError(result.error);
+          throw { message, code: "INVALID_QUERY" }; // will be caught below
+        }
 
-      const id = request.params.id;
-      const project = await projectService.getProjectById({ id });
+        return result.data;
+      })();
 
-      return project
-        ? { body: project, error: null }
-        : {
-            body: {},
-            error: {
-              code: "NOT_FOUND",
-              message: `No project found with id: "${id}"`,
-            },
-          };
+      let result: ProjectFields | ProjectFields[] | null;
+      switch (query.lookup) {
+        case "all":
+          result = await projectService.listProjects();
+          break;
+
+        case "byId":
+          result = await projectService.getProjectById({ id: query.id });
+          break;
+
+        case "byName":
+          result = await projectService.findByName({ name: query.name });
+          break;
+      }
+
+      return { body: { data: result }, error: null };
     } catch (ex) {
       return { body: {}, error: { message: ex.message, code: ex.code } };
     }
