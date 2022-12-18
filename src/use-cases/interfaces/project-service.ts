@@ -4,6 +4,7 @@ import type {
   MakeProject_Argument,
 } from "entities/project/project";
 import type { QueryMethodArguments } from "./project-db";
+import ProjectDatabaseInterface from "./project-db";
 
 export interface AddProject_Argument {
   projectInfo: MakeProject_Argument;
@@ -24,4 +25,5 @@ export interface ProjectServiceInterface {
   removeProject(
     arg: QueryMethodArguments["deleteById"]
   ): Promise<ProjectFields>;
+  findByName: ProjectDatabaseInterface["findByName"];
 }
