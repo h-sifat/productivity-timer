@@ -1,5 +1,5 @@
-import { is } from "handy-types";
 import EPP from "common/util/epp";
+import { assert, is } from "handy-types";
 
 import type { Controller } from "../interface";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
@@ -7,6 +7,7 @@ import type { CategoryServiceInterface } from "use-cases/interfaces/category-ser
 export interface MakeGetCategories_Argument {
   categoryService: Pick<
     CategoryServiceInterface,
+    | "findByName"
     | "listCategories"
     | "getCategoryById"
     | "listSubCategories"
@@ -23,7 +24,8 @@ export default function makeGetCategories(
    * RequestURL | Method to use
    * ---------- | ------
    * get /categories | listCategories
-   * get /categories/`:id?lookup=self` | getCategoryById
+   * get /categories/`:id?lookup=self-by-id` | getCategoryById
+   * get /categories/`:id?lookup=self-by-name` | findByName
    * get /categories/`:id?lookup=children` | listSubCategories
    * get /categories/`:id?lookup=parents` | listParentCategories
    * Anything else | Error
@@ -38,18 +40,17 @@ export default function makeGetCategories(
       const id: any = request.params.id;
       const lookup = request.query.lookup;
 
-      if (!is<string>("non_empty_string", lookup))
-        return {
-          body: {},
-          error: {
-            code: "INVALID_QUERY_TYPE",
-            message: `The "lookup" property in query string must be of type Non-Empty String.`,
-          },
-        };
+      assert<string>("non_empty_string", lookup, {
+        name: "Query.lookup",
+        code: "INVALID_QUERY_TYPE",
+      });
 
       switch (lookup) {
-        case "self":
+        case "self-by-id":
           result = await categoryService.getCategoryById({ id });
+          break;
+        case "self-by-name":
+          result = await categoryService.findByName({ name: id });
           break;
         case "parents":
           result = await categoryService.listParentCategories({ id });

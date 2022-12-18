@@ -3,6 +3,7 @@ import { Request } from "src/controllers/interface";
 import makeGetCategories from "src/controllers/category/get-categories";
 
 const categoryService = Object.freeze({
+  findByName: jest.fn(),
   listCategories: jest.fn(),
   getCategoryById: jest.fn(),
   listSubCategories: jest.fn(),
@@ -74,10 +75,17 @@ describe("Functionality", () => {
   it.each([
     {
       id: "1",
-      lookup: "self",
+      lookup: "self-by-id",
       fakeServiceResponse: fakeCategory,
       expectedServiceCallArgument: { id: "1" },
       expectedServiceToCall: "getCategoryById",
+    },
+    {
+      id: "study",
+      lookup: "self-by-name",
+      fakeServiceResponse: [fakeCategory],
+      expectedServiceCallArgument: { name: "study" },
+      expectedServiceToCall: "findByName",
     },
     {
       id: "1",
