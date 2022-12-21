@@ -42,7 +42,7 @@ export type TimerStateNames =
   | "TIMED_UP"
   | "NOT_STARTED";
 
-interface TimerData<RefType> {
+export interface TimerData<RefType> {
   ref: RefType | null;
   duration: number;
   state: TimerStates;
