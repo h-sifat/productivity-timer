@@ -107,7 +107,7 @@ describe("findByHash", () => {
   });
 });
 
-fdescribe("findByName", () => {
+describe("findByName", () => {
   it(`returns an empty array if no categories are found`, async () => {
     const categories = await categoryDb.findByName({ name: "study" });
     expect(categories).toEqual([]);

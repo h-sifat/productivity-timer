@@ -31,7 +31,7 @@ describe("makeExpressIPCMiddleware", () => {
     res.isSent = false;
   });
 
-  fit(`sends the response from the controller`, async () => {
+  it(`sends the response from the controller`, async () => {
     const fakeControllerResponse = deepFreeze({
       body: { success: false, data: { name: "a" } },
       headers: { "Content-Type": "application/json" },

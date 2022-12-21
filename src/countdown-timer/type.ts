@@ -5,7 +5,7 @@ import type {
   TimerElapsedTime,
 } from "./timer";
 
-interface MethodCallResult {
+export interface TimerMethodCallResult {
   message: string;
   success: boolean;
 }
@@ -35,11 +35,11 @@ export type GeneralEventArgument<RefType> = Pick<
   TimeInfo<RefType>;
 
 export interface TimerInstance<RefType> {
-  end(): MethodCallResult;
-  pause(): MethodCallResult;
-  start(): MethodCallResult;
-  setDuration(durationMs: number): MethodCallResult;
-  reset(arg?: { duration?: number; ref?: RefType }): MethodCallResult;
+  end(): TimerMethodCallResult;
+  pause(): TimerMethodCallResult;
+  start(): TimerMethodCallResult;
+  setDuration(durationMs: number): TimerMethodCallResult;
+  reset(arg?: { duration?: number; ref?: RefType }): TimerMethodCallResult;
 
   on(
     event: "reset",
