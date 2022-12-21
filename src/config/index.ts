@@ -1,61 +1,18 @@
 import path from "path";
 import { homedir } from "os";
-
-export interface ConfigInterface {
-  [key: string]: any;
-  // category
-  CATEGORY_MAX_NAME_LENGTH: number;
-  CATEGORY_VALID_NAME_PATTERN: RegExp;
-  CATEGORY_MAX_DESCRIPTION_LENGTH: number;
-  CATEGORY_MSG_NAME_DOES_NOT_MATCH_PATTERN: string;
-
-  // project
-  PROJECT_MAX_NAME_LENGTH: number;
-  PROJECT_VALID_NAME_PATTERN: RegExp;
-  PROJECT_MAX_DESCRIPTION_LENGTH: number;
-  PROJECT_MIN_HOUR_BEFORE_DEADLINE: number;
-  PROJECT_MSG_NAME_DOES_NOT_MATCH_PATTERN: string;
-
-  // work session
-  WORK_SESSION_MAX_ALLOWED_ELAPSED_TIME_DIFF: number;
-
-  // db
-  DB_PATH: string;
-  DATA_DIR: string;
-  DB_FILE_NAME: string;
-  LOG_FILE_NAME: string;
-  DB_BACKUP_DIR: string;
-  CONFIG_FILE_PATH: string;
-  DB_BACKUP_FILE_NAME: string;
-  DB_BACKUP_TEMP_FILE_NAME: string;
-  DB_SUB_PROCESS_MODULE_PATH: string;
-  DB_CLOSE_TIMEOUT_WHEN_KILLING: number;
-
-  // speaker
-  MPLAYER_PATH: string;
-  BEEP_DURATION_MS: number;
-  MPLAYER_AUDIO_PATH: string;
-
-  // other
-  NOTIFICATION_TITLE: string;
-
-  // server
-  SOCKET_PIPE_NAME: string;
-  API_PROJECT_PATH: string;
-  API_CATEGORY_PATH: string;
-  API_WORK_SESSION_PATH: string;
-}
+import type { ConfigInterface } from "./interface";
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
 export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
+export const DEFAULT_TIMER_DURATION_MS = 20 * 60 * 1000; // 20 minutes
+export const DEFAULT_BEEP_DURATION_MS = 60_0000;
 
 const DB_FILE_NAME = "p-timer.db";
 const LOG_FILE_NAME = "logs.txt";
 const DB_BACKUP_FILE_NAME = "p-timer.bak.db";
 const DB_BACKUP_TEMP_FILE_NAME = "p-timer.bak-temp.db";
 const CONFIG_FILE_PATH = path.join(homedir(), ".ptrc.json");
-export const DEFAULT_BEEP_DURATION_MS = 60_0000;
 
 const config: ConfigInterface = Object.seal({
   // category
@@ -94,15 +51,19 @@ const config: ConfigInterface = Object.seal({
   // other
   MPLAYER_PATH: "mplayer",
   MPLAYER_AUDIO_PATH: "",
-  BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
 
   NOTIFICATION_TITLE: "Productivity Timer",
 
   // api
+  API_TIMER_PATH: "/timer",
   API_PROJECT_PATH: "/project",
   API_CATEGORY_PATH: "/category",
   API_WORK_SESSION_PATH: "/work-session",
   SOCKET_PIPE_NAME: "pt_by_sifat_api_v1_0_0",
+
+  // timer
+  DEFAULT_TIMER_DURATION_MS,
+  BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
 });
 
 export interface modifyConfig_Argument {

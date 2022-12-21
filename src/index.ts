@@ -1,5 +1,4 @@
 import path from "path";
-import * as fs from "fs";
 import { getConfig } from "./config";
 import { notify } from "common/util/notify";
 import { makeServices } from "./make-services";
@@ -10,6 +9,8 @@ import { makeControllers } from "./make-controllers";
 import { makeExpressIPCMiddleware } from "./server/util";
 
 import { AllDatabases } from "./data-access";
+import { addDatabaseEventListeners } from "./start-up/db";
+import { makeFileConsole } from "common/util/fs";
 
 interface initApplication_Argument {
   log(...args: any[]): Promise<void>;
@@ -34,12 +35,9 @@ async function initApplication(arg: initApplication_Argument) {
     process.exit(1);
   };
 
-  const FileLogger = (() => {
-    const LOG_PATH = path.join(config.DATA_DIR, config.LOG_FILE_NAME);
-    const writeStream = fs.createWriteStream(LOG_PATH, { flags: "a+" });
-
-    return new console.Console(writeStream);
-  })();
+  const FileConsole = makeFileConsole({
+    filepath: path.join(config.DATA_DIR, config.LOG_FILE_NAME),
+  });
 
   async function notifyDatabaseCorruption(error: any) {
     notify({
@@ -47,7 +45,7 @@ async function initApplication(arg: initApplication_Argument) {
       message: `Database corrupted, Closing server. Please see logs.`,
     });
 
-    FileLogger.log(Date.now(), error);
+    FileConsole.log(Date.now(), error);
     await closeApplication();
   }
 
@@ -63,27 +61,10 @@ async function initApplication(arg: initApplication_Argument) {
   const services = makeServices({ databases });
   const controllers = makeControllers({ services });
 
-  databases.internalDatabase.on("db_subprocess:crashed", () => {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Database sub-process died. Trying to respawn.`,
-    });
-  });
-
-  databases.internalDatabase.on("db_subprocess:re_spawned", () => {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Database sub-process respawned.`,
-    });
-  });
-
-  databases.internalDatabase.on("db_subprocess:re_spawn_failed", async () => {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Database sub-process respawn failed. Closing app.`,
-    });
-
-    await closeApplication();
+  addDatabaseEventListeners({
+    config,
+    closeApplication,
+    database: databases.internalDatabase,
   });
 
   for (const method of ["get", "post", "patch", "delete"] as const) {

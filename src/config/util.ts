@@ -3,6 +3,7 @@ import {
   DEFAULT_BACKUP_DIR,
   DEFAULT_MPLAYER_PATH,
   DEFAULT_BEEP_DURATION_MS,
+  DEFAULT_TIMER_DURATION_MS,
 } from ".";
 import path from "path";
 import { z } from "zod";
@@ -28,6 +29,16 @@ const ConfigFileSchema = z
       .positive()
       .gt(5000)
       .default(DEFAULT_BEEP_DURATION_MS),
+
+    DEFAULT_TIMER_DURATION_MS: z
+      .number()
+      .int()
+      .positive()
+      .gt(5000)
+      .refine((value) => value % 1000 === 0, {
+        message: `"DEFAULT_TIMER_DURATION_MS" must be a multiple of 1000 (1 second)`,
+      })
+      .default(DEFAULT_TIMER_DURATION_MS),
   })
   .strict();
 

@@ -33,3 +33,14 @@ export async function accessPath(arg: access_Argument) {
 
   return { exists, hasPermissions };
 }
+
+export interface makeFileConsole_Argument {
+  filepath: string;
+}
+
+export function makeFileConsole(factoryArg: makeFileConsole_Argument): Console {
+  const { filepath } = factoryArg;
+
+  const writeStream = fs.createWriteStream(filepath, { flags: "a+" });
+  return new console.Console(writeStream);
+}
