@@ -8,9 +8,11 @@ import type {
   TimerMethodCallResult,
 } from "src/countdown-timer/type";
 import type { TimerRef } from "entities/work-session/work-session";
+import { Speaker } from "src/speaker";
 
 export interface makePostCommand_Argument {
   DEFAULT_TIMER_DURATION: number;
+  speaker: Speaker;
   timer: Pick<
     TimerInstance<TimerRef | null>,
     | "end"
@@ -81,7 +83,7 @@ export function makePostTimerCommand(
       .strict(),
   ]);
 
-  const { timer } = factoryArg;
+  const { timer, speaker } = factoryArg;
   return async function postTimerCommand(request) {
     try {
       let command: z.infer<typeof CommandSchema>;
@@ -96,6 +98,10 @@ export function makePostTimerCommand(
 
         command = result.data;
       }
+
+      // If any command is issued while the speaker is beeping, then turn
+      // off the beeping.
+      if (speaker.isPlaying) speaker.pause();
 
       let result:
         | { isMethodCallResult: true; data: TimerMethodCallResult }

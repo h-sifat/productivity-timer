@@ -26,6 +26,11 @@ const timer = Object.seal({
   setDuration: jest.fn(),
 });
 
+const speaker = Object.seal({
+  isPlaying: false,
+  pause: jest.fn(),
+});
+
 const timerMethods = Object.values(timer).filter(
   (value) => typeof value === "function"
 );
@@ -34,6 +39,7 @@ const DEFAULT_TIMER_DURATION = 20_000;
 
 const postTimerCommand = makePostTimerCommand({
   timer: timer as any,
+  speaker: <any>speaker,
   DEFAULT_TIMER_DURATION,
 });
 
@@ -48,6 +54,9 @@ const validRequestObject: Request = deepFreeze({
 
 beforeEach(() => {
   timerMethods.forEach((method) => (method as any).mockReset());
+
+  speaker.isPlaying = false;
+  speaker.pause.mockReset();
 
   timer.ref = null;
   timer.info = FAKE_TIMER_INFO;
@@ -378,5 +387,25 @@ describe("setDuration", () => {
 
     expect(timer.setDuration).toHaveBeenCalledTimes(1);
     expect(timer.setDuration).toHaveBeenCalledWith(changedDuration);
+  });
+});
+
+describe("Other", () => {
+  it("turns off the speaker if any command is issued while it is beeping", async () => {
+    speaker.isPlaying = true;
+
+    timer.start.mockReturnValue({ success: true, message: "hi!" });
+    await postTimerCommand({ ...validRequestObject, body: { name: "start" } });
+
+    expect(speaker.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not turns off the speaker if it is not beeping", async () => {
+    speaker.isPlaying = false;
+
+    timer.start.mockReturnValue({ success: true, message: "hi!" });
+    await postTimerCommand({ ...validRequestObject, body: { name: "start" } });
+
+    expect(speaker.pause).not.toHaveBeenCalled();
   });
 });

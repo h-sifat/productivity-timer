@@ -97,6 +97,7 @@ async function initApplication(arg: initApplication_Argument) {
 
   const timerController = makeTimerController({
     timer,
+    speaker,
     DEFAULT_TIMER_DURATION: config.DEFAULT_TIMER_DURATION_MS,
   });
 
