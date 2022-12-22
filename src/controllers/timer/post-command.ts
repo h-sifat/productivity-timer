@@ -70,7 +70,7 @@ export function makePostTimerCommand(
           .union([
             z
               .object({
-                duration: DurationSchema,
+                duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
                 ref: z.union([TimerRefSchema, z.literal(null)]),
               })
               .strict(),

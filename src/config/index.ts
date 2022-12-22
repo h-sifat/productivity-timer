@@ -6,7 +6,7 @@ export const DEFAULT_MPLAYER_PATH = "mplayer";
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
 export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
 export const DEFAULT_TIMER_DURATION_MS = 20 * 60 * 1000; // 20 minutes
-export const DEFAULT_BEEP_DURATION_MS = 60_0000;
+export const DEFAULT_BEEP_DURATION_MS = 60_000; // 60s
 
 const DB_FILE_NAME = "p-timer.db";
 const LOG_FILE_NAME = "logs.txt";
@@ -58,11 +58,13 @@ const config: ConfigInterface = Object.seal({
   API_TIMER_PATH: "/timer",
   API_PROJECT_PATH: "/project",
   API_CATEGORY_PATH: "/category",
+  TIMER_BROADCAST_CHANNEL: "timer",
   API_WORK_SESSION_PATH: "/work-session",
   SOCKET_PIPE_NAME: "pt_by_sifat_api_v1_0_0",
 
   // timer
   DEFAULT_TIMER_DURATION_MS,
+  SHOW_TIMER_NOTIFICATIONS: true,
   BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
 });
 

@@ -130,4 +130,8 @@ export class Speaker {
     this.#removePlayerEventListeners(this.#player);
     this.#player.kill();
   }
+
+  get isPlaying() {
+    return this.#isPlaying;
+  }
 }

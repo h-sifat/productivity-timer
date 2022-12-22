@@ -39,6 +39,8 @@ const ConfigFileSchema = z
         message: `"DEFAULT_TIMER_DURATION_MS" must be a multiple of 1000 (1 second)`,
       })
       .default(DEFAULT_TIMER_DURATION_MS),
+
+    SHOW_TIMER_NOTIFICATIONS: z.boolean().default(true),
   })
   .strict();
 

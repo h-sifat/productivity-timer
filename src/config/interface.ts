@@ -42,7 +42,9 @@ export interface ConfigInterface {
   API_CATEGORY_PATH: string;
   API_WORK_SESSION_PATH: string;
   API_TIMER_PATH: string;
+  TIMER_BROADCAST_CHANNEL: string;
 
   // timer
   DEFAULT_TIMER_DURATION_MS: number;
+  SHOW_TIMER_NOTIFICATIONS: boolean;
 }
