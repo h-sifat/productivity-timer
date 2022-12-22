@@ -17,7 +17,7 @@ export default function getID(arg: getID_Argument): ID {
   return {
     isValid,
     makeId: () => {
-      const nextId = currentIds[entity]++;
+      const nextId = ++currentIds[entity];
       return nextId.toString();
     },
   };
