@@ -61,14 +61,8 @@ export interface TimerInstance<RefType> {
     event: "err:wake_up_or_time_increment",
     handler: (arg: GeneralEventArgument<RefType>) => any
   ): void;
-  on(
-    event: "end_manually",
-    handler: (arg: GeneralEventArgument<RefType>) => any
-  ): void;
-  on(
-    event: "time_up",
-    handler: (arg: GeneralEventArgument<RefType>) => any
-  ): void;
+  on(event: "time_up", handler: (arg: Info<RefType>) => any): void;
+  on(event: "end_manually", handler: (arg: Info<RefType>) => any): void;
   on(
     event: "duration_change",
     handler: (arg: DurationChangeEventArg<RefType>) => any

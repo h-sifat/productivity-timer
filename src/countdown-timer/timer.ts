@@ -218,7 +218,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     this.#data.logs.push(this.#generateLog("end_manually", callTimestamp));
 
     this.#data.state = TimerStates.ENDED;
-    this.emit("end_manually", this.#getEventArgument());
+    this.emit("end_manually", this.info);
 
     return { success: true, message: `Ended timer.` };
   }
@@ -294,7 +294,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     this.#data.state = TimerStates.TIMED_UP;
     this.#data.logs.push(this.#generateLog("time_up", callTimestamp));
 
-    this.emit("time_up", this.#getEventArgument());
+    this.emit("time_up", this.info);
   }
 
   #assertTimerIsRunning() {
