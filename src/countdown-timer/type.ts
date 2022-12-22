@@ -10,7 +10,7 @@ export interface TimerMethodCallResult {
   success: boolean;
 }
 
-export type Info<RefType> = Pick<
+export type TimerInfo<RefType> = Pick<
   TimerData<RefType>,
   "ref" | "duration" | "logs" | "elapsedTime"
 > & { state: TimerStateNames; remainingTime: number };
@@ -21,15 +21,15 @@ export type TimeInfo<RefType> = Pick<
 > & { remainingTime: number };
 
 export interface ResetEventArg<RefType> {
-  previous: Info<RefType>;
-  current: Info<RefType>;
+  previous: TimerInfo<RefType>;
+  current: TimerInfo<RefType>;
 }
 export type DurationChangeEventArg<RefType> = GeneralEventArgument<RefType> & {
   previousDuration: number;
 };
 
 export type GeneralEventArgument<RefType> = Pick<
-  Info<RefType>,
+  TimerInfo<RefType>,
   "ref" | "state"
 > &
   TimeInfo<RefType>;
@@ -61,8 +61,8 @@ export interface TimerInstance<RefType> {
     event: "err:wake_up_or_time_increment",
     handler: (arg: GeneralEventArgument<RefType>) => any
   ): void;
-  on(event: "time_up", handler: (arg: Info<RefType>) => any): void;
-  on(event: "end_manually", handler: (arg: Info<RefType>) => any): void;
+  on(event: "time_up", handler: (arg: TimerInfo<RefType>) => any): void;
+  on(event: "end_manually", handler: (arg: TimerInfo<RefType>) => any): void;
   on(
     event: "duration_change",
     handler: (arg: DurationChangeEventArg<RefType>) => any
@@ -71,7 +71,7 @@ export interface TimerInstance<RefType> {
   on(event: string, handler: (arg: any) => any): TimerInstance<RefType>;
 
   get duration(): number;
-  get info(): Info<RefType>;
+  get info(): TimerInfo<RefType>;
   get ref(): RefType | null;
   get logs(): TimerEventLog[];
   get remainingTime(): number;

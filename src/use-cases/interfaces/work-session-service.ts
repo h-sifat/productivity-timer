@@ -3,7 +3,7 @@ import type { DeepFreezeTypeMapper } from "common/interfaces/other";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
 interface AddWorkSession_Argument {
-  workSessionInfo: QueryMethodArguments["insert"];
+  workSessionInfo: Omit<QueryMethodArguments["insert"], "id">;
 }
 
 export interface WorkSessionServiceInterface {
