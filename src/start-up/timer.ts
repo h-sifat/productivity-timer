@@ -2,11 +2,11 @@ import type { Server } from "express-ipc";
 import type { Speaker } from "src/speaker";
 import type { Notify } from "common/interfaces/other";
 import type { ConfigInterface } from "src/config/interface";
-import type { TimerRef } from "entities/work-session/work-session";
 import type { TimerInfo, TimerInstance } from "src/countdown-timer/type";
 import type { WorkSessionServiceInterface } from "use-cases/interfaces/work-session-service";
 
 import { convertTimerInfoToMakeWorkSessionArgument } from "entities/work-session/util";
+import { TimerRefWithName } from "src/controllers/timer/interface";
 
 export interface setUpTimerEventListeners_Argument {
   notify: Notify;
@@ -14,7 +14,7 @@ export interface setUpTimerEventListeners_Argument {
   speaker: Speaker;
   FileConsole: Console;
   config: ConfigInterface;
-  timer: TimerInstance<TimerRef>;
+  timer: TimerInstance<TimerRefWithName>;
   WorkSessionService: WorkSessionServiceInterface;
 }
 
@@ -69,16 +69,18 @@ export function setUpTimerEventListeners(
 
     await saveWorkSession(timerInfo);
 
-    // @TODO add a name to timerRef
-    if (config.SHOW_TIMER_NOTIFICATIONS)
-      notify({ title: config.NOTIFICATION_TITLE, message: `Timer ended.` });
+    if (config.SHOW_TIMER_NOTIFICATIONS) {
+      const name = timerInfo.ref?.name;
+      const message = name ? `The timer "${name}" has timed up.` : "Time up.";
+      notify({ title: config.NOTIFICATION_TITLE, message });
+    }
   });
 
   timer.on("end_manually", async (timerInfo) => {
     await saveWorkSession(timerInfo);
   });
 
-  async function saveWorkSession(timerInfo: TimerInfo<TimerRef>) {
+  async function saveWorkSession(timerInfo: TimerInfo<TimerRefWithName>) {
     if (!timerInfo.ref) return;
 
     try {

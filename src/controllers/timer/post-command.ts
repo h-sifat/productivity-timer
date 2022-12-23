@@ -2,19 +2,19 @@ import { z } from "zod";
 import EPP from "common/util/epp";
 import { formatError } from "common/validator/zod";
 
-import type { Controller } from "../interface";
 import type {
   TimerInstance,
   TimerMethodCallResult,
 } from "src/countdown-timer/type";
-import type { TimerRef } from "entities/work-session/work-session";
 import { Speaker } from "src/speaker";
+import type { Controller } from "../interface";
+import type { TimerRefWithName } from "./interface";
 
 export interface makePostCommand_Argument {
   DEFAULT_TIMER_DURATION: number;
   speaker: Speaker;
   timer: Pick<
-    TimerInstance<TimerRef | null>,
+    TimerInstance<TimerRefWithName | null>,
     | "end"
     | "ref"
     | "info"
@@ -35,6 +35,7 @@ export function makePostTimerCommand(
   const TimerRefSchema = z
     .object({
       id: z.string().trim().min(1),
+      name: z.string().trim().min(1).optional(),
       type: z.union([z.literal("category"), z.literal("project")]),
     })
     .strict();
@@ -72,8 +73,8 @@ export function makePostTimerCommand(
           .union([
             z
               .object({
-                duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
                 ref: z.union([TimerRefSchema, z.literal(null)]),
+                duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
               })
               .strict(),
             z.literal(null),
