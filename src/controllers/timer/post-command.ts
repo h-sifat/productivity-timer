@@ -23,6 +23,7 @@ export interface makePostCommand_Argument {
     | "start"
     | "state"
     | "timeInfo"
+    | "duration"
     | "setDuration"
   >;
 }
@@ -51,7 +52,7 @@ export function makePostTimerCommand(
         name: z.literal("reset"),
         arg: z
           .object({
-            duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
+            duration: DurationSchema.optional(),
             hardReset: z.boolean().default(false),
           })
           .strict()
@@ -145,7 +146,7 @@ export function makePostTimerCommand(
 
         case "reset":
           {
-            const { duration, hardReset } = command.arg;
+            const { duration = timer.duration, hardReset } = command.arg;
             const resetArg = hardReset
               ? { duration, ref: null }
               : { duration, ref: timer.ref };

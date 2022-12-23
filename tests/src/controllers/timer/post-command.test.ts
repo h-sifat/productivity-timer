@@ -14,6 +14,7 @@ const FAKE_TIMER_REF = Object.freeze({ id: "123", type: "category" });
 const timer = Object.seal({
   // states
   ref: null,
+  duration: 5000,
   info: FAKE_TIMER_INFO,
   timeInfo: FAKE_TIMER_TIME_INFO,
   state: TimerStates[TimerStates.NOT_STARTED],
@@ -59,6 +60,7 @@ beforeEach(() => {
   speaker.pause.mockReset();
 
   timer.ref = null;
+  timer.duration = 5000;
   timer.info = FAKE_TIMER_INFO;
   timer.timeInfo = FAKE_TIMER_TIME_INFO;
   timer.state = TimerStates[TimerStates.NOT_STARTED];
@@ -293,7 +295,7 @@ describe("start", () => {
 });
 
 describe("reset", () => {
-  it(`resets the timer with default duration and existing ref if no arg is provided`, async () => {
+  it(`resets the timer with existing duration and ref if no arg is provided`, async () => {
     const request = deepFreeze({
       ...validRequestObject,
       body: { name: "reset" },
@@ -304,8 +306,10 @@ describe("reset", () => {
       message: "Timer has been reset",
     });
 
+    const duration = 5000;
     timer.reset.mockReturnValue(fakeResult);
     timer.ref = FAKE_TIMER_REF as any;
+    timer.duration = duration;
 
     const response = await postTimerCommand(request);
 
@@ -319,7 +323,7 @@ describe("reset", () => {
     expect(timer.reset).toHaveBeenCalledTimes(1);
     expect(timer.reset).toHaveBeenCalledWith({
       ref: FAKE_TIMER_REF,
-      duration: DEFAULT_TIMER_DURATION,
+      duration: duration,
     });
   });
 
