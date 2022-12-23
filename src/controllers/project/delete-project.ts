@@ -12,12 +12,9 @@ export default function makeDeleteProject(
 ): Controller {
   const { projectService } = builderArg;
 
-  /**
-   * **delete** /projects/`:id`
-   * */
   return async function deleteProject(request) {
     try {
-      const { id = required("params.id", "MISSING_ID") } = request.params;
+      const { id = required("params.id", "MISSING_ID") } = request.query;
 
       const deletedCategories = await projectService.removeProject({ id });
       return { body: { success: true, data: deletedCategories } };

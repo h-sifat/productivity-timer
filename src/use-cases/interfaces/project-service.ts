@@ -27,3 +27,8 @@ export interface ProjectServiceInterface {
   ): Promise<ProjectFields>;
   findByName: ProjectDatabaseInterface["findByName"];
 }
+
+export type ProjectDeleteSideEffect = (arg: {
+  id: string;
+  deleted: ProjectFields[];
+}) => Promise<void>;

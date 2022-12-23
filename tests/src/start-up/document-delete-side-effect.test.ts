@@ -1,4 +1,4 @@
-import { makeDocumentDeleteSideEffect } from "src/start-up/category-delete-side-effect";
+import { makeDocumentDeleteSideEffect } from "src/start-up/document-delete-side-effect";
 
 const timer = Object.seal({
   ref: null as any,

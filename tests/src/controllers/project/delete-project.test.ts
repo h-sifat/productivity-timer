@@ -28,10 +28,10 @@ describe("Validation", () => {
     {
       request: {
         ...validRequestObject,
-        params: {},
+        query: {},
       },
       errorCode: "MISSING_ID",
-      case: `id is missing from params`,
+      case: `id is missing from query`,
     },
   ])(`returns ewc "$errorCode" if $case`, async ({ errorCode, request }) => {
     const response = await deleteProject(request);
@@ -51,7 +51,7 @@ describe("Validation", () => {
 describe("Functionality", () => {
   it(`calls the projectService.removeProject with the given id and returns the response`, async () => {
     const id = "1";
-    const request = { ...validRequestObject, params: { id } };
+    const request = { ...validRequestObject, query: { id } };
 
     const fakeEditProjectResponse = [fakeProject];
     projectService.removeProject.mockResolvedValueOnce(fakeEditProjectResponse);
@@ -67,7 +67,7 @@ describe("Functionality", () => {
 
   it(`returns the error thrown by projectService.removeProject`, async () => {
     const id = "1";
-    const request = { ...validRequestObject, params: { id } };
+    const request = { ...validRequestObject, query: { id } };
 
     const error = new EPP(`No project exists with id: "${id}"`, "NOT_FOUND");
     projectService.removeProject.mockRejectedValueOnce(error);

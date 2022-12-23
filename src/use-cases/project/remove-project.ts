@@ -1,6 +1,9 @@
+import type {
+  ProjectDeleteSideEffect,
+  ProjectServiceInterface,
+} from "use-cases/interfaces/project-service";
 import type { ID } from "common/interfaces/id";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
@@ -9,12 +12,13 @@ import required from "common/util/required";
 interface MakeRemoveProject_Argument {
   isValidId: ID["isValid"];
   db: Pick<ProjectDatabaseInterface, "deleteById" | "findById">;
+  sideEffect: ProjectDeleteSideEffect;
 }
 
 export default function makeRemoveProject(
   builderArg: MakeRemoveProject_Argument
 ): ProjectServiceInterface["removeProject"] {
-  const { isValidId, db } = builderArg;
+  const { isValidId, db, sideEffect } = builderArg;
 
   return async function removeProject(arg) {
     assert("plain_object", arg, {
@@ -34,6 +38,7 @@ export default function makeRemoveProject(
       });
 
     await db.deleteById({ id });
+    await sideEffect({ id, deleted: [project] });
 
     return project;
   };

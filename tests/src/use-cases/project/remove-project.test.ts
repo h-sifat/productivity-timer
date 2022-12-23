@@ -7,18 +7,20 @@ const db = Object.freeze({
   deleteById: jest.fn(),
 });
 const dbMethodsCount = Object.keys(db).length;
+const sideEffect = jest.fn();
 
-const removeProject = makeRemoveProject({ db, isValidId });
+const removeProject = makeRemoveProject({ db, isValidId, sideEffect });
 
 beforeEach(() => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Validation", () => {
   {
     const errorCode = "INVALID_ARGUMENT_TYPE";
     it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
-      expect.assertions(1 + dbMethodsCount);
+      expect.assertions(1 + dbMethodsCount + 1); // +1 for the sideEffect
 
       try {
         // @ts-expect-error
@@ -29,6 +31,8 @@ describe("Validation", () => {
 
       for (const method of Object.values(db))
         expect(method).not.toHaveBeenCalled();
+
+      expect(sideEffect).not.toHaveBeenCalled();
     });
   }
 
@@ -36,7 +40,7 @@ describe("Validation", () => {
     const errorCode = "MISSING_ID";
 
     it(`throws ewc "${errorCode}" if id is missing`, async () => {
-      expect.assertions(1 + dbMethodsCount);
+      expect.assertions(1 + dbMethodsCount + 1); // +1 for the sideEffect
 
       try {
         // @ts-expect-error missing id
@@ -47,6 +51,8 @@ describe("Validation", () => {
 
       for (const method of Object.values(db))
         expect(method).not.toHaveBeenCalled();
+
+      expect(sideEffect).not.toHaveBeenCalled();
     });
   }
 
@@ -54,7 +60,7 @@ describe("Validation", () => {
     const errorCode = "INVALID_ID";
 
     it(`it throws ewc "${errorCode}" if id is not valid`, async () => {
-      expect.assertions(2);
+      expect.assertions(2 + dbMethodsCount + 1); // +1 for the sideEffect
 
       const invalidId = "non_numeric_string";
       expect(isValidId(invalidId)).toBeFalsy();
@@ -64,14 +70,17 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      for (const method of Object.values(db))
+        expect(method).not.toHaveBeenCalled();
+
+      expect(sideEffect).not.toHaveBeenCalled();
     });
   }
 });
 
 describe("Functionality", () => {
   it(`returns the deleted project record`, async () => {
-    expect.assertions(5);
-
     const project = Project.make({ name: "todo" });
     const id = project.id;
 
@@ -85,12 +94,15 @@ describe("Functionality", () => {
 
     expect(db.findById).toHaveBeenCalledWith({ id });
     expect(db.deleteById).toHaveBeenCalledWith({ id });
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledWith({ id, deleted: [project] });
   });
 
   {
     const errorCode = "NOT_FOUND";
     it(`throws ewc "${errorCode}" if project doesn't exist with the given id`, async () => {
-      expect.assertions(4);
+      expect.assertions(5);
 
       db.findById.mockResolvedValueOnce(null);
 
@@ -106,6 +118,7 @@ describe("Functionality", () => {
       expect(db.deleteById).not.toHaveBeenCalled();
 
       expect(db.findById).toHaveBeenCalledWith({ id });
+      expect(sideEffect).not.toHaveBeenCalled();
     });
   }
 });
