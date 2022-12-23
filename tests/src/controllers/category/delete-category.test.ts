@@ -28,10 +28,10 @@ describe("Validation", () => {
     {
       request: {
         ...validRequestObject,
-        params: {},
+        query: {},
       },
       errorCode: "MISSING_ID",
-      case: `id is missing from params`,
+      case: `id is missing from query`,
     },
   ])(`returns ewc "$errorCode" if $case`, async ({ errorCode, request }) => {
     const response = await deleteCategory(request);
@@ -51,7 +51,7 @@ describe("Validation", () => {
 describe("Functionality", () => {
   it(`calls the categoryService.removeCategory with the given id and returns the response`, async () => {
     const id = "1";
-    const request = { ...validRequestObject, params: { id } };
+    const request = { ...validRequestObject, query: { id } };
 
     const fakeEditCategoryResponse = [fakeCategory];
     categoryService.removeCategory.mockResolvedValueOnce(
@@ -72,7 +72,7 @@ describe("Functionality", () => {
 
   it(`returns the error thrown by categoryService.removeCategory`, async () => {
     const id = "1";
-    const request = { ...validRequestObject, params: { id } };
+    const request = { ...validRequestObject, query: { id } };
 
     const error = new EPP(`No category exists with id: "${id}"`, "NOT_FOUND");
     categoryService.removeCategory.mockRejectedValueOnce(error);

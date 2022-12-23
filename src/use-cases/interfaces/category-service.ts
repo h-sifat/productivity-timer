@@ -30,3 +30,8 @@ export interface CategoryServiceInterface {
   listCategories(): ReturnType<CategoryDatabaseInterface["findAll"]>;
   findByName: CategoryDatabaseInterface["findByName"];
 }
+
+export type CategoryDeleteSideEffect = (arg: {
+  id: string;
+  deleted: CategoryFields[];
+}) => Promise<void>;

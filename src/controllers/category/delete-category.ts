@@ -17,7 +17,7 @@ export default function makeDeleteCategory(
    * */
   return async function deleteCategory(request) {
     try {
-      const { id = required("params.id", "MISSING_ID") } = request.params;
+      const { id = required("params.id", "MISSING_ID") } = request.query;
 
       const deletedCategories = await categoryService.removeCategory({ id });
       return { body: { success: true, data: deletedCategories } };

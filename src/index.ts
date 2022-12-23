@@ -15,11 +15,11 @@ import { makeAppControllers } from "./controllers/app";
 import { makeExpressIPCMiddleware } from "./server/util";
 import { addDatabaseEventListeners } from "./start-up/db";
 import { makeTimerController } from "./controllers/timer";
-import { setUpTimerEventListeners } from "./start-up/timer";
-import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
-
 import type { TimerInstance } from "./countdown-timer/type";
+import { setUpTimerEventListeners } from "./start-up/timer";
 import type { TimerRef } from "entities/work-session/work-session";
+import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
+import { makeCategoryDeleteSideEffect } from "./start-up/category-delete-side-effect";
 
 interface initApplication_Argument {
   log(...args: any[]): Promise<void>;
@@ -76,8 +76,6 @@ async function initApplication(arg: initApplication_Argument) {
     process.exit(1);
   }
 
-  const services = makeServices({ databases });
-
   // --------- Setting Up Timer ------------------------
   const timer = new CountDownTimer({
     clearInterval,
@@ -94,6 +92,13 @@ async function initApplication(arg: initApplication_Argument) {
   const speaker = new Speaker({
     mPlayerPath: config.MPLAYER_PATH,
     audioPath: config.MPLAYER_AUDIO_PATH,
+  });
+
+  const services = makeServices({
+    databases,
+    sideEffects: {
+      category: { delete: makeCategoryDeleteSideEffect({ timer }) },
+    },
   });
 
   const timerController = makeTimerController({

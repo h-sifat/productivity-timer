@@ -2,20 +2,23 @@ import Category from "entities/category";
 import { isValid as isValidId } from "common/util/id";
 import makeRemoveCategory from "use-cases/category/remove-category";
 
-const forbiddenDeleteById: any = () => {
-  throw new Error(`"deleteById" should not have been called`);
-};
+const db = Object.freeze({
+  deleteById: jest.fn(),
+});
+const sideEffect = jest.fn();
+
+const removeCategory = makeRemoveCategory({ db, isValidId, sideEffect });
+
+beforeEach(() => {
+  sideEffect.mockReset();
+  Object.values(db).forEach((method) => method.mockReset());
+});
 
 describe("Validation", () => {
   {
-    const removeCategory = makeRemoveCategory({
-      isValidId,
-      db: { deleteById: forbiddenDeleteById },
-    });
-
     const errorCode = "INVALID_ARGUMENT_TYPE";
     it(`throws ewc "${errorCode}" if the argument is not a plain object`, async () => {
-      expect.assertions(1);
+      expect.assertions(3);
 
       try {
         // @ts-expect-error
@@ -23,19 +26,17 @@ describe("Validation", () => {
       } catch (ex) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(sideEffect).not.toHaveBeenCalled();
+      expect(db.deleteById).not.toHaveBeenCalled();
     });
   }
 
   {
     const errorCode = "MISSING_ID";
 
-    const removeCategory = makeRemoveCategory({
-      isValidId,
-      db: { deleteById: forbiddenDeleteById },
-    });
-
     it(`throws ewc "${errorCode}" if id is missing`, async () => {
-      expect.assertions(1);
+      expect.assertions(3);
 
       try {
         // @ts-ignore
@@ -43,18 +44,17 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(sideEffect).not.toHaveBeenCalled();
+      expect(db.deleteById).not.toHaveBeenCalled();
     });
   }
 
   {
-    const removeCategory = makeRemoveCategory({
-      isValidId,
-      db: { deleteById: forbiddenDeleteById },
-    });
     const errorCode = "INVALID_ID";
 
     it(`throws ewc "${errorCode}" if the given id is invalid`, async () => {
-      expect.assertions(2);
+      expect.assertions(4);
 
       const invalidId = "non_numeric_string";
       expect(isValidId(invalidId)).toBeFalsy();
@@ -64,6 +64,9 @@ describe("Validation", () => {
       } catch (ex: any) {
         expect(ex.code).toBe(errorCode);
       }
+
+      expect(sideEffect).not.toHaveBeenCalled();
+      expect(db.deleteById).not.toHaveBeenCalled();
     });
   }
 });
@@ -76,20 +79,20 @@ describe("Functionality", () => {
       parentId: study.id,
     });
 
-    const deleteByIdResult = [study, programming];
-
-    const removeCategory = makeRemoveCategory({
-      isValidId,
-      db: {
-        async deleteById({ id }) {
-          if (id !== study.id) throw new Error(`Id must be equal to study.id`);
-          return deleteByIdResult;
-        },
-      },
-    });
+    const fakeDeleteByIdResult = Object.freeze([study, programming]);
+    db.deleteById.mockResolvedValueOnce(fakeDeleteByIdResult);
 
     const deletedCategories = await removeCategory({ id: study.id });
 
-    expect(deletedCategories).toEqual(deleteByIdResult);
+    expect(deletedCategories).toEqual(fakeDeleteByIdResult);
+
+    expect(db.deleteById).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+
+    expect(db.deleteById).toHaveBeenCalledWith({ id: study.id });
+    expect(sideEffect).toHaveBeenCalledWith({
+      id: study.id,
+      deleted: fakeDeleteByIdResult,
+    });
   });
 });
