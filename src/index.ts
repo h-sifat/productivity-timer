@@ -19,7 +19,7 @@ import type { TimerInstance } from "./countdown-timer/type";
 import { setUpTimerEventListeners } from "./start-up/timer";
 import type { TimerRef } from "entities/work-session/work-session";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
-import { makeCategoryDeleteSideEffect } from "./start-up/category-delete-side-effect";
+import { makeDocumentDeleteSideEffect } from "./start-up/category-delete-side-effect";
 
 interface initApplication_Argument {
   log(...args: any[]): Promise<void>;
@@ -97,7 +97,12 @@ async function initApplication(arg: initApplication_Argument) {
   const services = makeServices({
     databases,
     sideEffects: {
-      category: { delete: makeCategoryDeleteSideEffect({ timer }) },
+      category: {
+        delete: makeDocumentDeleteSideEffect({
+          timer,
+          documentType: "category",
+        }),
+      },
     },
   });
 
