@@ -11,6 +11,7 @@ import { makeFileConsole } from "common/util/fs";
 import { configureApplication } from "./configure";
 import CountDownTimer from "./countdown-timer/timer";
 import { makeControllers } from "./make-controllers";
+import { makeAppControllers } from "./controllers/app";
 import { makeExpressIPCMiddleware } from "./server/util";
 import { addDatabaseEventListeners } from "./start-up/db";
 import { makeTimerController } from "./controllers/timer";
@@ -39,10 +40,10 @@ async function initApplication(arg: initApplication_Argument) {
   const server = new Server();
   let databases: AllDatabases;
 
-  const closeApplication = async () => {
+  const closeApplication = async (exitCode = 1) => {
     if (databases) await databases.internalDatabase.close();
     if (server.socketPath) server.close();
-    process.exit(1);
+    process.exit(exitCode);
   };
 
   const FileConsole = makeFileConsole({
@@ -86,7 +87,7 @@ async function initApplication(arg: initApplication_Argument) {
       setInterval(<any>callback, interval),
     getDateFromTimeMs: unixMsTimestampToUsLocaleDateString,
     assertValidRef: WorkSession.validator.assertValidReference,
-    MIN_ALLOWED_TICK_DIFF_MS: 950, // a little less than TICK_INTERVAL_MS
+    MIN_ALLOWED_TICK_DIFF_MS: 980, // a little less than TICK_INTERVAL_MS
     MAX_ALLOWED_TICK_DIFF_MS: 5_000, // a little greater that TICK_INTERVAL_MS
   }) as TimerInstance<TimerRef>;
 
@@ -122,6 +123,7 @@ async function initApplication(arg: initApplication_Argument) {
       [controllers.project, config.API_PROJECT_PATH],
       [controllers.category, config.API_CATEGORY_PATH],
       [controllers.workSession, config.API_WORK_SESSION_PATH],
+      [makeAppControllers({ closeApplication }), config.API_APP_PATH],
     ] as const;
 
     for (const [controllerGroup, path] of controllerAndPathPairs)

@@ -55,6 +55,7 @@ const config: ConfigInterface = Object.seal({
   NOTIFICATION_TITLE: "Productivity Timer",
 
   // api
+  API_APP_PATH: "/app",
   API_TIMER_PATH: "/timer",
   API_PROJECT_PATH: "/project",
   API_CATEGORY_PATH: "/category",

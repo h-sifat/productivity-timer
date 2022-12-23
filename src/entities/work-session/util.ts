@@ -21,10 +21,10 @@ export function convertTimerInfoToMakeWorkSessionArgument(
     });
 
   return {
-    ref,
     events,
     elapsedTime,
     targetDuration,
+    ref: { id: ref.id, type: ref.type },
     startedAt: unixMsTimestampToUsLocaleDateString(events[0].timestamp),
   };
 }
