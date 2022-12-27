@@ -1,5 +1,5 @@
-import { Option, Command, InvalidArgumentError } from "commander";
 import { durationParser } from "./util";
+import { Option, Command } from "commander";
 
 const program = new Command();
 
@@ -7,7 +7,7 @@ program
   .name("pt")
   .usage("<command> [args...]")
   .description("A CLI/TUI Pomodoro timer and Todo application.")
-  .version("0.8.0", "-v, --version", "outputs the current version");
+  .version(__APP_VERSION__, "-v, --version", "outputs the current version");
 
 // Backend related
 program.command("bootup").description("Boots up the backend application.");
