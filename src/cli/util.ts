@@ -1,6 +1,7 @@
-import { InvalidArgumentError } from "commander";
 import { Client } from "express-ipc";
+import colors from "ansi-colors";
 import { getConfig } from "src/config";
+import { InvalidArgumentError } from "commander";
 
 export function durationParser(value: any) {
   if (!/^\d+[hms]$/.test(String(value)))
@@ -9,6 +10,11 @@ export function durationParser(value: any) {
     );
 
   return "parsed duration";
+}
+
+export function formatStr(arg: { string: string; color: "green" | "red" }) {
+  const { string, color } = arg;
+  return colors[color](string);
 }
 
 export async function isServerRunning() {

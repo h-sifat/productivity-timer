@@ -1,7 +1,8 @@
+import { ping } from "./ping";
 import { quit } from "./quit";
 import { durationParser } from "./util";
-import { Option, Command } from "commander";
 import { bootupServer } from "./boot-up";
+import { Option, Command } from "commander";
 
 const program = new Command();
 
@@ -16,7 +17,10 @@ program
   .command("bootup")
   .description("Boots up the backend application.")
   .action(bootupServer);
-program.command("reboot").description("Reboots the backend application.");
+program
+  .command("ping")
+  .description("Pings the backend application.")
+  .action(ping);
 program
   .command("quit")
   .description("Closes the backend application.")
