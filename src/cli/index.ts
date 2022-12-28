@@ -1,3 +1,4 @@
+import { quit } from "./quit";
 import { durationParser } from "./util";
 import { Option, Command } from "commander";
 
@@ -12,7 +13,10 @@ program
 // Backend related
 program.command("bootup").description("Boots up the backend application.");
 program.command("reboot").description("Reboots the backend application.");
-program.command("quit").description("Closes the backend application.");
+program
+  .command("quit")
+  .description("Closes the backend application.")
+  .action(quit);
 
 // Statistics
 program.command("stats").description("Shows statistics.");
