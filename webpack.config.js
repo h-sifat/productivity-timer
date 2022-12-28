@@ -3,12 +3,18 @@ const webpack = require("webpack");
 const packageDotJSON = require("./package.json");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
+const outputModuleNames = {
+  CLI: "cli",
+  SERVER: "server",
+  DB_SUBPROCESS: "db_subprocess",
+};
+
 module.exports = {
   mode: "production",
   entry: {
-    index: "./src/index.ts",
-    cli: "./src/cli/index.ts",
-    db_subprocess: "./src/data-access/db/subprocess-db.js",
+    [outputModuleNames.SERVER]: "./src/index.ts",
+    [outputModuleNames.CLI]: "./src/cli/index.ts",
+    [outputModuleNames.DB_SUBPROCESS]: "./src/data-access/db/subprocess-db.js",
   },
   module: {
     rules: [
@@ -27,11 +33,17 @@ module.exports = {
   plugins: [
     new webpack.BannerPlugin({
       raw: true,
-      test: /cli/,
       banner: "#!/usr/bin/env node",
+      test: new RegExp(outputModuleNames.CLI),
     }),
     new webpack.DefinePlugin({
       __APP_VERSION__: JSON.stringify(packageDotJSON.version),
+      __M_PLAYER_AUDIO_FILE_NAME__: JSON.stringify("alarm.mp3"),
+      __DB_SUBPROCESS_FILE_NAME__: JSON.stringify(
+        outputModuleNames.DB_SUBPROCESS + ".js"
+      ),
+      __SERVER_FILE_NAME__: JSON.stringify(outputModuleNames.SERVER + ".js"),
+      __CLI_FILE_NAME__: JSON.stringify(outputModuleNames.CLI + ".js"),
     }),
   ],
 

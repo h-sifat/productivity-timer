@@ -157,7 +157,7 @@ async function initApplication(arg: initApplication_Argument) {
   server.listen({
     deleteSocketBeforeListening: true,
     path: { namespace: "pt_by_sifat", id: "v1_0_0" },
-    callback: () => log(`server running at socket: "${server.socketPath}"`),
+    callback: () => log(`Server running at socket: "${server.socketPath}"`),
   });
 }
 
