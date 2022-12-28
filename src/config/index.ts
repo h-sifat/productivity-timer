@@ -61,7 +61,10 @@ const config: ConfigInterface = Object.seal({
   API_CATEGORY_PATH: "/category",
   TIMER_BROADCAST_CHANNEL: "timer",
   API_WORK_SESSION_PATH: "/work-session",
-  SOCKET_PIPE_NAME: "pt_by_sifat_api_v1_0_0",
+
+  // server
+  SERVER_NAMESPACE: "pt_by_sifat",
+  SERVER_ID: "v" + __APP_VERSION__,
 
   // timer
   DEFAULT_TIMER_DURATION_MS,

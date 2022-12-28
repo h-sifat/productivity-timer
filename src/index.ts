@@ -39,10 +39,15 @@ async function initApplication(arg: initApplication_Argument) {
   const config = getConfig();
   const server = new Server();
   let databases: AllDatabases;
+  const speaker = new Speaker({
+    mPlayerPath: config.MPLAYER_PATH,
+    audioPath: config.MPLAYER_AUDIO_PATH,
+  });
 
   const closeApplication = async (exitCode = 1) => {
     if (databases) await databases.internalDatabase.close();
     if (server.socketPath) server.close();
+    speaker.close();
     process.exit(exitCode);
   };
 
@@ -88,11 +93,6 @@ async function initApplication(arg: initApplication_Argument) {
     MIN_ALLOWED_TICK_DIFF_MS: 980, // a little less than TICK_INTERVAL_MS
     MAX_ALLOWED_TICK_DIFF_MS: 5_000, // a little greater that TICK_INTERVAL_MS
   }) as TimerInstance<TimerRef>;
-
-  const speaker = new Speaker({
-    mPlayerPath: config.MPLAYER_PATH,
-    audioPath: config.MPLAYER_AUDIO_PATH,
-  });
 
   const services = makeServices({
     databases,
@@ -156,7 +156,7 @@ async function initApplication(arg: initApplication_Argument) {
   // --------- Starting Server -------------------------------
   server.listen({
     deleteSocketBeforeListening: true,
-    path: { namespace: "pt_by_sifat", id: "v1_0_0" },
+    path: { namespace: config.SERVER_NAMESPACE, id: config.SERVER_ID },
     callback: () => log(`Server running at socket: "${server.socketPath}"`),
   });
 }

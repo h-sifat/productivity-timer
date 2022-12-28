@@ -5,3 +5,5 @@ declare global {
   var __DB_SUBPROCESS_FILE_NAME__: string;
   var __M_PLAYER_AUDIO_FILE_NAME__: string;
 }
+
+export {};

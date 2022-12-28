@@ -1,4 +1,6 @@
-export {};
+import "../src/type";
+
+globalThis.__APP_VERSION__ = "v1.0.0";
 
 interface CustomMatchers<R = unknown> {
   toThrowErrorWithCode(code: string): R;
@@ -56,3 +58,5 @@ expect.extend({
     };
   },
 });
+
+export {};

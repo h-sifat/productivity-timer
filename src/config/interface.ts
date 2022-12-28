@@ -37,13 +37,16 @@ export interface ConfigInterface {
   NOTIFICATION_TITLE: string;
 
   // server
-  SOCKET_PIPE_NAME: string;
   API_PROJECT_PATH: string;
   API_CATEGORY_PATH: string;
   API_WORK_SESSION_PATH: string;
   API_TIMER_PATH: string;
   API_APP_PATH: string;
   TIMER_BROADCAST_CHANNEL: string;
+
+  // server
+  SERVER_ID: string;
+  SERVER_NAMESPACE: string;
 
   // timer
   DEFAULT_TIMER_DURATION_MS: number;
