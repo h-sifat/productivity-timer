@@ -1,6 +1,7 @@
 import { quit } from "./quit";
 import { durationParser } from "./util";
 import { Option, Command } from "commander";
+import { bootupServer } from "./boot-up";
 
 const program = new Command();
 
@@ -11,7 +12,10 @@ program
   .version(__APP_VERSION__, "-v, --version", "outputs the current version");
 
 // Backend related
-program.command("bootup").description("Boots up the backend application.");
+program
+  .command("bootup")
+  .description("Boots up the backend application.")
+  .action(bootupServer);
 program.command("reboot").description("Reboots the backend application.");
 program
   .command("quit")

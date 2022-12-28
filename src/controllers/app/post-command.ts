@@ -42,7 +42,7 @@ export function makePostAppCommand(
           message = "Now quitting";
           // we're setting a timeout because, if we quit instantly
           // then we won't be able to send a response of this command.
-          setTimeout(closeApplication, 1000, 0); // here 0 is the exitCode
+          setTimeout(closeApplication, 100, 0); // here 0 is the exitCode
           break;
         default: {
           const __exhaustiveCheck: never = command;

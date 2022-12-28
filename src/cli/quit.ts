@@ -17,8 +17,7 @@ export async function quit() {
     client.close();
   } catch (ex) {
     console.log("Could not close the server. It's probably not running.");
-    process.exit(0);
   }
 
-  process.exit(0);
+  process.exitCode = 0;
 }

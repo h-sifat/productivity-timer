@@ -34,6 +34,7 @@ async function initApplication(arg: initApplication_Argument) {
     await configureApplication({ log, TAB_CHAR });
   } catch (ex) {
     log({ message: ex.message, type: "fatal_error" });
+    notifyApplicationStartupStatus({ success: false });
     process.exit(1);
   }
   // ------------ End Loading Configurations ----------------
@@ -79,9 +80,15 @@ async function initApplication(arg: initApplication_Argument) {
       database: databases.internalDatabase,
     });
   } catch (ex) {
-    log({ type: "fatal_error", message: "Could not initialize database." });
+    log({
+      indentLevel: 1,
+      type: "fatal_error",
+      message: "Could not initialize database.",
+    });
     log.info(`Error: ${ex.message}`);
 
+    notifyApplicationStartupStatus({ success: false });
+    await closeApplication();
     process.exit(1);
   }
 
@@ -163,8 +170,23 @@ async function initApplication(arg: initApplication_Argument) {
     path: { namespace: config.SERVER_NAMESPACE, id: config.SERVER_ID },
     callback() {
       log(`Server running at socket: "${server.socketPath}"`);
+      notifyApplicationStartupStatus({ success: true });
     },
   });
 }
 
-initApplication({ log });
+function notifyApplicationStartupStatus(arg: { success: boolean }) {
+  if (process.send) process.send({ type: "start-up", success: arg.success });
+}
+
+async function main() {
+  try {
+    await initApplication({ log });
+  } catch (ex) {
+    log({ message: ex.message, type: "fatal_error" });
+    notifyApplicationStartupStatus({ success: false });
+    process.exitCode = 1;
+  }
+}
+
+main();

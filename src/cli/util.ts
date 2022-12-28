@@ -1,4 +1,6 @@
 import { InvalidArgumentError } from "commander";
+import { Client } from "express-ipc";
+import { getConfig } from "src/config";
 
 export function durationParser(value: any) {
   if (!/^\d+[hms]$/.test(String(value)))
@@ -7,4 +9,28 @@ export function durationParser(value: any) {
     );
 
   return "parsed duration";
+}
+
+export async function isServerRunning() {
+  const config = getConfig();
+  let client: Client;
+
+  try {
+    client = new Client({
+      path: {
+        id: config.SERVER_ID,
+        namespace: config.SERVER_NAMESPACE,
+      },
+    });
+
+    await client.post(config.API_APP_PATH, {
+      body: { name: "ping" },
+    } as any);
+
+    return true;
+  } catch (ex) {
+    return false;
+  } finally {
+    if (client!) client.close();
+  }
 }
