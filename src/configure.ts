@@ -2,15 +2,17 @@ import path from "path";
 import EPP from "common/util/epp";
 import { promises as fsp } from "fs";
 import { accessPath } from "common/util/fs";
+import type { Log } from "./start-up/interface";
 import { getConfig, modifyConfig } from "./config";
 import { FileConfigInterface, validateFileConfig } from "./config/util";
 
 export interface configureApplication_Argument {
-  log(message: string): Promise<void>;
+  log: Log;
+  TAB_CHAR: string;
 }
 
 export async function configureApplication(arg: configureApplication_Argument) {
-  const { log } = arg;
+  const { log, TAB_CHAR } = arg;
 
   {
     const initialConfig = getConfig();
@@ -18,7 +20,7 @@ export async function configureApplication(arg: configureApplication_Argument) {
     let fileConfig: FileConfigInterface;
 
     {
-      await log("Looking for configuration file...");
+      log("Looking for configuration file...");
       const { exists, hasPermissions } = await accessPath({
         path: initialConfig.CONFIG_FILE_PATH,
         permissions: { read: true, write: true },
@@ -28,7 +30,8 @@ export async function configureApplication(arg: configureApplication_Argument) {
         throwNotAccessibleError(initialConfig.CONFIG_FILE_PATH);
 
       if (exists) {
-        await log("\tFound config file.");
+        log.success("Found config file.", 1);
+
         let unValidatedConfig: any;
         try {
           const configJSON = await fsp.readFile(
@@ -38,12 +41,14 @@ export async function configureApplication(arg: configureApplication_Argument) {
 
           unValidatedConfig = JSON.parse(configJSON);
         } catch (ex) {
-          throw new Error(`\tCould not read/parse config file.`);
+          throw new Error(`Could not read/parse config file.`);
         }
 
         fileConfig = validateFileConfig(unValidatedConfig);
       } else {
-        await log(`\tConfig file not found. Using default configurations.`);
+        log.error("Config file not found.", 1);
+        log.info("Using default configurations.", 1);
+
         fileConfig = validateFileConfig({}); // will return default values
 
         await fsp.writeFile(
@@ -77,7 +82,7 @@ export async function configureApplication(arg: configureApplication_Argument) {
 
   const updatedConfig = getConfig();
 
-  await log("Making sure that all data directory exists.");
+  log("Making sure that all data directory exists...");
   for (const dir of [updatedConfig.DATA_DIR, updatedConfig.DB_BACKUP_DIR]) {
     const { exists, hasPermissions } = await accessPath({
       path: dir,
@@ -86,11 +91,12 @@ export async function configureApplication(arg: configureApplication_Argument) {
 
     if (exists && !hasPermissions) throwNotAccessibleError(dir);
     if (exists && (await fsp.stat(dir)).isDirectory()) {
-      await log(`\tExists: ${dir}`);
+      log.success(`Exists: ${dir}`, 1);
       continue;
     }
 
-    await log(`\tNot found: ${dir}.\n\tCreating directory: "${dir}"`);
+    log.error(`Not found: ${dir}.`, 1);
+    log.info(`Creating directory: "${dir}"`, 1);
     await fsp.mkdir(dir, { recursive: true });
   }
 
@@ -100,17 +106,21 @@ export async function configureApplication(arg: configureApplication_Argument) {
     updatedConfig.DB_BACKUP_FILE_NAME
   );
 
-  await log("Checking database file.");
+  log("Checking database file...");
 
   {
     const { exists, hasPermissions } = await accessPath({
       path: DB_PATH,
       permissions: { read: true, write: true },
     });
-    if (exists && !hasPermissions) throwNotAccessibleError(DB_PATH);
 
-    if (!exists) {
-      await log("\tThe database file does not exist. Looking for backup.");
+    if (exists) {
+      if (!hasPermissions) throwNotAccessibleError(DB_PATH);
+      else log.success("Database file found.", 1);
+    } else {
+      log.error("The database file does not exist.", 1);
+      log.info("Looking for backup...", 1);
+
       const { exists, hasPermissions } = await accessPath({
         path: DB_BACKUP_PATH,
         permissions: { read: true, write: true },
@@ -118,15 +128,18 @@ export async function configureApplication(arg: configureApplication_Argument) {
 
       if (exists && !hasPermissions) throwNotAccessibleError(DB_BACKUP_PATH);
       if (exists) {
-        await log("\tBackup found. Trying to restore backup.");
+        log.success("Backup found", 1);
+        log.info("Trying to restore backup.", 1);
+
         await fsp.copyFile(DB_BACKUP_PATH, DB_PATH);
-        await log("\tRestored backup.");
+
+        log.success("Restored backup successfully.", 1);
       } else {
-        await log("\tNo backup found. Creating new database file.");
+        log.error("No backup found.", 1);
+        log.info("Creating new database file.", 1);
+
         await fsp.writeFile(DB_PATH, "");
       }
-    } else {
-      await log("\tDatabase file found.");
     }
   }
 }

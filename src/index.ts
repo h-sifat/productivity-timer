@@ -1,10 +1,12 @@
 import path from "path";
 import { Speaker } from "./speaker";
 import { getConfig } from "./config";
+import { Log } from "./start-up/interface";
 import { notify } from "common/util/notify";
 import { AllDatabases } from "./data-access";
 import { makeServices } from "./make-services";
 import WorkSession from "entities/work-session";
+import { log, TAB_CHAR } from "./start-up/util";
 import { makeAllDatabase } from "./data-access";
 import { Server } from "express-ipc/dist/server";
 import { makeFileConsole } from "common/util/fs";
@@ -22,16 +24,16 @@ import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
 
 interface initApplication_Argument {
-  log(...args: any[]): Promise<void>;
+  log: Log;
 }
 async function initApplication(arg: initApplication_Argument) {
   const { log } = arg;
 
   // ------------ Loading Configurations ----------------
   try {
-    await configureApplication({ log });
+    await configureApplication({ log, TAB_CHAR });
   } catch (ex) {
-    await log(ex.message);
+    log({ message: ex.message, type: "fatal_error" });
     process.exit(1);
   }
   // ------------ End Loading Configurations ----------------
@@ -66,10 +68,10 @@ async function initApplication(arg: initApplication_Argument) {
   }
 
   try {
-    await log("Initializing database.");
+    log("Initializing database...");
     databases = await makeAllDatabase({ notifyDatabaseCorruption });
 
-    await log("\tDatabase initialized");
+    log.success("Database initialized.", 1);
 
     addDatabaseEventListeners({
       config,
@@ -77,7 +79,9 @@ async function initApplication(arg: initApplication_Argument) {
       database: databases.internalDatabase,
     });
   } catch (ex) {
-    await log(`\tError: ${ex.message}`);
+    log({ type: "fatal_error", message: "Could not initialize database." });
+    log.info(`Error: ${ex.message}`);
+
     process.exit(1);
   }
 
@@ -157,8 +161,10 @@ async function initApplication(arg: initApplication_Argument) {
   server.listen({
     deleteSocketBeforeListening: true,
     path: { namespace: config.SERVER_NAMESPACE, id: config.SERVER_ID },
-    callback: () => log(`Server running at socket: "${server.socketPath}"`),
+    callback() {
+      log(`Server running at socket: "${server.socketPath}"`);
+    },
   });
 }
 
-initApplication({ log: console.log as any });
+initApplication({ log });
