@@ -1,6 +1,7 @@
 import path from "path";
 import { homedir } from "os";
 import type { ConfigInterface } from "./interface";
+import { API_AND_SERVER_CONFIG } from "./other";
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
@@ -55,17 +56,7 @@ const config: ConfigInterface = Object.seal({
   NOTIFICATION_TITLE: "Productivity Timer",
 
   // api
-  API_APP_PATH: "/app",
-  API_TIMER_PATH: "/timer",
-  API_PROJECT_PATH: "/project",
-  API_CATEGORY_PATH: "/category",
-  TIMER_BROADCAST_CHANNEL: "timer",
-  API_WORK_SESSION_PATH: "/work-session",
-
-  // server
-  SERVER_NAMESPACE: "pt_by_sifat",
-  SERVER_ID: "v" + __APP_VERSION__,
-
+  ...API_AND_SERVER_CONFIG,
   // timer
   DEFAULT_TIMER_DURATION_MS,
   SHOW_TIMER_NOTIFICATIONS: true,

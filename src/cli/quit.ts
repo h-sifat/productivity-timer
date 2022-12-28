@@ -1,9 +1,7 @@
 import { Client } from "express-ipc";
-import { getConfig } from "src/config";
+import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export async function quit() {
-  const config = getConfig();
-
   let client: Client;
   try {
     client = new Client({

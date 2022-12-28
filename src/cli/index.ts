@@ -1,5 +1,6 @@
 import { ping } from "./ping";
 import { quit } from "./quit";
+import { CLI_NAME } from "src/config/other";
 import { durationParser } from "./util";
 import { bootupServer } from "./boot-up";
 import { Option, Command } from "commander";
@@ -7,7 +8,7 @@ import { Option, Command } from "commander";
 const program = new Command();
 
 program
-  .name("pt")
+  .name(CLI_NAME)
   .usage("<command> [args...]")
   .description("A CLI/TUI Pomodoro timer and Todo application.")
   .version(__APP_VERSION__, "-v, --version", "outputs the current version");

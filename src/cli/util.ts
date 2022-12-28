@@ -1,7 +1,7 @@
-import { Client } from "express-ipc";
 import colors from "ansi-colors";
-import { getConfig } from "src/config";
+import { Client } from "express-ipc";
 import { InvalidArgumentError } from "commander";
+import { API_AND_SERVER_CONFIG as config, CLI_NAME } from "src/config/other";
 
 export function durationParser(value: any) {
   if (!/^\d+[hms]$/.test(String(value)))
@@ -18,7 +18,6 @@ export function formatStr(arg: { string: string; color: "green" | "red" }) {
 }
 
 export async function isServerRunning() {
-  const config = getConfig();
   let client: Client;
 
   try {
