@@ -4,6 +4,7 @@ import { CLI_NAME } from "src/config/other";
 import { durationParser } from "./util";
 import { bootupServer } from "./boot-up";
 import { Option, Command } from "commander";
+import { addCreateProjectCommand } from "./create/project";
 
 const program = new Command();
 
@@ -34,7 +35,8 @@ program.command("stats").description("Shows statistics.");
 const CreateCommand = program
   .command("create")
   .description("Creates a project/category");
-CreateCommand.command("project").description("Create a new project.");
+
+addCreateProjectCommand(CreateCommand);
 CreateCommand.command("category").description("Create a new category.");
 
 const EditCommand = program
