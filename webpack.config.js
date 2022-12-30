@@ -48,13 +48,7 @@ module.exports = {
   ],
 
   externalsType: "commonjs",
-  externals: Object.keys(packageDotJSON.dependencies).reduce(
-    (externals, packageName) => {
-      externals[packageName] = packageName;
-      return externals;
-    },
-    {}
-  ),
+  externals: makeExternalsObject(),
 
   node: {
     __dirname: false,
@@ -65,6 +59,8 @@ module.exports = {
     node: true,
   },
 
+  target: "node",
+
   output: {
     clean: true,
     globalObject: "this",
@@ -73,3 +69,19 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
   },
 };
+
+function makeExternalsObject(arg = {}) {
+  const { externalTypes = {}, exceptions = [] } = arg;
+
+  return Object.keys(packageDotJSON.dependencies).reduce(
+    (externals, packageName) => {
+      if (!exceptions.includes(packageName)) {
+        externals[packageName] = `${
+          externalTypes[packageName] || "commonjs"
+        } ${packageName}`;
+      }
+      return externals;
+    },
+    {}
+  );
+}

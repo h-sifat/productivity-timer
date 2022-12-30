@@ -5,6 +5,8 @@ import { durationParser } from "./util";
 import { bootupServer } from "./boot-up";
 import { Option, Command } from "commander";
 import { addCreateProjectCommand } from "./create/project";
+import { addEditProjectCommand } from "./edit/project";
+import { addProjectListCommand } from "./list/projects";
 
 const program = new Command();
 
@@ -42,7 +44,8 @@ CreateCommand.command("category").description("Create a new category.");
 const EditCommand = program
   .command("edit")
   .description("Edits a project/category");
-EditCommand.command("project").description("Edits a project.");
+
+addEditProjectCommand(EditCommand);
 EditCommand.command("category").description("Edits a category.");
 
 const DeleteCommand = program
@@ -50,6 +53,12 @@ const DeleteCommand = program
   .description("Deletes a project/category");
 DeleteCommand.command("project").description("Deletes a project.");
 DeleteCommand.command("category").description("Deletes a category.");
+
+const ListCommand = program
+  .command("list")
+  .description("Lists all projects/categories.");
+
+addProjectListCommand(ListCommand);
 
 // Timer related
 const DurationOption = new Option(
