@@ -34,7 +34,7 @@ export function deepFreeze<Type>(
   return object as any;
 }
 
-export function isObjectEmpty(object: any) {
+export function isEmptyObject(object: any) {
   for (const key in object) return false;
   return true;
 }

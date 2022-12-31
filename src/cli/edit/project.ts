@@ -6,7 +6,7 @@ import {
   printErrorAndSetExitCode,
 } from "../util";
 import { Command, Option } from "commander";
-import { isObjectEmpty } from "common/util/other";
+import { isEmptyObject } from "common/util/other";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import { ProjectFields, ProjectStatus } from "entities/project/project";
 
@@ -52,7 +52,7 @@ export async function editProject(options: EditOptions) {
   try {
     const { id, json, ...changes } = options;
 
-    if (isObjectEmpty(changes)) {
+    if (isEmptyObject(changes)) {
       printErrorAndSetExitCode({ message: "At least one option is required." });
       return;
     }
