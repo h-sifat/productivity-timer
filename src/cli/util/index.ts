@@ -4,6 +4,7 @@ import { dynamicImport } from "./import";
 import { InvalidArgumentError } from "commander";
 import { assertValidUSLocaleDateString } from "common/util/date-time";
 import { API_AND_SERVER_CONFIG as config, CLI_NAME } from "src/config/other";
+import { handyTypes } from "handy-types";
 
 export function durationParser(value: any) {
   if (!/^\d+[hms]$/.test(String(value)))
@@ -119,7 +120,7 @@ export async function printObjectAsBox(arg: printObjectAsBox_Argument) {
 
   let content = "";
   keyValuePair.forEach(([key, value], index) => {
-    if (!value) return;
+    if (value === undefined) return;
 
     if (index) content += "\n";
     content += `${colors.green(key + ": ")}${" ".repeat(
