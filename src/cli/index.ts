@@ -7,6 +7,7 @@ import { Option, Command } from "commander";
 import { addCreateProjectCommand } from "./create/project";
 import { addEditProjectCommand } from "./edit/project";
 import { addProjectListCommand } from "./list/projects";
+import { addCreateCategoryCommand } from "./create/category";
 
 const program = new Command();
 
@@ -38,8 +39,8 @@ const CreateCommand = program
   .command("create")
   .description("Creates a project/category");
 
+addCreateCategoryCommand(CreateCommand);
 addCreateProjectCommand(CreateCommand);
-CreateCommand.command("category").description("Create a new category.");
 
 const EditCommand = program
   .command("edit")
