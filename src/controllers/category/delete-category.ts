@@ -13,11 +13,11 @@ export default function makeDeleteCategory(
   const { categoryService } = builderArg;
 
   /**
-   * **delete** /categories/`:id`
+   * **delete** /categories/`?id=<id>`
    * */
   return async function deleteCategory(request) {
     try {
-      const { id = required("params.id", "MISSING_ID") } = request.query;
+      const { id = required("query.id", "MISSING_ID") } = request.query;
 
       const deletedCategories = await categoryService.removeCategory({ id });
       return { body: { success: true, data: deletedCategories } };

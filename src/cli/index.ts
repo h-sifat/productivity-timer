@@ -1,15 +1,16 @@
 import { ping } from "./ping";
 import { quit } from "./quit";
-import { CLI_NAME } from "src/config/other";
 import { durationParser } from "./util";
 import { bootupServer } from "./boot-up";
+import { CLI_NAME } from "src/config/other";
 import { Option, Command } from "commander";
-import { addCreateProjectCommand } from "./create/project";
 import { addEditProjectCommand } from "./edit/project";
 import { addProjectListCommand } from "./list/projects";
+import { addEditCategoryCommand } from "./edit/category";
+import { addCreateProjectCommand } from "./create/project";
 import { addCreateCategoryCommand } from "./create/category";
 import { addListCategoriesCommand } from "./list/categories";
-import { addEditCategoryCommand } from "./edit/category";
+import { addDeleteProjectCommand } from "./delete/project";
 
 const program = new Command();
 
@@ -54,7 +55,8 @@ addEditCategoryCommand(EditCommand);
 const DeleteCommand = program
   .command("delete")
   .description("Deletes a project/category");
-DeleteCommand.command("project").description("Deletes a project.");
+addDeleteProjectCommand(DeleteCommand);
+
 DeleteCommand.command("category").description("Deletes a category.");
 
 const ListCommand = program
