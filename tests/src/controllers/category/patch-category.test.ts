@@ -27,17 +27,17 @@ describe("Validation", () => {
     {
       request: {
         ...validRequestObject,
-        params: {},
+        query: {},
         body: { changes: { name: "x" } },
       },
       errorCode: "MISSING_ID",
-      case: `id is missing from params`,
+      case: `id is missing from query`,
     },
     {
       request: {
         ...validRequestObject,
         body: {},
-        params: { id: "1" },
+        query: { id: "1" },
       },
       errorCode: "MISSING_CHANGES",
       case: `changes is missing from body`,
@@ -64,7 +64,7 @@ describe("Functionality", () => {
 
     const request = {
       ...validRequestObject,
-      params: { id },
+      query: { id },
       body: { changes },
     };
     const fakeEditCategoryResponse = Object.freeze({ id, ...changes });
@@ -86,7 +86,7 @@ describe("Functionality", () => {
     const changes = Object.freeze({ name: "study_hard" });
     const request = {
       ...validRequestObject,
-      params: { id },
+      query: { id },
       body: { changes },
     };
 

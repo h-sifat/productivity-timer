@@ -13,12 +13,12 @@ export default function makePatchCategory(
   const { categoryService } = builderArg;
 
   /**
-   * **patch** categories/`:id`
+   * **patch** categories/`?id=<id>`
    * body: `{changes: {...}}`
    * */
   return async function patchCategory(request) {
     try {
-      const { id = required("params.id", "MISSING_ID") } = request.params;
+      const { id = required("query.id", "MISSING_ID") } = request.query;
       const { changes = required("body.changes", "MISSING_CHANGES") } =
         request.body;
 
