@@ -18,7 +18,7 @@ export default function makePatchProject(
    * */
   return async function patchProject(request) {
     try {
-      const { id = required("params.id", "MISSING_ID") } = request.params;
+      const { id = required("query.id", "MISSING_ID") } = request.query;
       const { changes = required("body.changes", "MISSING_CHANGES") } =
         request.body;
 
