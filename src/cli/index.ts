@@ -8,6 +8,7 @@ import { addCreateProjectCommand } from "./create/project";
 import { addEditProjectCommand } from "./edit/project";
 import { addProjectListCommand } from "./list/projects";
 import { addCreateCategoryCommand } from "./create/category";
+import { addListCategoriesCommand } from "./list/categories";
 
 const program = new Command();
 
@@ -60,6 +61,7 @@ const ListCommand = program
   .description("Lists all projects/categories.");
 
 addProjectListCommand(ListCommand);
+addListCategoriesCommand(ListCommand);
 
 // Timer related
 const DurationOption = new Option(

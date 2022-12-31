@@ -114,9 +114,11 @@ export async function printObjectAsBox(arg: printObjectAsBox_Argument) {
     -Infinity
   );
 
-  keyValuePair.sort(
-    ([_kA, vA], [_kB, vB]) => String(vA).length - String(vB).length
-  );
+  keyValuePair.sort(([kA, vA], [kB, vB]) => {
+    const diff = String(vA).length - String(vB).length;
+    // if both has the same length then sort by the key fields
+    return diff ? diff : kA.length - kB.length;
+  });
 
   let content = "";
   keyValuePair.forEach(([key, value], index) => {
