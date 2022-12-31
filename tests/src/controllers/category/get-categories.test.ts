@@ -30,21 +30,19 @@ const fakeCategory = Object.freeze({ name: "study", id: 1 });
 describe("Validation", () => {
   it.each([
     {
-      errorCode: "INVALID_QUERY_TYPE",
+      errorCode: "INVALID_QUERY",
       case: "lookup is not a non-empty string",
       request: {
         ...defaultRequest,
-        params: { id: "12" },
-        query: { lookup: null },
+        query: { id: "12", lookup: null },
       },
     },
     {
-      errorCode: "INVALID_QUERY_TYPE",
+      errorCode: "INVALID_QUERY",
       case: "lookup is not a non-empty string",
       request: {
         ...defaultRequest,
-        params: { id: "12" },
-        query: { lookup: "duck_duck_go" },
+        query: { id: "12", lookup: "duck_duck_go" },
       },
     },
   ])(`throws ewc "$errorCode" if $case`, async ({ request, errorCode }) => {
@@ -59,66 +57,48 @@ describe("Validation", () => {
 });
 
 describe("Functionality", () => {
-  it(`calls the listCategories service if no "id" is provided in the parameter`, async () => {
-    const request = { ...defaultRequest, params: {} };
-    const fakeCategories = Object.freeze([fakeCategory]);
-
-    categoryService.listCategories.mockResolvedValueOnce(fakeCategories);
-
-    const response = await getCategories(request);
-    expect(response).toEqual({ body: { success: true, data: fakeCategories } });
-
-    expect(categoryService.listCategories).toHaveBeenCalledTimes(1);
-
-    for (const [name, service] of Object.entries(categoryService))
-      if (name !== "listCategories") expect(service).not.toHaveBeenCalled();
-  });
-
   it.each([
     {
-      id: "1",
-      lookup: "self-by-id",
+      query: { lookup: "all" },
+      fakeServiceResponse: [fakeCategory],
+      expectedServiceCallArgument: undefined,
+      expectedServiceToCall: "listCategories",
+    },
+    {
+      query: { id: "1", lookup: "selfById" },
       fakeServiceResponse: fakeCategory,
       expectedServiceCallArgument: { id: "1" },
       expectedServiceToCall: "getCategoryById",
     },
     {
-      id: "study",
-      lookup: "self-by-name",
+      query: { name: "study", lookup: "selfByName" },
       fakeServiceResponse: [fakeCategory],
       expectedServiceCallArgument: { name: "study" },
       expectedServiceToCall: "findByName",
     },
     {
-      id: "1",
-      lookup: "children",
+      query: { id: "1", lookup: "children" },
       fakeServiceResponse: [fakeCategory],
       expectedServiceToCall: "listSubCategories",
       expectedServiceCallArgument: { parentId: "1" },
     },
     {
-      id: "1",
-      lookup: "parents",
+      query: { id: "1", lookup: "parents" },
       fakeServiceResponse: [fakeCategory],
       expectedServiceCallArgument: { id: "1" },
       expectedServiceToCall: "listParentCategories",
     },
   ])(
-    `calls the $expectedServiceToCall service if an id parameter is provided and lookup = "$lookup"`,
+    `calls the $expectedServiceToCall service if lookup = "$lookup"`,
     async (arg) => {
       const {
-        id,
-        lookup,
+        query,
         fakeServiceResponse,
         expectedServiceCallArgument,
         expectedServiceToCall,
       } = arg;
 
-      const request = Object.freeze({
-        ...defaultRequest,
-        params: { id },
-        query: { lookup },
-      });
+      const request = Object.freeze({ ...defaultRequest, query });
 
       // @ts-ignore
       categoryService[expectedServiceToCall].mockResolvedValueOnce(
@@ -132,10 +112,12 @@ describe("Functionality", () => {
 
       // @ts-ignore
       expect(categoryService[expectedServiceToCall]).toHaveBeenCalledTimes(1);
-      // @ts-ignore
-      expect(categoryService[expectedServiceToCall]).toHaveBeenCalledWith(
-        expectedServiceCallArgument
-      );
+
+      if (expectedServiceCallArgument)
+        // @ts-ignore
+        expect(categoryService[expectedServiceToCall]).toHaveBeenCalledWith(
+          expectedServiceCallArgument
+        );
 
       for (const [name, service] of Object.entries(categoryService))
         if (name !== expectedServiceToCall)

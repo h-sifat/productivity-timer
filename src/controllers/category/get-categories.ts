@@ -3,6 +3,8 @@ import { assert } from "handy-types";
 
 import type { Controller } from "../interface";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
+import { z } from "zod";
+import { formatError } from "common/validator/zod";
 
 export interface MakeGetCategories_Argument {
   categoryService: Pick<
@@ -15,6 +17,18 @@ export interface MakeGetCategories_Argument {
   >;
 }
 
+const QuerySchema = z.discriminatedUnion("lookup", [
+  z.object({ lookup: z.literal("all") }).strict(),
+  z.object({ lookup: z.literal("parents"), id: z.string().min(1) }).strict(),
+  z.object({ lookup: z.literal("children"), id: z.string().min(1) }).strict(),
+  z.object({ lookup: z.literal("selfById"), id: z.string().min(1) }).strict(),
+  z
+    .object({ lookup: z.literal("selfByName"), name: z.string().min(1) })
+    .strict(),
+]);
+
+export type QuerySchemaInterface = z.infer<typeof QuerySchema>;
+
 export default function makeGetCategories(
   builderArg: MakeGetCategories_Argument
 ): Controller {
@@ -23,51 +37,47 @@ export default function makeGetCategories(
   /**
    * RequestURL | Method to use
    * ---------- | ------
-   * get /categories | listCategories
-   * get /categories/`:id?lookup=self-by-id` | getCategoryById
-   * get /categories/`:id?lookup=self-by-name` | findByName
-   * get /categories/`:id?lookup=children` | listSubCategories
-   * get /categories/`:id?lookup=parents` | listParentCategories
+   * get /categories/`?lookup=all` | listCategories
+   * get /categories/`?id=<id>&lookup=self-by-id` | getCategoryById
+   * get /categories/`?name=<name>&lookup=self-by-name` | findByName
+   * get /categories/`?id=<id>&lookup=children` | listSubCategories
+   * get /categories/`?id=<id>&lookup=parents` | listParentCategories
    * Anything else | Error
    * */
   return async function getCategories(request) {
     try {
-      let result: any;
+      const validationResult = QuerySchema.safeParse(request.query);
 
-      if (!("id" in request.params))
-        return {
-          body: {
-            success: true,
-            data: await categoryService.listCategories(),
-          },
+      if (!validationResult.success)
+        throw {
+          message: formatError(validationResult.error),
+          code: "INVALID_QUERY",
         };
 
-      const id: any = request.params.id;
-      const lookup = request.query.lookup;
+      const query = validationResult.data;
 
-      assert<string>("non_empty_string", lookup, {
-        name: "Query.lookup",
-        code: "INVALID_QUERY_TYPE",
-      });
+      let result: any;
 
-      switch (lookup) {
-        case "self-by-id":
-          result = await categoryService.getCategoryById({ id });
+      switch (query.lookup) {
+        case "all":
+          result = await categoryService.listCategories();
           break;
-        case "self-by-name":
-          result = await categoryService.findByName({ name: id });
+        case "selfById":
+          result = await categoryService.getCategoryById({ id: query.id });
+          break;
+        case "selfByName":
+          result = await categoryService.findByName({ name: query.name });
           break;
         case "parents":
-          result = await categoryService.listParentCategories({ id });
+          result = await categoryService.listParentCategories({ id: query.id });
           break;
         case "children":
-          result = await categoryService.listSubCategories({ parentId: id });
+          result = await categoryService.listSubCategories({
+            parentId: query.id,
+          });
           break;
         default:
-          throw new EPP({
-            code: "INVALID_QUERY_TYPE",
-            message: `Invalid "lookup" in query string: "${lookup}"`,
-          });
+          const __exhaustiveCheck: never = query;
       }
 
       return { body: { success: true, data: result as any } };
