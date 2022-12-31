@@ -13,9 +13,10 @@
 
     "baseUrl": "./",
     "paths": {
-      "fixtures/*": ["tests/fixtures/*"],
-      "entities/*": ["src/entities/*"],
+      "cli/*": ["src/cli/*"],
       "common/*": ["src/common/*"],
+      "entities/*": ["src/entities/*"],
+      "fixtures/*": ["tests/fixtures/*"],
       "use-cases/*": ["src/use-cases/*"],
       "data-access/*": ["src/data-access/*"]
     },

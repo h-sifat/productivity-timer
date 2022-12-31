@@ -1,14 +1,15 @@
 import {
-  getClient,
   dateStringParser,
   printObjectAsBox,
-  formatDateProperties,
   printErrorAndSetExitCode,
-} from "../util";
+} from "cli/util";
 import { Command, Option } from "commander";
+import { withClient } from "cli/util/client";
 import { isEmptyObject } from "common/util/other";
+import { preprocessProject } from "cli/util/project";
+import { setNegatedPropsToNull } from "cli/util/edit";
+import { ProjectStatus } from "entities/project/project";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
-import { ProjectFields, ProjectStatus } from "entities/project/project";
 
 export function addEditProjectCommand(EditCommand: Command) {
   EditCommand.command("project")
@@ -47,47 +48,25 @@ type EditOptions = {
   description?: string | false;
 };
 export async function editProject(options: EditOptions) {
-  const client = await getClient();
+  const { id, json: printAsJson, ...changes } = options;
 
-  try {
-    const { id, json, ...changes } = options;
-
-    if (isEmptyObject(changes)) {
-      printErrorAndSetExitCode({ message: "At least one option is required." });
-      return;
-    }
-
-    // if an option is negated (e.g., --no-description) it's value will be
-    // false. So, to remove this property we've to change it to null.
-    for (const [key, value] of Object.entries(changes))
-      if (value === false) (<any>changes)[key] = null;
-
-    const response = await client.patch(config.API_PROJECT_PATH, {
-      headers: {},
-      body: { changes },
-      query: { id: options.id },
-    });
-
-    const body: any = response.body;
-
-    if (!body.success) {
-      printErrorAndSetExitCode(body.error);
-      return;
-    }
-
-    if (options.json) {
-      console.log(JSON.stringify(body.data));
-      return;
-    }
-
-    const project = formatDateProperties<ProjectFields>({
-      object: body.data,
-      dateProperties: ["createdAt", "deadline"],
-    });
-    printObjectAsBox({ object: project });
-  } catch (ex) {
-    printErrorAndSetExitCode(ex);
-  } finally {
-    client.close();
+  if (isEmptyObject(changes)) {
+    printErrorAndSetExitCode({ message: "At least one option is required." });
+    return;
   }
+
+  setNegatedPropsToNull(changes);
+
+  await withClient(async (client) => {
+    const { body } = (await client.patch(config.API_PROJECT_PATH, {
+      headers: {},
+      query: { id },
+      body: { changes },
+    })) as any;
+
+    if (!body.success) throw body.error;
+
+    if (printAsJson) console.log(JSON.stringify(body.data));
+    else printObjectAsBox({ object: preprocessProject(body.data) });
+  });
 }

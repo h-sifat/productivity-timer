@@ -1,13 +1,10 @@
-import {
-  getClient,
-  printObjectAsBox,
-  formatDateProperties,
-  printErrorAndSetExitCode,
-} from "../util";
 import type { Command } from "commander";
+import { withClient } from "cli/util/client";
 import { isEmptyObject } from "common/util/other";
-import type { CategoryFields } from "entities/category/category";
+import { setNegatedPropsToNull } from "cli/util/edit";
+import { preprocessCategory } from "cli/util/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { printObjectAsBox, printErrorAndSetExitCode } from "cli/util";
 
 export function addEditCategoryCommand(EditCommand: Command) {
   EditCommand.command("category")
@@ -29,47 +26,25 @@ interface editCategory_Options {
   description?: string | false;
 }
 async function editCategory(options: editCategory_Options) {
-  const { json, id, ...changes } = options;
+  const { json: printAsJson, id, ...changes } = options;
 
   if (isEmptyObject(changes)) {
     printErrorAndSetExitCode({ message: `At least one option is required.` });
     return;
   }
 
-  // if an option is negated (e.g., --no-description) it's value will be
-  // false. So, to remove this property we've to change it to null.
-  for (const [key, value] of Object.entries(changes))
-    if (value === false) (<any>changes)[key] = null;
+  setNegatedPropsToNull(changes);
 
-  const client = await getClient();
-
-  try {
-    const response = await client.patch(config.API_CATEGORY_PATH, {
+  await withClient(async (client) => {
+    const { body } = (await client.patch(config.API_CATEGORY_PATH, {
       headers: {},
       query: { id },
       body: { changes },
-    });
+    })) as any;
 
-    const body: any = response.body;
+    if (!body.success) throw body.error;
 
-    if (!body.success) {
-      printErrorAndSetExitCode(body.error);
-      return;
-    }
-
-    if (options.json) {
-      console.log(JSON.stringify(body.data));
-      return;
-    }
-
-    const { hash: _hash, ...category } = formatDateProperties<CategoryFields>({
-      object: body.data,
-      dateProperties: ["createdAt"],
-    });
-    printObjectAsBox({ object: category });
-  } catch (ex) {
-    printErrorAndSetExitCode(ex);
-  } finally {
-    client.close();
-  }
+    if (printAsJson) console.log(JSON.stringify(body.data));
+    else printObjectAsBox({ object: preprocessCategory(body.data) });
+  });
 }

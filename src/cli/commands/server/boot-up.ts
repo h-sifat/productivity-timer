@@ -1,7 +1,7 @@
 import path from "path";
 import { fork } from "child_process";
 import { log } from "src/start-up/util";
-import { isServerRunning } from "./util";
+import { isServerRunning } from "cli/util";
 
 export async function bootupServer() {
   if (await isServerRunning())

@@ -1,16 +1,13 @@
-import {
-  formatStr,
-  getClient,
-  printObjectAsBox,
-  formatDateProperties,
-  printErrorAndSetExitCode,
-} from "../util";
-import { Command, Option } from "commander";
-import { printTables } from "../util/table";
+import { Option } from "commander";
+import type { Command } from "commander";
+import { printTables } from "cli/util/table";
+import { withClient } from "cli/util/client";
+import { printTree } from "flexible-tree-printer";
+import { formatStr, printObjectAsBox } from "cli/util";
+import { preprocessCategory } from "cli/util/category";
 import { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import type { QuerySchemaInterface } from "src/controllers/category/get-categories";
-import { printTree } from "flexible-tree-printer";
 
 export function addListCategoriesCommand(ListCommand: Command) {
   ListCommand.command("categories")
@@ -51,64 +48,42 @@ type listCategories_Option = ({ json?: true } | { tree?: true }) &
   ({ parents?: true } | { children?: true });
 
 export async function listCategories(options: listCategories_Option) {
-  let query: QuerySchemaInterface = (() => {
-    if ("name" in options) return { lookup: "selfByName", name: options.name };
-    if ("id" in options) {
-      const { id } = options;
-      if ("parents" in options) return { lookup: "parents", id };
-      if ("children" in options) return { lookup: "children", id };
-      else return { lookup: "selfById", id };
-    }
-    return { lookup: "all" };
-  })();
+  const query = makeQueryFromOptions(options);
 
-  const client = await getClient();
-  try {
-    const response = await client.get(config.API_CATEGORY_PATH, { query });
+  await withClient(async (client) => {
+    const { body } = (await client.get(config.API_CATEGORY_PATH, {
+      query,
+    })) as any;
 
-    const body: any = response.body;
-    if (!body.success) {
-      printErrorAndSetExitCode(body.error);
-      return;
-    }
+    if (!body.success) throw body.error;
 
-    if ("json" in options) {
-      console.log(JSON.stringify(body.data));
-      return;
-    }
-
-    if (Array.isArray(body.data)) {
+    if ("json" in options) console.log(JSON.stringify(body.data));
+    else if (Array.isArray(body.data)) {
       const categories = body.data as CategoryFields[];
 
       if ("tree" in options) printCategoriesAsTree(categories);
       else
         printTables({
           columns: ["id", "name", "parentId", "createdAt", "description"],
-          objects: categories.map((category) =>
-            formatDateProperties<CategoryFields>({
-              object: category,
-              dateProperties: ["createdAt"],
-            })
-          ),
+          objects: categories.map(preprocessCategory),
         });
-      return;
-    }
-
-    if (!body.data) {
+    } else if (!body.data)
       console.log(formatStr({ string: "Not found.", color: "red" }));
-      return;
-    }
+    else printObjectAsBox({ object: preprocessCategory(body.data) });
+  });
+}
 
-    const { hash: _hash, ...category } = formatDateProperties<CategoryFields>({
-      object: body.data,
-      dateProperties: ["createdAt"],
-    });
-    printObjectAsBox({ object: category });
-  } catch (ex) {
-    printErrorAndSetExitCode(ex);
-  } finally {
-    client.close();
+function makeQueryFromOptions(
+  options: listCategories_Option
+): QuerySchemaInterface {
+  if ("name" in options) return { lookup: "selfByName", name: options.name };
+  if ("id" in options) {
+    const { id } = options;
+    if ("parents" in options) return { lookup: "parents", id };
+    if ("children" in options) return { lookup: "children", id };
+    else return { lookup: "selfById", id };
   }
+  return { lookup: "all" };
 }
 
 function printCategoriesAsTree(categories: CategoryFields[]) {
