@@ -1,9 +1,8 @@
 import { Option } from "commander";
 import type { Command } from "commander";
-import { printTables } from "cli/util/table";
 import { withClient } from "cli/util/client";
 import { printTree } from "flexible-tree-printer";
-import { formatStr, printObjectAsBox } from "cli/util";
+import { formatString, printObjectAsBox } from "cli/util";
 import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 import { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
@@ -60,11 +59,14 @@ export async function listCategories(options: listCategories_Option) {
     if ("json" in options) console.log(JSON.stringify(body.data));
     else if (Array.isArray(body.data)) {
       const categories = body.data as CategoryFields[];
-
-      if ("tree" in options) printCategoriesAsTree(categories);
+      if (!categories.length)
+        console.log(
+          formatString({ string: "No category found.", color: "red" })
+        );
+      else if ("tree" in options) printCategoriesAsTree(categories);
       else printCategoriesAsTable(categories);
     } else if (!body.data)
-      console.log(formatStr({ string: "Not found.", color: "red" }));
+      console.log(formatString({ string: "Not found.", color: "red" }));
     else printObjectAsBox({ object: preprocessCategory(body.data) });
   });
 }
@@ -86,7 +88,7 @@ function printCategoriesAsTree(categories: CategoryFields[]) {
   const tree = buildTree(categories);
   printTree({
     printRootNode: () =>
-      console.log(formatStr({ string: ".", color: "yellow" })),
+      console.log(formatString({ string: ".", color: "yellow" })),
     parentNode: tree,
     getSubNodes: ({ parentNode }) =>
       parentNode.children.map((child: any) => ({
@@ -94,12 +96,12 @@ function printCategoriesAsTree(categories: CategoryFields[]) {
         value: child,
       })),
     printNode({ nodePrefix, node }) {
-      const name = formatStr({ string: node.name, color: "green" });
-      const prefix = formatStr({
+      const name = formatString({ string: node.name, color: "green" });
+      const prefix = formatString({
         string: nodePrefix.join(""),
         color: "yellow",
       });
-      const id = formatStr({ color: "grey", string: `(${node.value.id})` });
+      const id = formatString({ color: "grey", string: `(${node.value.id})` });
       const line = `${prefix}${name} ${id}`;
       console.log(line);
     },

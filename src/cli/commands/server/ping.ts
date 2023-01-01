@@ -1,8 +1,10 @@
-import { formatStr, isServerRunning } from "cli/util";
+import { formatString, isServerRunning } from "cli/util";
 
 export async function pingServer() {
   if (await isServerRunning())
-    console.log(formatStr({ string: "Server is running", color: "green" }));
+    console.log(formatString({ string: "Server is running", color: "green" }));
   else
-    console.log(formatStr({ string: "Server is not running", color: "red" }));
+    console.log(
+      formatString({ string: "Server is not running", color: "red" })
+    );
 }

@@ -3,7 +3,7 @@ import type { Command } from "commander";
 import { printTables } from "cli/util/table";
 import { withClient } from "cli/util/client";
 import { preprocessProject } from "cli/util/project";
-import { formatStr, printObjectAsBox } from "cli/util";
+import { formatString, printObjectAsBox } from "cli/util";
 import { ProjectFields } from "entities/project/project";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
@@ -49,13 +49,19 @@ export async function listProjects(options: listProjects_Options) {
     if (!body.success) throw body.error;
 
     if ("json" in options) console.log(JSON.stringify(body.data));
-    else if (Array.isArray(body.data))
-      printTables({
-        columns: projectTableColumns as string[],
-        objects: formatProjectsForTable({ projects: body.data }),
-      });
-    else if (!body.data)
-      console.log(formatStr({ string: "Not found.", color: "red" }));
+    else if (Array.isArray(body.data)) {
+      const projects = body.data;
+      if (!projects.length)
+        console.log(
+          formatString({ string: `No project found.`, color: "red" })
+        );
+      else
+        printTables({
+          columns: projectTableColumns as string[],
+          objects: formatProjectsForTable({ projects: body.data }),
+        });
+    } else if (!body.data)
+      console.log(formatString({ string: "Not found.", color: "red" }));
     else printObjectAsBox({ object: preprocessProject(body.data) });
   });
 }
@@ -81,7 +87,7 @@ function formatProjectsForTable(arg: { projects: ProjectFields[] }) {
       project = preprocessProject(project);
 
       // @ts-expect-error
-      project.status = formatStr({
+      project.status = formatString({
         string: project.status,
         color: statusValueMap[project.status].color,
       });

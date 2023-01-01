@@ -15,7 +15,7 @@ export function durationParser(value: any) {
   return "parsed duration";
 }
 
-export function formatStr(arg: {
+export function formatString(arg: {
   string: string;
   color: "green" | "red" | "yellow" | "grey";
 }) {
@@ -58,7 +58,7 @@ export function dateStringParser(dateString: string) {
 
 export function printErrorAndSetExitCode(ex: any) {
   const message = `Error: ${ex.message}`;
-  console.log(formatStr({ string: message, color: "red" }));
+  console.log(formatString({ string: message, color: "red" }));
   process.exitCode = 1;
 }
 

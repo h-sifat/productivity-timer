@@ -10,6 +10,7 @@ import { addDeleteProjectCommand } from "./commands/delete/project";
 import { addCreateCategoryCommand } from "./commands/create/category";
 import { addListCategoriesCommand } from "./commands/list/categories";
 import { addDeleteCategoryCommand } from "./commands/delete/category";
+import { addTimerStartCommand } from "./commands/timer/start";
 
 const program = new Command();
 
@@ -84,50 +85,7 @@ program
   .command("set-duration")
   .description("Set the timer duration while the timer is not running.");
 
-program
-  .command("start")
-  .description(
-    "Starts a countdown timer. The timer can be for a specific project/category or anonymous."
-  )
-  .addOption(
-    new Option(
-      "-c, --category",
-      "indicates that it's a category timer"
-    ).conflicts("project")
-  )
-  .addOption(
-    new Option(
-      "-p, --project",
-      "indicates that it's a project timer"
-    ).conflicts("category")
-  )
-  .addOption(
-    new Option(
-      "-n, --name <string>",
-      "the name of the project or category"
-    ).conflicts("id")
-  )
-  .addOption(
-    new Option(
-      "-i, --id <string>",
-      "the id of the project or category"
-    ).conflicts("name")
-  )
-  .addOption(DurationOption)
-  .action((options) => {
-    const refTypeExists = options.category || options.project;
-    const nameOrIdExists = "name" in options || "id" in options;
-
-    if (
-      (refTypeExists && !nameOrIdExists) ||
-      (!refTypeExists && nameOrIdExists)
-    )
-      throw new Error(
-        "The options category/project and name/id must be specified together."
-      );
-
-    console.dir(options, { depth: null });
-  });
+addTimerStartCommand(program);
 
 try {
   program.parse();
