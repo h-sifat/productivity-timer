@@ -140,7 +140,12 @@ describe("Functionality", () => {
       const response = await postTimerCommand({ ...validRequestObject, body });
       {
         const { success, message } = fakeResponse;
-        expect(response).toEqual({ body: { success, data: { message } } });
+        expect(response).toEqual({
+          body: {
+            success,
+            data: { message, ref: timer.ref, timeInfo: expect.any(Object) },
+          },
+        });
       }
 
       expect(expectedTimerMethodToCall).toHaveBeenCalledTimes(1);
@@ -210,7 +215,14 @@ describe("start", () => {
 
     const response = await postTimerCommand(request);
     expect(response).toEqual({
-      body: { success: true, data: { message: fakeResponse.message } },
+      body: {
+        success: true,
+        data: {
+          ref: timer.ref,
+          timeInfo: expect.any(Object),
+          message: fakeResponse.message,
+        },
+      },
     });
 
     expect(timer.start).toHaveBeenCalledTimes(1);
@@ -283,7 +295,11 @@ describe("start", () => {
     expect(response).toEqual({
       body: {
         success: true,
-        data: { message: expect.any(String) },
+        data: {
+          message: expect.any(String),
+          ref: timer.ref,
+          timeInfo: expect.any(Object),
+        },
       },
     });
 
@@ -316,7 +332,11 @@ describe("reset", () => {
     expect(response).toEqual({
       body: {
         success: fakeResult.success,
-        data: { message: fakeResult.message },
+        data: {
+          message: fakeResult.message,
+          ref: timer.ref,
+          timeInfo: expect.any(Object),
+        },
       },
     });
 
@@ -350,7 +370,11 @@ describe("reset", () => {
     expect(response).toEqual({
       body: {
         success: fakeResult.success,
-        data: { message: fakeResult.message },
+        data: {
+          ref: timer.ref,
+          message: fakeResult.message,
+          timeInfo: expect.any(Object),
+        },
       },
     });
 
@@ -385,7 +409,11 @@ describe("setDuration", () => {
     expect(response).toEqual({
       body: {
         success: fakeResult.success,
-        data: { message: fakeResult.message },
+        data: {
+          message: fakeResult.message,
+          ref: timer.ref,
+          timeInfo: expect.any(Object),
+        },
       },
     });
 

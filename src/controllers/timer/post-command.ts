@@ -3,6 +3,7 @@ import EPP from "common/util/epp";
 import { formatError } from "common/validator/zod";
 
 import type {
+  TimeInfo,
   TimerInstance,
   TimerMethodCallResult,
 } from "src/countdown-timer/type";
@@ -106,12 +107,26 @@ export function makePostTimerCommand(
       if (speaker.isPlaying) speaker.pause();
 
       let result:
-        | { isMethodCallResult: true; data: TimerMethodCallResult }
+        | {
+            isMethodCallResult: true;
+            data: {
+              ref?: TimerRefWithName | null;
+              callResult: TimerMethodCallResult;
+              timeInfo?: TimeInfo<TimerRefWithName>;
+            };
+          }
         | { isMethodCallResult: false; data: any };
       switch (command.name) {
         case "end":
         case "pause":
-          result = { isMethodCallResult: true, data: timer[command.name]() };
+          result = {
+            isMethodCallResult: true,
+            data: {
+              ref: timer.ref,
+              timeInfo: timer.timeInfo,
+              callResult: timer[command.name](),
+            },
+          };
           break;
 
         case "info":
@@ -123,7 +138,14 @@ export function makePostTimerCommand(
           {
             const { arg: commandArg } = command;
             if (!commandArg) {
-              result = { isMethodCallResult: true, data: timer.start() };
+              result = {
+                isMethodCallResult: true,
+                data: {
+                  ref: timer.ref,
+                  timeInfo: timer.timeInfo,
+                  callResult: timer.start(),
+                },
+              };
               break;
             }
 
@@ -140,7 +162,14 @@ export function makePostTimerCommand(
                 throw { code: "COMMAND_FAILED", message: resetResult.message };
             }
 
-            result = { isMethodCallResult: true, data: timer.start() };
+            result = {
+              isMethodCallResult: true,
+              data: {
+                ref: timer.ref,
+                timeInfo: timer.timeInfo,
+                callResult: timer.start(),
+              },
+            };
           }
           break;
 
@@ -151,14 +180,25 @@ export function makePostTimerCommand(
               ? { duration, ref: null }
               : { duration, ref: timer.ref };
 
-            result = { isMethodCallResult: true, data: timer.reset(resetArg) };
+            result = {
+              isMethodCallResult: true,
+              data: {
+                ref: timer.ref,
+                timeInfo: timer.timeInfo,
+                callResult: timer.reset(resetArg),
+              },
+            };
           }
           break;
 
         case "setDuration":
           result = {
             isMethodCallResult: true,
-            data: timer.setDuration(command.arg.duration),
+            data: {
+              ref: timer.ref,
+              timeInfo: timer.timeInfo,
+              callResult: timer.setDuration(command.arg.duration),
+            },
           };
           break;
 
@@ -169,10 +209,13 @@ export function makePostTimerCommand(
       }
 
       if (result.isMethodCallResult) {
-        const { success, message } = result.data;
+        const { callResult, ref = null, timeInfo = null } = result.data;
+        const { success, message } = callResult;
+        const payload = { message, ref, timeInfo };
+
         return success
-          ? { body: { success: true, data: { message } } }
-          : { body: { success: false, error: { message } } };
+          ? { body: { success: true, data: payload } }
+          : { body: { success: false, error: payload } };
       }
       return { body: { success: true, data: result.data } };
     } catch (ex) {
