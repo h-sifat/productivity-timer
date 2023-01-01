@@ -9,6 +9,7 @@ import { addCreateProjectCommand } from "./commands/create/project";
 import { addDeleteProjectCommand } from "./commands/delete/project";
 import { addCreateCategoryCommand } from "./commands/create/category";
 import { addListCategoriesCommand } from "./commands/list/categories";
+import { addDeleteCategoryCommand } from "./commands/delete/category";
 
 const program = new Command();
 
@@ -54,8 +55,7 @@ const DeleteCommand = program
   .command("delete")
   .description("Deletes a project/category");
 addDeleteProjectCommand(DeleteCommand);
-
-DeleteCommand.command("category").description("Deletes a category.");
+addDeleteCategoryCommand(DeleteCommand);
 
 const ListCommand = program
   .command("list")

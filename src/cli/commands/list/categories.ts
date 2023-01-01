@@ -4,7 +4,7 @@ import { printTables } from "cli/util/table";
 import { withClient } from "cli/util/client";
 import { printTree } from "flexible-tree-printer";
 import { formatStr, printObjectAsBox } from "cli/util";
-import { preprocessCategory } from "cli/util/category";
+import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 import { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import type { QuerySchemaInterface } from "src/controllers/category/get-categories";
@@ -62,11 +62,7 @@ export async function listCategories(options: listCategories_Option) {
       const categories = body.data as CategoryFields[];
 
       if ("tree" in options) printCategoriesAsTree(categories);
-      else
-        printTables({
-          columns: ["id", "name", "parentId", "createdAt", "description"],
-          objects: categories.map(preprocessCategory),
-        });
+      else printCategoriesAsTable(categories);
     } else if (!body.data)
       console.log(formatStr({ string: "Not found.", color: "red" }));
     else printObjectAsBox({ object: preprocessCategory(body.data) });
