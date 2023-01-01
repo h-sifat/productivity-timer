@@ -36,7 +36,7 @@ function durationParser(value: any) {
 }
 
 export interface printTimer_Arg {
-  message: string;
+  message?: string;
   state: TimerStateNames;
   ref: TimerRefWithName | null;
   timeInfo: TimeInfo<TimerRefWithName>;
@@ -59,7 +59,7 @@ export function printTimerMethodCallResult(arg: printTimer_Arg) {
     info.type = ref.type;
   }
 
-  console.log(arg.message);
+  if (arg.message) console.log(arg.message);
   printObjectAsBox({ object: info, title, useColors: false });
 }
 
