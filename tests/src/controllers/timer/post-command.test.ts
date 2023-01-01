@@ -143,7 +143,12 @@ describe("Functionality", () => {
         expect(response).toEqual({
           body: {
             success,
-            data: { message, ref: timer.ref, timeInfo: expect.any(Object) },
+            data: {
+              message,
+              ref: timer.ref,
+              timeInfo: expect.any(Object),
+              state: expect.any(String),
+            },
           },
         });
       }
@@ -220,6 +225,7 @@ describe("start", () => {
         data: {
           ref: timer.ref,
           timeInfo: expect.any(Object),
+          state: expect.any(String),
           message: fakeResponse.message,
         },
       },
@@ -298,6 +304,7 @@ describe("start", () => {
         data: {
           message: expect.any(String),
           ref: timer.ref,
+          state: expect.any(String),
           timeInfo: expect.any(Object),
         },
       },
@@ -336,6 +343,7 @@ describe("reset", () => {
           message: fakeResult.message,
           ref: timer.ref,
           timeInfo: expect.any(Object),
+          state: expect.any(String),
         },
       },
     });
@@ -374,6 +382,7 @@ describe("reset", () => {
           ref: timer.ref,
           message: fakeResult.message,
           timeInfo: expect.any(Object),
+          state: expect.any(String),
         },
       },
     });
@@ -413,6 +422,7 @@ describe("setDuration", () => {
           message: fakeResult.message,
           ref: timer.ref,
           timeInfo: expect.any(Object),
+          state: expect.any(String),
         },
       },
     });

@@ -1,6 +1,6 @@
-import { DurationOption } from "./util";
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
+import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export function addResetTimerCommand(program: Command) {
@@ -27,6 +27,6 @@ export async function resetTimer(options: resetTimer_Options) {
 
     if (!body.success) throw body.error;
 
-    console.dir(body.data, { depth: null });
+    printTimerMethodCallResult(body.data);
   });
 }

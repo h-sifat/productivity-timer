@@ -6,10 +6,10 @@ import {
 import EPP from "common/util/epp";
 import { Option } from "commander";
 import { Client } from "express-ipc";
-import { DurationOption } from "./util";
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
 import { getProject } from "cli/util/project";
+import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 import { isEmptyObject } from "common/util/other";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
@@ -82,8 +82,7 @@ async function startTimer(options: startTimer_Options) {
 
     if (!body.success) throw body.error;
 
-    const { message, ref, timeInfo } = body.data;
-    console.log(message);
+    printTimerMethodCallResult(body.data);
   });
 }
 

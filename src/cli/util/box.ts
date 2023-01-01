@@ -3,9 +3,11 @@ import { dynamicImport } from "./import";
 
 export interface printObjectAsBox_Argument {
   object: object;
+  title?: string;
+  useColors?: boolean;
 }
 export async function printObjectAsBox(arg: printObjectAsBox_Argument) {
-  const { object } = arg;
+  const { object, useColors = true } = arg;
 
   const keyValuePair = Object.entries(object);
   const maxKeyNameLength = keyValuePair.reduce(
@@ -24,16 +26,33 @@ export async function printObjectAsBox(arg: printObjectAsBox_Argument) {
     if (value === undefined) return;
 
     if (index) content += "\n";
-    content += `${colors.green(key + ": ")}${" ".repeat(
+
+    let formattedKey = key + ": ";
+    let formattedValue = String(value);
+
+    if (useColors) {
+      formattedKey = colors.green(formattedKey);
+      formattedValue = colors.white(formattedValue);
+    }
+
+    content += `${formattedKey}${" ".repeat(
       maxKeyNameLength - key.length
-    )}${colors.white(String(value))}`;
+    )}${formattedValue}`;
   });
 
   const { default: boxen } = await dynamicImport("boxen");
-  const box = boxen(content, {
+
+  let boxStyle: any = {
     padding: 1,
     borderStyle: "round",
-  });
+  };
+
+  if ("title" in arg) {
+    boxStyle.title = arg.title;
+    boxStyle.titleAlignment = "center";
+  }
+
+  const box = boxen(content, boxStyle);
 
   console.log(box);
 }

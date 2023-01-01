@@ -10,6 +10,7 @@ import type {
 import { Speaker } from "src/speaker";
 import type { Controller } from "../interface";
 import type { TimerRefWithName } from "./interface";
+import { TimerStateNames } from "src/countdown-timer/timer";
 
 export interface makePostCommand_Argument {
   DEFAULT_TIMER_DURATION: number;
@@ -110,6 +111,7 @@ export function makePostTimerCommand(
         | {
             isMethodCallResult: true;
             data: {
+              state: TimerStateNames;
               ref?: TimerRefWithName | null;
               callResult: TimerMethodCallResult;
               timeInfo?: TimeInfo<TimerRefWithName>;
@@ -122,9 +124,11 @@ export function makePostTimerCommand(
           result = {
             isMethodCallResult: true,
             data: {
-              ref: timer.ref,
-              timeInfo: timer.timeInfo,
+              // @WARNING put the callResult always at the top
               callResult: timer[command.name](),
+              ref: timer.ref,
+              state: timer.state,
+              timeInfo: timer.timeInfo,
             },
           };
           break;
@@ -141,9 +145,11 @@ export function makePostTimerCommand(
               result = {
                 isMethodCallResult: true,
                 data: {
-                  ref: timer.ref,
-                  timeInfo: timer.timeInfo,
+                  // @WARNING put the callResult always at the top
                   callResult: timer.start(),
+                  ref: timer.ref,
+                  state: timer.state,
+                  timeInfo: timer.timeInfo,
                 },
               };
               break;
@@ -165,9 +171,11 @@ export function makePostTimerCommand(
             result = {
               isMethodCallResult: true,
               data: {
-                ref: timer.ref,
-                timeInfo: timer.timeInfo,
+                // @WARNING put the callResult always at the top
                 callResult: timer.start(),
+                ref: timer.ref,
+                state: timer.state,
+                timeInfo: timer.timeInfo,
               },
             };
           }
@@ -184,7 +192,12 @@ export function makePostTimerCommand(
 
             result = {
               isMethodCallResult: true,
-              data: { callResult, ref: timer.ref, timeInfo: timer.timeInfo },
+              data: {
+                callResult,
+                ref: timer.ref,
+                state: timer.state,
+                timeInfo: timer.timeInfo,
+              },
             };
           }
           break;
@@ -193,9 +206,11 @@ export function makePostTimerCommand(
           result = {
             isMethodCallResult: true,
             data: {
-              ref: timer.ref,
-              timeInfo: timer.timeInfo,
+              // @WARNING put the callResult always at the top
               callResult: timer.setDuration(command.arg.duration),
+              ref: timer.ref,
+              state: timer.state,
+              timeInfo: timer.timeInfo,
             },
           };
           break;
@@ -207,9 +222,9 @@ export function makePostTimerCommand(
       }
 
       if (result.isMethodCallResult) {
-        const { callResult, ref = null, timeInfo = null } = result.data;
+        const { callResult, ref = null, timeInfo = null, state } = result.data;
         const { success, message } = callResult;
-        const payload = { message, ref, timeInfo };
+        const payload = { message, ref, timeInfo, state };
 
         return success
           ? { body: { success: true, data: payload } }
