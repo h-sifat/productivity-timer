@@ -180,13 +180,11 @@ export function makePostTimerCommand(
               ? { duration, ref: null }
               : { duration, ref: timer.ref };
 
+            const callResult = timer.reset(resetArg);
+
             result = {
               isMethodCallResult: true,
-              data: {
-                ref: timer.ref,
-                timeInfo: timer.timeInfo,
-                callResult: timer.reset(resetArg),
-              },
+              data: { callResult, ref: timer.ref, timeInfo: timer.timeInfo },
             };
           }
           break;

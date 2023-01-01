@@ -100,7 +100,10 @@ async function initApplication(arg: initApplication_Argument) {
     setInterval: ({ callback, interval }) =>
       setInterval(<any>callback, interval),
     getDateFromTimeMs: unixMsTimestampToUsLocaleDateString,
-    assertValidRef: WorkSession.validator.assertValidReference,
+    assertValidRef: (ref) => {
+      // @ts-ignore shut up!
+      if (ref !== null) WorkSession.validator.assertValidReference(ref);
+    },
     MIN_ALLOWED_TICK_DIFF_MS: 980, // a little less than TICK_INTERVAL_MS
     MAX_ALLOWED_TICK_DIFF_MS: 5_000, // a little greater that TICK_INTERVAL_MS
   }) as TimerInstance<TimerRef>;

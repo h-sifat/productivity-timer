@@ -1,16 +1,16 @@
 import * as ServerCommands from "./commands/server";
-import { durationParser } from "./util";
+import { Command } from "commander";
 import { CLI_NAME } from "src/config/other";
-import { Option, Command } from "commander";
+import { addResetTimerCommand } from "./commands/timer/reset";
+import { addTimerStartCommand } from "./commands/timer/start";
 import { addEditProjectCommand } from "./commands/edit/project";
 import { addProjectListCommand } from "./commands/list/projects";
 import { addEditCategoryCommand } from "./commands/edit/category";
 import { addCreateProjectCommand } from "./commands/create/project";
 import { addDeleteProjectCommand } from "./commands/delete/project";
 import { addCreateCategoryCommand } from "./commands/create/category";
-import { addListCategoriesCommand } from "./commands/list/categories";
 import { addDeleteCategoryCommand } from "./commands/delete/category";
-import { addTimerStartCommand } from "./commands/timer/start";
+import { addListCategoriesCommand } from "./commands/list/categories";
 
 const program = new Command();
 
@@ -65,26 +65,15 @@ const ListCommand = program
 addProjectListCommand(ListCommand);
 addListCategoriesCommand(ListCommand);
 
-// Timer related
-const DurationOption = new Option(
-  "-d, --duration <number>{s|m|h}",
-  "specifies the timer duration. e.g., 10m, 1h etc."
-).argParser(durationParser);
-
 program.command("pause").description("Pauses the currently running timer.");
 program.command("end").description("End the currently running timer.");
 program.command("info").description("Shows the timer information.");
 
 program
-  .command("reset")
-  .description("Resets the countdown timer.")
-  .option("-h, --hard", "resets the category/project reference", false)
-  .addOption(DurationOption);
-
-program
   .command("set-duration")
   .description("Set the timer duration while the timer is not running.");
 
+addResetTimerCommand(program);
 addTimerStartCommand(program);
 
 try {
