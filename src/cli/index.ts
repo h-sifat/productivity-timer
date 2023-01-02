@@ -13,6 +13,7 @@ import { addDeleteCategoryCommand } from "./commands/delete/category";
 import { addListCategoriesCommand } from "./commands/list/categories";
 import { addTimerInfoCommand } from "./commands/timer/info";
 import { addPauseTimerCommand } from "./commands/timer/pause";
+import { addEndTimerCommand } from "./commands/timer/end";
 
 const program = new Command();
 
@@ -67,8 +68,6 @@ const ListCommand = program
 addProjectListCommand(ListCommand);
 addListCategoriesCommand(ListCommand);
 
-program.command("end").description("End the currently running timer.");
-
 program
   .command("set-duration")
   .description("Set the timer duration while the timer is not running.");
@@ -77,6 +76,7 @@ addResetTimerCommand(program);
 addTimerStartCommand(program);
 addTimerInfoCommand(program);
 addPauseTimerCommand(program);
+addEndTimerCommand(program);
 
 try {
   program.parse();
