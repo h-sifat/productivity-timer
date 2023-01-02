@@ -8,6 +8,11 @@ export interface MetaInformationInterface {
   dailyWorkTargetMs: number | null;
 }
 
+export const DEFAULT_META_INFO = Object.freeze({
+  lastBackupTime: null,
+  dailyWorkTargetMs: null,
+});
+
 const MetaInformationSchema = z
   .object({
     lastBackupTime: z

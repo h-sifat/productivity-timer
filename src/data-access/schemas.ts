@@ -79,6 +79,12 @@ export const TABLE_SCHEMAS = Object.freeze({
         on update cascade
         on delete cascade
     );`,
+
+  meta_info: `create table if not exists meta_info (
+      id integer primary key check(typeof(id) = 'integer'),
+      json text not null check(typeof(json) == 'text'),
+      hash text not null check(typeof(hash) == 'text')
+    )`,
 });
 
 /**
@@ -93,4 +99,5 @@ export const TABLE_SCHEMA_ORDER: Readonly<Array<keyof typeof TABLE_SCHEMAS>> =
     "work_sessions",
     "work_session_timer_events",
     "work_session_elapsed_time_by_date",
+    "meta_info",
   ]);
