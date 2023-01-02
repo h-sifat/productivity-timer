@@ -1,13 +1,13 @@
 import { makeDbSubProcess } from "data-access/db";
-import { DEFAULT_META_INFO } from "entities/meta-info";
+import { DEFAULT_META_INFO } from "entities/meta";
 import { initializeDatabase } from "data-access/init-db";
 import SqliteDatabase from "data-access/db/mainprocess-db";
 import {
   buildMetaInfoDatabase,
   TABLE_NAME as MetaInfoTableName,
   META_INFO_RECORD_ID,
-} from "data-access/meta-info-db";
-import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-info-db";
+} from "data-access/meta-db";
+import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const _internalDb_ = new SqliteDatabase({
@@ -20,8 +20,8 @@ let metaInfoDb: MetaInformationDatabaseInterface;
 const notifyDatabaseCorruption = jest.fn();
 
 const PREPARED_QUERY_NAMES = Object.freeze({
-  setJSONManually: "test/meta-info/set-json",
-  setHashManually: "test/meta-info/set-hash",
+  setJSONManually: "test/meta/set-json",
+  setHashManually: "test/meta/set-hash",
 });
 
 const PREPARED_QUERY_STATEMENTS = Object.freeze({

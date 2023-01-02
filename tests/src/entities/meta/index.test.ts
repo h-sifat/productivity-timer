@@ -1,4 +1,4 @@
-import { validateMetaInformation } from "entities/meta-info";
+import { validateMetaInformation } from "entities/meta";
 
 describe("ValidateMetaInformation", () => {
   it.each([

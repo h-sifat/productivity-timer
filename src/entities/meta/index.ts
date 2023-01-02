@@ -3,15 +3,24 @@ import EPP from "common/util/epp";
 import { createMD5Hash } from "common/util/other";
 import { formatError } from "common/validator/zod";
 
-export interface MetaInformationInterface {
+export interface PrivateMetaInfoInterface {
   lastBackupTime: number | null;
+}
+
+export interface PublicMetaInfoInterface {
   dailyWorkTargetMs: number | null;
 }
+
+export type MetaInformationInterface = PrivateMetaInfoInterface &
+  PublicMetaInfoInterface;
 
 export const DEFAULT_META_INFO = Object.freeze({
   lastBackupTime: null,
   dailyWorkTargetMs: null,
 });
+
+export const PublicMetaFields: readonly (keyof PublicMetaInfoInterface)[] =
+  Object.freeze(["dailyWorkTargetMs"]);
 
 const MetaInformationSchema = z
   .object({

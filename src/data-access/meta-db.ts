@@ -3,9 +3,9 @@ import {
   generateMetaInfoHash,
   MetaInformationInterface,
   validateMetaInformation,
-} from "entities/meta-info";
+} from "entities/meta";
 import EPP from "common/util/epp";
-import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-info-db";
+import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
 import type SqliteDatabase from "./db/mainprocess-db";
 
