@@ -1,6 +1,9 @@
 import * as ServerCommands from "./commands/server";
 import { Command } from "commander";
 import { CLI_NAME } from "src/config/other";
+import { addEndTimerCommand } from "./commands/timer/end";
+import { addTimerInfoCommand } from "./commands/timer/info";
+import { addPauseTimerCommand } from "./commands/timer/pause";
 import { addResetTimerCommand } from "./commands/timer/reset";
 import { addTimerStartCommand } from "./commands/timer/start";
 import { addEditProjectCommand } from "./commands/edit/project";
@@ -11,9 +14,7 @@ import { addDeleteProjectCommand } from "./commands/delete/project";
 import { addCreateCategoryCommand } from "./commands/create/category";
 import { addDeleteCategoryCommand } from "./commands/delete/category";
 import { addListCategoriesCommand } from "./commands/list/categories";
-import { addTimerInfoCommand } from "./commands/timer/info";
-import { addPauseTimerCommand } from "./commands/timer/pause";
-import { addEndTimerCommand } from "./commands/timer/end";
+import { addSetTimerDurationCommand } from "./commands/timer/set-duration";
 
 const program = new Command();
 
@@ -68,15 +69,12 @@ const ListCommand = program
 addProjectListCommand(ListCommand);
 addListCategoriesCommand(ListCommand);
 
-program
-  .command("set-duration")
-  .description("Set the timer duration while the timer is not running.");
-
-addResetTimerCommand(program);
-addTimerStartCommand(program);
+addEndTimerCommand(program);
 addTimerInfoCommand(program);
 addPauseTimerCommand(program);
-addEndTimerCommand(program);
+addResetTimerCommand(program);
+addTimerStartCommand(program);
+addSetTimerDurationCommand(program);
 
 try {
   program.parse();

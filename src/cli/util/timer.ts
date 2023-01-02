@@ -17,7 +17,7 @@ export const DurationOption = new Option(
   "specifies the timer duration. e.g., 10m, 1h etc."
 ).argParser(durationParser);
 
-function durationParser(value: any) {
+export function durationParser(value: any) {
   const durationWithUnit = String(value);
 
   if (!/^\d+[hms]$/.test(durationWithUnit))
