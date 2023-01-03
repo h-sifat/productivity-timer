@@ -22,6 +22,7 @@ import { setUpTimerEventListeners } from "./start-up/timer";
 import type { TimerRef } from "entities/work-session/work-session";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
+import { makeBackupDatabase } from "data-access/backup";
 
 interface initApplication_Argument {
   log: Log;
@@ -92,6 +93,27 @@ async function initApplication(arg: initApplication_Argument) {
     process.exit(1);
   }
 
+  const backupDatabase = makeBackupDatabase({
+    sideEffect: async () => {
+      await services.metaInfo.update({
+        audience: "private",
+        changes: { lastBackupTime: Date.now() },
+      });
+    },
+    database: databases.internalDatabase,
+    log: FileConsole.log.bind(FileConsole),
+    notify,
+    NOTIFICATION_TITLE: config.NOTIFICATION_TITLE,
+    DB_BACKUP_FILE_PATH: path.join(
+      config.DB_BACKUP_DIR,
+      config.DB_BACKUP_FILE_NAME
+    ),
+    DB_BACKUP_TEMP_FILE_PATH: path.join(
+      config.DB_BACKUP_DIR,
+      config.DB_BACKUP_TEMP_FILE_NAME
+    ),
+  });
+
   // --------- Setting Up Timer ------------------------
   const timer = new CountDownTimer({
     clearInterval,
@@ -126,12 +148,6 @@ async function initApplication(arg: initApplication_Argument) {
     },
   });
 
-  const timerController = makeTimerController({
-    timer,
-    speaker,
-    DEFAULT_TIMER_DURATION: config.DEFAULT_TIMER_DURATION_MS,
-  });
-
   setUpTimerEventListeners({
     timer,
     config,
@@ -145,26 +161,38 @@ async function initApplication(arg: initApplication_Argument) {
   // --------- End Setting Up Timer --------------------
 
   // --------- Registering API Routes -------------------
-  const controllers = makeControllers({ services });
 
-  for (const method of ["get", "post", "patch", "delete"] as const) {
+  {
+    const controllers = makeControllers({ services });
+    const timerControllers = makeTimerController({
+      timer,
+      speaker,
+      DEFAULT_TIMER_DURATION: config.DEFAULT_TIMER_DURATION_MS,
+    });
+
+    const appControllers = makeAppControllers({
+      backupDatabase,
+      closeApplication,
+    });
     const controllerAndPathPairs = [
-      [timerController, config.API_TIMER_PATH],
+      [appControllers, config.API_APP_PATH],
+      [timerControllers, config.API_TIMER_PATH],
       [controllers.project, config.API_PROJECT_PATH],
       [controllers.category, config.API_CATEGORY_PATH],
       [controllers.metaInfo, config.API_META_INFO_PATH],
       [controllers.workSession, config.API_WORK_SESSION_PATH],
-      [makeAppControllers({ closeApplication }), config.API_APP_PATH],
     ] as const;
 
-    for (const [controllerGroup, path] of controllerAndPathPairs)
-      if (method in controllerGroup)
-        server[method](
-          path,
-          makeExpressIPCMiddleware({
-            controller: (controllerGroup as any)[method],
-          })
-        );
+    for (const method of ["get", "post", "patch", "delete"] as const) {
+      for (const [controllerGroup, path] of controllerAndPathPairs)
+        if (method in controllerGroup)
+          server[method](
+            path,
+            makeExpressIPCMiddleware({
+              controller: (controllerGroup as any)[method],
+            })
+          );
+    }
   }
   // --------- End Registering API Routes -------------------
 

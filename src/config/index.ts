@@ -1,7 +1,7 @@
 import path from "path";
 import { homedir } from "os";
-import type { ConfigInterface } from "./interface";
 import { API_AND_SERVER_CONFIG } from "./other";
+import type { ConfigInterface } from "./interface";
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
