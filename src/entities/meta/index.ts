@@ -33,13 +33,17 @@ export const DEFAULT_META_INFO = Object.freeze({
   dailyWorkTargetMs: null,
 });
 
-const MS_IN_ONE_MINUTE = convertDuration({
-  duration: 1,
+const MAX_DAILY_WORK_TARGET_MS = convertDuration({
+  duration: 24,
+  toUnit: "ms",
+  fromUnit: "hour",
+});
+
+export const MIN_DAILY_WORK_TARGET_MS = convertDuration({
+  duration: 5,
   toUnit: "ms",
   fromUnit: "minute",
 });
-
-export const MIN_DAILY_WORK_TARGET_MS = MS_IN_ONE_MINUTE * 5;
 
 export const PublicMetaFields: (keyof PublicMetaInfoInterface)[] =
   Object.freeze(["dailyWorkTargetMs"]) as any;
@@ -48,9 +52,16 @@ const PublicMetaInfoSchema = z
   .object({
     dailyWorkTargetMs: z
       .union([
-        z.number().positive().int().gte(MIN_DAILY_WORK_TARGET_MS, {
-          message: `Come on! You can work way more than this.`,
-        }),
+        z
+          .number()
+          .positive()
+          .int()
+          .gte(MIN_DAILY_WORK_TARGET_MS, {
+            message: `Come on! You can work way more than this.`,
+          })
+          .lt(MAX_DAILY_WORK_TARGET_MS, {
+            message: `Please have some mercy on yourself! Your goal is too high.`,
+          }),
         z.null(),
       ])
       .default(null),
