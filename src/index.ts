@@ -152,6 +152,7 @@ async function initApplication(arg: initApplication_Argument) {
       [timerController, config.API_TIMER_PATH],
       [controllers.project, config.API_PROJECT_PATH],
       [controllers.category, config.API_CATEGORY_PATH],
+      [controllers.metaInfo, config.API_META_INFO_PATH],
       [controllers.workSession, config.API_WORK_SESSION_PATH],
       [makeAppControllers({ closeApplication }), config.API_APP_PATH],
     ] as const;

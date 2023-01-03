@@ -1,4 +1,4 @@
-import type { MetaInformationInterface } from "entities/meta-info";
+import type { MetaInformationInterface } from "entities/meta";
 
 export interface MetaInformationDatabaseInterface {
   get(): Promise<MetaInformationInterface>;

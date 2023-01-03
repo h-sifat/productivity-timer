@@ -15,6 +15,8 @@ export function makeGetMetaInfo(
     const { audience } = arg;
 
     const metaInfo = await db.get();
-    return audience === "private" ? metaInfo : pick(metaInfo, PublicMetaFields);
+    return audience === "private"
+      ? metaInfo
+      : (pick(metaInfo, PublicMetaFields) as any);
   };
 }

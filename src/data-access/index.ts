@@ -12,15 +12,19 @@ import SqliteDatabase from "./db/mainprocess-db";
 import buildCategoryDatabase from "./category-db";
 import buildWorkSessionDatabase from "./work-session-db";
 import { setInitialId, setInitialId_Argument } from "./id";
-import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
+
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
+import type { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
+import { buildMetaInfoDatabase } from "./meta-db";
 
 export interface AllDatabases {
   internalDatabase: SqliteDatabase;
   project: ProjectDatabaseInterface;
   category: CategoryDatabaseInterface;
   workSession: WorkSessionDatabaseInterface;
+  metaInfo: MetaInformationDatabaseInterface;
 }
 
 export interface MakeAllDatabase_Argument {
@@ -53,6 +57,7 @@ export async function makeAllDatabase(
     internalDatabase: database,
     project: buildProjectDatabase(commonArg),
     category: buildCategoryDatabase(commonArg),
+    metaInfo: buildMetaInfoDatabase(commonArg),
     workSession: buildWorkSessionDatabase({
       ...commonArg,
       normalizeDocumentToRecord,

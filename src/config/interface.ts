@@ -37,11 +37,12 @@ export interface ConfigInterface {
   NOTIFICATION_TITLE: string;
 
   // server
+  API_APP_PATH: string;
+  API_TIMER_PATH: string;
   API_PROJECT_PATH: string;
   API_CATEGORY_PATH: string;
+  API_META_INFO_PATH: string;
   API_WORK_SESSION_PATH: string;
-  API_TIMER_PATH: string;
-  API_APP_PATH: string;
   TIMER_BROADCAST_CHANNEL: string;
 
   // server
