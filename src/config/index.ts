@@ -80,6 +80,7 @@ export function getConfig(): ConfigInterface {
 
 export const dbPragmas = Object.freeze({
   encoding: "'UTF-8'",
+  journal_mode: "WAL",
   cache_size: 10_000,
   foreign_keys: "ON",
   synchronous: "EXTRA",
