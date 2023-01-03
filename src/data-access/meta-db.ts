@@ -1,8 +1,8 @@
 import {
+  MetaInformation,
   DEFAULT_META_INFO,
   generateMetaInfoHash,
   MetaInformationInterface,
-  validateMetaInformation,
 } from "entities/meta";
 import EPP from "common/util/epp";
 import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
@@ -58,7 +58,7 @@ export function buildMetaInfoDatabase(
     try {
       const { json, hash } = result[0] as any;
       const metaInfo = JSON.parse(json);
-      validateMetaInformation(metaInfo, hash);
+      MetaInformation.validate(metaInfo, hash);
       return metaInfo;
     } catch (ex) {
       const error = new EPP({

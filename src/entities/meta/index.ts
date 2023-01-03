@@ -15,6 +15,19 @@ export interface PublicMetaInfoInterface {
 export type MetaInformationInterface = PrivateMetaInfoInterface &
   PublicMetaInfoInterface;
 
+export type editMetaInfo_Arg = { metaInfo: MetaInformationInterface } & (
+  | { audience: "public"; changes: Partial<PublicMetaInfoInterface> }
+  | { audience: "private"; changes: Partial<PrivateMetaInfoInterface> }
+);
+
+export interface MetaInformationEntity {
+  edit(arg: editMetaInfo_Arg): MetaInformationInterface;
+  validate(
+    metaInfo: unknown,
+    hash?: string
+  ): asserts metaInfo is MetaInformationInterface;
+}
+
 export const DEFAULT_META_INFO = Object.freeze({
   lastBackupTime: null,
   dailyWorkTargetMs: null,
@@ -56,17 +69,12 @@ const MetaInformationSchema = PublicMetaInfoSchema.merge(
   PrivateMetaInfoSchema
 ).strict();
 
-export type editMetaInfo_Arg = { metaInfo: MetaInformationInterface } & (
-  | { audience: "public"; changes: Partial<PublicMetaInfoInterface> }
-  | { audience: "private"; changes: Partial<PrivateMetaInfoInterface> }
-);
-
 const editChangesSchemas = Object.freeze({
   public: PublicMetaInfoSchema.partial(),
   private: MetaInformationSchema.partial(),
 });
 
-export function editMetaInfo(arg: editMetaInfo_Arg) {
+function editMetaInfo(arg: editMetaInfo_Arg): MetaInformationInterface {
   const { audience, changes } = arg;
   const changesSchema = editChangesSchemas[audience];
 
@@ -77,10 +85,14 @@ export function editMetaInfo(arg: editMetaInfo_Arg) {
       message: formatError(validationResult.error),
     });
 
-  return Object.freeze({ ...arg.metaInfo, ...validationResult.data });
+  const edited = { ...arg.metaInfo };
+  for (const [key, value] of Object.entries(validationResult.data))
+    if (value !== undefined) (<any>edited)[key] = value;
+
+  return Object.freeze(edited);
 }
 
-export function validateMetaInformation(
+function validateMetaInformation(
   metaInfo: unknown,
   hash?: string
 ): asserts metaInfo is MetaInformationInterface {
@@ -109,3 +121,8 @@ export function generateMetaInfoHash(metaInfo: MetaInformationInterface) {
 
   return createMD5Hash(serialized);
 }
+
+export const MetaInformation: MetaInformationEntity = Object.freeze({
+  edit: editMetaInfo,
+  validate: validateMetaInformation,
+});

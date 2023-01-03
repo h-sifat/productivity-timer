@@ -1,9 +1,5 @@
 import { convertDuration } from "common/util/date-time";
-import {
-  DEFAULT_META_INFO,
-  editMetaInfo,
-  validateMetaInformation,
-} from "entities/meta";
+import { DEFAULT_META_INFO, MetaInformation } from "entities/meta";
 
 describe("ValidateMetaInformation", () => {
   it.each([
@@ -24,7 +20,7 @@ describe("ValidateMetaInformation", () => {
     ({ metaInfo, hash, errorCode }) => {
       expect.assertions(1);
       try {
-        validateMetaInformation(metaInfo, hash);
+        MetaInformation.validate(metaInfo, hash);
       } catch (ex) {
         expect(ex.code).toBe(errorCode);
       }
@@ -66,8 +62,7 @@ describe("editMetaInfo", () => {
         expect.assertions(1);
 
         try {
-          // @ts-ignore
-          editMetaInfo({ audience, changes, metaInfo });
+          MetaInformation.edit({ audience, changes, metaInfo });
         } catch (ex) {
           expect(ex.code).toBe(errorCode);
         }
@@ -97,7 +92,7 @@ describe("editMetaInfo", () => {
     ] as const)(
       `it edits the metaInfo | audience: $audience`,
       ({ changes, audience, metaInfo }) => {
-        const edited = editMetaInfo({ audience, changes, metaInfo });
+        const edited = MetaInformation.edit({ audience, changes, metaInfo });
         expect(edited).toEqual({ ...metaInfo, ...changes });
       }
     );
