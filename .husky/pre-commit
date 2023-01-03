@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run type checks
+npm run typecheck
+
 # Run prettier on every file
 npm run format
 

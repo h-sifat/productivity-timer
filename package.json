@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
+    "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --passWithNoTests --watch",
     "postbuild": "cp ./src/speaker/alarm.mp3 ./dist",
