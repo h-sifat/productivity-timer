@@ -1,4 +1,9 @@
-import { validateMetaInformation } from "entities/meta";
+import { convertDuration } from "common/util/date-time";
+import {
+  DEFAULT_META_INFO,
+  editMetaInfo,
+  validateMetaInformation,
+} from "entities/meta";
 
 describe("ValidateMetaInformation", () => {
   it.each([
@@ -25,4 +30,76 @@ describe("ValidateMetaInformation", () => {
       }
     }
   );
+});
+
+describe("editMetaInfo", () => {
+  describe("Validation", () => {
+    const errorCode = "INVALID_CHANGES";
+    it.each([
+      {
+        audience: "public",
+        metaInfo: DEFAULT_META_INFO,
+        changes: { dailyWorkTargetMs: -1 },
+        case: "changes contains invalid props",
+      },
+      {
+        audience: "private",
+        metaInfo: DEFAULT_META_INFO,
+        changes: { dailyWorkTargetMs: -1 },
+        case: "changes contains invalid props",
+      },
+      {
+        audience: "public",
+        metaInfo: DEFAULT_META_INFO,
+        changes: { lastBackupTime: 23423 },
+        case: "changes contains unknown props",
+      },
+      {
+        audience: "public",
+        metaInfo: DEFAULT_META_INFO,
+        changes: { unknown: "hi" },
+        case: "changes contains unknown props",
+      },
+    ] as const)(
+      `throws ewc "${errorCode}" if $case | audience: $audience`,
+      ({ changes, audience, metaInfo }) => {
+        expect.assertions(1);
+
+        try {
+          // @ts-ignore
+          editMetaInfo({ audience, changes, metaInfo });
+        } catch (ex) {
+          expect(ex.code).toBe(errorCode);
+        }
+      }
+    );
+  });
+
+  describe("Functionality", () => {
+    const metaInfo = DEFAULT_META_INFO;
+    const MS_IN_ONE_HOUR = convertDuration({
+      fromUnit: "h",
+      toUnit: "ms",
+      duration: 1,
+    });
+
+    it.each([
+      {
+        metaInfo,
+        audience: "private",
+        changes: { lastBackupTime: 123, dailyWorkTargetMs: MS_IN_ONE_HOUR * 6 },
+      },
+      {
+        metaInfo,
+        audience: "public",
+        changes: { dailyWorkTargetMs: MS_IN_ONE_HOUR * 6 },
+      },
+    ] as const)(
+      `it edits the metaInfo | audience: $audience`,
+      ({ changes, audience, metaInfo }) => {
+        const edited = editMetaInfo({ audience, changes, metaInfo });
+        expect(edited).toEqual({ ...metaInfo, ...changes });
+      }
+    );
+  });
 });

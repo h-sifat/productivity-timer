@@ -1,5 +1,5 @@
 import { makeDbSubProcess } from "data-access/db";
-import { DEFAULT_META_INFO } from "entities/meta";
+import { DEFAULT_META_INFO, MIN_DAILY_WORK_TARGET_MS } from "entities/meta";
 import { initializeDatabase } from "data-access/init-db";
 import SqliteDatabase from "data-access/db/mainprocess-db";
 import {
@@ -71,7 +71,7 @@ describe("get/set", () => {
   it(`sets the meta info`, async () => {
     const insertedMetaInfo = Object.freeze({
       lastBackupTime: Date.now(),
-      dailyWorkTargetMs: 100,
+      dailyWorkTargetMs: MIN_DAILY_WORK_TARGET_MS,
     });
     await metaInfoDb.set(insertedMetaInfo);
 
