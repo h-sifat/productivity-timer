@@ -19,8 +19,8 @@ export const DEFAULT_META_INFO = Object.freeze({
   dailyWorkTargetMs: null,
 });
 
-export const PublicMetaFields: readonly (keyof PublicMetaInfoInterface)[] =
-  Object.freeze(["dailyWorkTargetMs"]);
+export const PublicMetaFields: (keyof PublicMetaInfoInterface)[] =
+  Object.freeze(["dailyWorkTargetMs"]) as any;
 
 const MetaInformationSchema = z
   .object({
