@@ -1,4 +1,4 @@
-import { deepFreeze } from "common/util/other";
+import { deepFreeze, pick } from "common/util/other";
 
 describe("deepFreeze", () => {
   it(`deep freezes an object`, () => {
@@ -16,5 +16,18 @@ describe("deepFreeze", () => {
     expect(Object.isFrozen(object.b[0])).toBeTruthy();
     expect(Object.isFrozen(object.b[0].d)).toBeTruthy();
     expect(Object.isFrozen(object.b[0].d[0])).toBeTruthy();
+  });
+});
+
+describe("pick", () => {
+  it(`picks the selected keys`, () => {
+    const object = {
+      age: 1,
+      name: "a",
+      sex: "male",
+    };
+
+    const filtered = pick(object, ["name", "age"]);
+    expect(filtered).toEqual({ name: object.name, age: object.age });
   });
 });

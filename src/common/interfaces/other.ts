@@ -13,3 +13,8 @@ export interface notify_Argument {
   message: string;
 }
 export type Notify = (arg: notify_Argument) => void;
+
+export type PickObject = <O extends object, K extends Array<keyof O>>(
+  object: O,
+  keys: K
+) => Pick<O, K[number]>;

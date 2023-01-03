@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { DeepFreezeTypeMapper } from "common/interfaces/other";
+import { DeepFreezeTypeMapper, PickObject } from "common/interfaces/other";
 
 export function createMD5Hash(arg: string): string {
   return createHash("md5").update(String(arg)).digest("base64");
@@ -35,6 +35,13 @@ export function deepFreeze<Type>(
 }
 
 export function isEmptyObject(object: any) {
-  for (const key in object) return false;
+  for (const _key in object) return false;
   return true;
 }
+
+export const pick: PickObject = function _pick(object, keys) {
+  return keys.reduce((pickedObject, key) => {
+    pickedObject[key] = object[key];
+    return pickedObject;
+  }, Object.create(null));
+};
