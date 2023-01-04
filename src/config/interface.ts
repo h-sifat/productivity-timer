@@ -20,10 +20,11 @@ export interface ConfigInterface {
   DB_PATH: string;
   DATA_DIR: string;
   DB_FILE_NAME: string;
-  LOG_FILE_NAME: string;
   DB_BACKUP_DIR: string;
+  LOG_FILE_NAME: string;
   CONFIG_FILE_PATH: string;
   DB_BACKUP_FILE_NAME: string;
+  DB_BACKUP_INTERVAL_MS: number;
   DB_BACKUP_TEMP_FILE_NAME: string;
   DB_SUB_PROCESS_MODULE_PATH: string;
   DB_CLOSE_TIMEOUT_WHEN_KILLING: number;

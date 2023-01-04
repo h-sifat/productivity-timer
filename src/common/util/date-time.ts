@@ -99,3 +99,6 @@ export const unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateS
     assertValidUnixMsTimestamp(timestamp);
     return new Date(timestamp).toLocaleDateString("en-US");
   };
+
+export const MS_IN_ONE_MINUTE = 60_000;
+export const MS_IN_ONE_HOUR = 60 * MS_IN_ONE_MINUTE;

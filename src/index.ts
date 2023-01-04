@@ -23,6 +23,7 @@ import type { TimerRef } from "entities/work-session/work-session";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
 import { makeBackupDatabase } from "data-access/backup";
+import { BackupManager } from "data-access/backup-manager";
 
 interface initApplication_Argument {
   log: Log;
@@ -114,6 +115,18 @@ async function initApplication(arg: initApplication_Argument) {
     ),
   });
 
+  // ---------------- Setting up Backup Manager ------------
+  const backupManager = new BackupManager({
+    BACKUP_INTERVAL_MS: config.DB_BACKUP_INTERVAL_MS,
+    backupDatabase: async () => {
+      await backupDatabase({ notifyError: true });
+    },
+    getLastBackupTime: async () => {
+      const metaInfo = await services.metaInfo.get({ audience: "private" });
+      return metaInfo.lastBackupTime;
+    },
+  });
+
   // --------- Setting Up Timer ------------------------
   const timer = new CountDownTimer({
     clearInterval,
@@ -126,8 +139,8 @@ async function initApplication(arg: initApplication_Argument) {
       // @ts-ignore shut up!
       if (ref !== null) WorkSession.validator.assertValidReference(ref);
     },
-    MIN_ALLOWED_TICK_DIFF_MS: 980, // a little less than TICK_INTERVAL_MS
-    MAX_ALLOWED_TICK_DIFF_MS: 5_000, // a little greater that TICK_INTERVAL_MS
+    MIN_ALLOWED_TICK_DIFF_MS: 995, // a little less than TICK_INTERVAL_MS
+    MAX_ALLOWED_TICK_DIFF_MS: 2000, // a little greater than TICK_INTERVAL_MS
   }) as TimerInstance<TimerRef>;
 
   const services = makeServices({
@@ -197,11 +210,16 @@ async function initApplication(arg: initApplication_Argument) {
   // --------- End Registering API Routes -------------------
 
   // --------- Starting Server -------------------------------
+  log("Starting server...");
   server.listen({
     deleteSocketBeforeListening: true,
     path: { namespace: config.SERVER_NAMESPACE, id: config.SERVER_ID },
-    callback() {
-      log(`Server running at socket: "${server.socketPath}"`);
+    async callback() {
+      log.success(`Server running at socket: "${server.socketPath}"`, 1);
+
+      log(`Initializing database backup manager...`);
+      await backupManager.init();
+      log.success(`Backup manager initialized.`, 1);
       notifyApplicationStartupStatus({ success: true });
     },
   });

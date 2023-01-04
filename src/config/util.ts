@@ -4,10 +4,12 @@ import {
   DEFAULT_MPLAYER_PATH,
   DEFAULT_BEEP_DURATION_MS,
   DEFAULT_TIMER_DURATION_MS,
+  DEFAULT_DB_BACKUP_INTERVAL_MS,
 } from ".";
 import path from "path";
 import { z } from "zod";
 import { formatError } from "common/validator/zod";
+import { MS_IN_ONE_MINUTE } from "common/util/date-time";
 
 const ConfigFileSchema = z
   .object({
@@ -27,20 +29,27 @@ const ConfigFileSchema = z
       .number()
       .int()
       .positive()
-      .gt(5000)
+      .gte(5000)
       .default(DEFAULT_BEEP_DURATION_MS),
 
     DEFAULT_TIMER_DURATION_MS: z
       .number()
       .int()
       .positive()
-      .gt(5000)
+      .gte(5000)
       .refine((value) => value % 1000 === 0, {
         message: `"DEFAULT_TIMER_DURATION_MS" must be a multiple of 1000 (1 second)`,
       })
       .default(DEFAULT_TIMER_DURATION_MS),
 
     SHOW_TIMER_NOTIFICATIONS: z.boolean().default(true),
+
+    DB_BACKUP_INTERVAL_MS: z
+      .number()
+      .int()
+      .positive()
+      .gte(MS_IN_ONE_MINUTE * 5)
+      .default(DEFAULT_DB_BACKUP_INTERVAL_MS),
   })
   .strict();
 

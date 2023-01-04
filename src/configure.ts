@@ -12,7 +12,7 @@ export interface configureApplication_Argument {
 }
 
 export async function configureApplication(arg: configureApplication_Argument) {
-  const { log, TAB_CHAR } = arg;
+  const { log } = arg;
 
   {
     const initialConfig = getConfig();

@@ -2,12 +2,14 @@ import path from "path";
 import { homedir } from "os";
 import { API_AND_SERVER_CONFIG } from "./other";
 import type { ConfigInterface } from "./interface";
+import { MS_IN_ONE_MINUTE, MS_IN_ONE_HOUR } from "common/util/date-time";
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
+export const DEFAULT_BEEP_DURATION_MS = MS_IN_ONE_MINUTE; // 60s
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
+export const DEFAULT_DB_BACKUP_INTERVAL_MS = MS_IN_ONE_HOUR; // 1 hour
 export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
-export const DEFAULT_TIMER_DURATION_MS = 20 * 60 * 1000; // 20 minutes
-export const DEFAULT_BEEP_DURATION_MS = 60_000; // 60s
+export const DEFAULT_TIMER_DURATION_MS = 20 * MS_IN_ONE_MINUTE; // 20 minutes
 
 const DB_FILE_NAME = "p-timer.db";
 const LOG_FILE_NAME = "logs.txt";
@@ -44,6 +46,7 @@ const config: ConfigInterface = Object.seal({
   DATA_DIR: DEFAULT_DATA_DIR,
   DB_BACKUP_DIR: DEFAULT_BACKUP_DIR,
   DB_CLOSE_TIMEOUT_WHEN_KILLING: 30,
+  DB_BACKUP_INTERVAL_MS: DEFAULT_DB_BACKUP_INTERVAL_MS,
   DB_SUB_PROCESS_MODULE_PATH: path.join(
     process.cwd(),
     "src/data-access/db/subprocess-db.js"
