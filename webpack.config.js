@@ -5,6 +5,7 @@ const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 const outputModuleNames = {
   CLI: "cli",
+  TUI: "tui",
   SERVER: "server",
   DB_SUBPROCESS: "db_subprocess",
 };
@@ -13,6 +14,7 @@ module.exports = {
   mode: "production",
   entry: {
     [outputModuleNames.SERVER]: "./src/index.ts",
+    [outputModuleNames.TUI]: "./src/tui/index.ts",
     [outputModuleNames.CLI]: "./src/cli/index.ts",
     [outputModuleNames.DB_SUBPROCESS]: "./src/data-access/db/subprocess-db.js",
   },
