@@ -18,3 +18,8 @@ export type BlessedKeypressHandler = (
   ch: string | undefined,
   key: BlessedKeyEvent
 ) => boolean | void;
+
+export interface BGAndFGColor {
+  bg: string;
+  fg: string;
+}
