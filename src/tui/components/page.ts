@@ -1,5 +1,5 @@
 import blessed from "blessed";
-import { Debug } from "./interface";
+import { Debug } from "../interface";
 import type { Widgets } from "blessed";
 import { getCircularArrayIndex } from "common/util/other";
 
