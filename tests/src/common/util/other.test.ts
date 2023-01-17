@@ -1,4 +1,4 @@
-import { deepFreeze, pick } from "common/util/other";
+import { deepFreeze, getCircularArrayIndex, pick } from "common/util/other";
 
 describe("deepFreeze", () => {
   it(`deep freezes an object`, () => {
@@ -30,4 +30,20 @@ describe("pick", () => {
     const filtered = pick(object, ["name", "age"]);
     expect(filtered).toEqual({ name: object.name, age: object.age });
   });
+});
+
+describe("getCircularArrayIndex", () => {
+  it.each([
+    { index: 0, length: 1, offset: -1, newIndex: 0 },
+    { index: 0, length: 1, offset: 1, newIndex: 0 },
+    { index: 0, length: 2, offset: 1, newIndex: 1 },
+    { index: 0, length: 2, offset: -1, newIndex: 1 },
+    { index: 0, length: 3, offset: 6, newIndex: 0 },
+    { index: 0, length: 3, offset: -6, newIndex: 0 },
+  ])(
+    `getIdx({length: $length, index: $index, offset: $offset}) => $newIndex`,
+    ({ newIndex, ...arg }) => {
+      expect(getCircularArrayIndex(arg)).toBe(newIndex);
+    }
+  );
 });

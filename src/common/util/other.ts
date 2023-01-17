@@ -45,3 +45,39 @@ export const pick: PickObject = function _pick(object, keys) {
     return pickedObject;
   }, Object.create(null));
 };
+
+export interface getCircularArrayIndex_Arg {
+  offset: number;
+  length: number;
+  index: number;
+}
+
+/**
+ *
+ * */
+export function getCircularArrayIndex(arg: getCircularArrayIndex_Arg) {
+  const { index, length, offset } = arg;
+  if (offset >= 0) return (index + offset) % length;
+
+  /**
+   * Formula:
+   * newIndex = maxIndex - ((inverseIndex + Math.abs(offset)) % length)
+   *                       (--------------New Inverse Index---------------)
+   *            (----------New Real Index---------------------------------)
+   *
+   * array:        [a, b, c, d]
+   * index:         0, 1, 2, 3
+   * inverseIndex:  3, 2, 1, 0 (maxIndex - index)
+   *
+   * Example: index: 2, offset: -3, length: 4
+   * newIndex = (4 - 1) - ((4 - 1 - 2 - -3) % 4)
+   *          = 3 - ((4 - 3 + 3) % 4)
+   *          = 3 - (4 % 4)
+   *          = 3 - 0
+   *          = 3
+   * */
+  return (
+    length - 1 - ((length - 1 - index - offset) % length)
+    //-maxIndex--|    |-------Inverse Index--------|
+  );
+}
