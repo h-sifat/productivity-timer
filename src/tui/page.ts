@@ -58,12 +58,13 @@ export class Page {
 
   show() {
     if (!this.#wrapperBox.hidden) return;
+
     this.#wrapperBox.show();
     this.#wrapperBox.focus();
     this.#focusSelectedChild();
   }
 
   hide() {
-    if (this.#wrapperBox.hidden) this.#wrapperBox.hide();
+    if (!this.#wrapperBox.hidden) this.#wrapperBox.hide();
   }
 }
