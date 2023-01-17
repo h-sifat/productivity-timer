@@ -12,7 +12,7 @@ export type BlessedKeyEvent =
     };
 
 /**
- * return `false` to prevent event propagation.
+ * return `boolean` to prevent event propagation.
  * */
 export type BlessedKeypressHandler = (
   ch: string | undefined,
@@ -22,4 +22,19 @@ export type BlessedKeypressHandler = (
 export interface BGAndFGColor {
   bg: string;
   fg: string;
+}
+
+export interface BlessedElementStyle {
+  bg: string;
+  fg: string;
+  bold: boolean;
+  blink: boolean;
+  inverse: boolean;
+  invisible: boolean;
+  underline: boolean;
+  focus: BGAndFGColor;
+  hover: BGAndFGColor;
+  border: BGAndFGColor;
+  transparent: boolean;
+  scrollbar: BGAndFGColor;
 }
