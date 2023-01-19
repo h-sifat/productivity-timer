@@ -1,10 +1,10 @@
 import blessed from "blessed";
 import { merge } from "common/util/merge";
-import { getCircularArrayIndex } from "common/util/other";
+import { deepFreeze, getCircularArrayIndex } from "common/util/other";
 
 import type { Widgets } from "blessed";
-import type { BGAndFGColor, Debug } from "../interface";
 import type { PartialDeep, ReadonlyDeep } from "type-fest";
+import type { BGAndFGColor, Debug, ElementPosition } from "../interface";
 
 export type NavigationBarStyles = Pick<BGAndFGColor, "bg"> & {
   items: BGAndFGColor;
@@ -13,23 +13,28 @@ export type NavigationBarStyles = Pick<BGAndFGColor, "bg"> & {
 
 export interface NavigationBar_Argument {
   debug: Debug;
-  tabs: string[];
   selected?: string;
+  position?: ElementPosition;
+  showTabSerialNumber: boolean;
   align?: "center" | "left" | "right";
   style?: PartialDeep<NavigationBarStyles>;
+  tabs: ({ name: string; label: string } | string)[];
 }
 
 export type OnTabChange = (arg: { index: number; name: string }) => void;
 
+const defaultStyles = deepFreeze({
+  bg: "gray",
+  items: { bg: "gray", fg: "white" },
+  selected: { bg: "black", fg: "white" },
+});
+
 export class NavigationBar {
   readonly #debug: Debug;
-  readonly #tabs: readonly string[];
   readonly #element: Widgets.BoxElement;
-  readonly #styles: ReadonlyDeep<NavigationBarStyles> = Object.freeze({
-    bg: "gray",
-    items: { bg: "gray", fg: "white" },
-    selected: { bg: "black", fg: "white" },
-  });
+  readonly #showTabSerialNumber: boolean;
+  readonly #tabs: readonly Readonly<{ name: string; label: string }>[];
+  readonly #styles: ReadonlyDeep<NavigationBarStyles>;
 
   #onChange: OnTabChange = () => {};
 
@@ -37,14 +42,23 @@ export class NavigationBar {
 
   constructor(arg: NavigationBar_Argument) {
     this.#debug = arg.debug;
-    this.#tabs = Object.freeze([...arg.tabs]);
-    this.#styles = merge(this.#styles, arg.style || {});
+    this.#tabs = Object.freeze(
+      arg.tabs.map((tab) =>
+        typeof tab === "string"
+          ? Object.freeze({ name: tab, label: tab })
+          : Object.freeze({ ...tab })
+      )
+    );
+    this.#styles = merge({}, defaultStyles, arg.style || {});
+    this.#showTabSerialNumber = arg.showTabSerialNumber;
 
     if ("selected" in arg)
       this.#selectedIndex = this.#findTabByName(arg.selected!);
 
     this.#element = blessed.box({
       top: 0,
+      ...(arg.position || {}),
+
       height: 1,
       tags: true,
       scrollable: false,
@@ -57,11 +71,11 @@ export class NavigationBar {
 
   #renderText() {
     const content = this.#tabs
-      .map((tab, index) => {
-        const numbered = ` ${index + 1} ${tab} `;
-
+      .map(({ label: tabLabel }, index) => {
         return this.#formatTabText({
-          text: numbered,
+          text: this.#showTabSerialNumber
+            ? ` ${index + 1} ${tabLabel} `
+            : ` ${tabLabel} `,
           selected: index === this.#selectedIndex,
         });
       })
@@ -78,7 +92,7 @@ export class NavigationBar {
   }
 
   #findTabByName(name: string) {
-    const index = this.#tabs.findIndex((tab) => tab === name);
+    const index = this.#tabs.findIndex((tab) => tab.name === name);
     if (index === -1) throw new Error(`Couldn't find any tab named "${name}"`);
     return index;
   }
@@ -97,7 +111,7 @@ export class NavigationBar {
     this.#renderText();
     this.#onChange({
       index: this.#selectedIndex,
-      name: this.#tabs[this.#selectedIndex],
+      name: this.#tabs[this.#selectedIndex].name,
     });
   }
 
