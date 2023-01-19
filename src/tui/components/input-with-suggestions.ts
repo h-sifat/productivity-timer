@@ -1,8 +1,14 @@
+import type {
+  Debug,
+  Message,
+  ElementPosition,
+  BlessedKeypressHandler,
+} from "../interface";
+
 import blessed from "blessed";
 import { SuggestionsElement } from "./suggestions";
 import { createInstructionsBox } from "./instructions";
 import { formatMessageForBlessedElement } from "../util";
-import { BlessedKeypressHandler, Debug, Message } from "../interface";
 
 export type OnInputChangeFunc = (value: string) => void | boolean;
 export type OnSuggestionSelectFunc = (value: string) => void;
@@ -14,7 +20,7 @@ export interface InputWithSuggestions_Argument {
     height: number | string;
     parent?: blessed.Widgets.Node;
     instructions?: { [k: string]: string | number };
-  };
+  } & ElementPosition;
   debug: Debug;
   zIndex?: number;
   renderScreen(): void;
