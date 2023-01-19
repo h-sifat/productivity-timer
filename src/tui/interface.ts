@@ -1,3 +1,5 @@
+import type { PartialDeep } from "type-fest";
+
 export type Debug = (...args: any[]) => void;
 
 export type BlessedKeyEvent =
@@ -24,7 +26,7 @@ export interface BGAndFGColor {
   fg: string;
 }
 
-export interface BlessedElementStyle {
+export type BlessedElementStyle = PartialDeep<{
   bg: string;
   fg: string;
   bold: boolean;
@@ -37,4 +39,17 @@ export interface BlessedElementStyle {
   border: BGAndFGColor;
   transparent: boolean;
   scrollbar: BGAndFGColor;
+}>;
+
+export type ElementPosition = Partial<
+  Record<"top" | "bottom" | "left" | "right", number | string>
+>;
+
+export type ElementDimension = Partial<
+  Record<"width" | "height", string | number>
+>;
+
+export interface Message {
+  text: string;
+  type: "normal" | "info" | "warn" | "error" | "success";
 }
