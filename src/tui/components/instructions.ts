@@ -7,6 +7,7 @@ export type createInstructionsBox_Argument = Partial<
     string | number
   >
 > & {
+  border?: boolean;
   keyColor?: string;
   style?: Partial<BGAndFGColor>;
   parent?: blessed.Widgets.Node;
@@ -15,7 +16,13 @@ export type createInstructionsBox_Argument = Partial<
 };
 
 export function createInstructionsBox(arg: createInstructionsBox_Argument) {
-  const { instructions, style = {}, keyColor = "green", ...rest } = arg;
+  const {
+    style = {},
+    instructions,
+    border = false,
+    keyColor = "green",
+    ...rest
+  } = arg;
   const options: any = {
     align: "center",
 
@@ -28,6 +35,8 @@ export function createInstructionsBox(arg: createInstructionsBox_Argument) {
       .map(([key, action]) => `{${keyColor}-fg}${key}{/}: ${action}`)
       .join(", "),
   };
+
+  if (border) options.border = "line";
 
   return blessed.box(options);
 }

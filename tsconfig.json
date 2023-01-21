@@ -14,6 +14,7 @@
     "baseUrl": "./",
     "paths": {
       "cli/*": ["src/cli/*"],
+      "tui/*": ["src/tui/*"],
       "common/*": ["src/common/*"],
       "entities/*": ["src/entities/*"],
       "fixtures/*": ["tests/fixtures/*"],
