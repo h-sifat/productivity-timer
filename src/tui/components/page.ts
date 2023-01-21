@@ -1,12 +1,12 @@
 import blessed from "blessed";
-import { Debug } from "../interface";
 import type { Widgets } from "blessed";
+import { Debug, ElementPosition } from "../interface";
 import { getCircularArrayIndex } from "common/util/other";
 
-export interface Page_Argument {
+export type Page_Argument = {
   debug: Debug;
   children: Widgets.Node[];
-}
+} & ElementPosition;
 
 export class Page {
   #focusedIndex = 0;
@@ -14,10 +14,12 @@ export class Page {
   readonly #wrapperBox: Widgets.BoxElement;
 
   constructor(arg: Page_Argument) {
-    this.#debug = arg.debug;
+    const { debug, ...rest } = arg;
+    this.#debug = debug;
     this.#wrapperBox = blessed.box({
+      ...rest,
+      mouse: true,
       scrollable: true,
-      children: arg.children,
     });
     this.hide();
 
