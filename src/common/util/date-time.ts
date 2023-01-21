@@ -102,3 +102,39 @@ export const unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateS
 
 export const MS_IN_ONE_MINUTE = 60_000;
 export const MS_IN_ONE_HOUR = 60 * MS_IN_ONE_MINUTE;
+
+/**
+ * converts millisecond duration to hh:mm:ss format
+ * */
+export function formatDurationMsAsHMS(arg: {
+  duration: number;
+  separator?: string;
+}) {
+  let { duration } = arg;
+  assert<number>("non_negative_integer", duration, {
+    name: "duration",
+    code: "invalid_duration",
+  });
+
+  const formatted = {
+    h: "00",
+    m: "00",
+    s: "00",
+  };
+
+  for (const unit of ["h", "m", "s"] as const) {
+    const msInUnit = msPerUnit[unit];
+    {
+      const result = Math.floor(duration / msInUnit);
+      formatted[unit] = result < 10 ? `0${result}` : result.toString();
+    }
+
+    duration = duration % msInUnit;
+  }
+
+  if (arg.separator)
+    return [formatted.h, formatted.m, formatted.s].join(arg.separator);
+
+  // e.g 11h 20m 21s
+  return `${formatted.h}h ${formatted.m}m ${formatted.s}s`;
+}

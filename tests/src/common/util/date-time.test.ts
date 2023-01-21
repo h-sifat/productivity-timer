@@ -1,7 +1,10 @@
 import {
   assertValidUSLocaleDateString,
   currentTimeMs,
+  formatDurationMsAsHMS,
   isValidUnixMsTimestamp,
+  MS_IN_ONE_HOUR,
+  MS_IN_ONE_MINUTE,
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
 
@@ -75,5 +78,27 @@ describe("unixMsTimestampToUsLocaleDateString", () => {
     expect(unixMsTimestampToUsLocaleDateString(+date)).toBe(
       date.toLocaleDateString("en-US")
     );
+  });
+});
+
+describe("formatDurationMsAsHMS", () => {
+  it.each([
+    { arg: { duration: 12 }, expected: "00h 00m 00s" },
+    { arg: { duration: 12, separator: ":" }, expected: "00:00:00" },
+    { arg: { duration: 1000 }, expected: "00h 00m 01s" },
+    { arg: { duration: 1000, separator: ":" }, expected: "00:00:01" },
+    {
+      expected: "00:01:01",
+      arg: { duration: MS_IN_ONE_MINUTE + 1000, separator: ":" },
+    },
+    {
+      expected: "10:01:01",
+      arg: {
+        duration: 10 * MS_IN_ONE_HOUR + MS_IN_ONE_MINUTE + 1000,
+        separator: ":",
+      },
+    },
+  ])(`format($arg) => "$expected"`, ({ arg, expected }) => {
+    expect(formatDurationMsAsHMS(arg)).toBe(expected);
   });
 });
