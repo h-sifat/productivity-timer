@@ -11,7 +11,7 @@ import { createInstructionsBox } from "./instructions";
 import { formatMessageForBlessedElement } from "../util";
 
 export type OnInputChangeFunc = (value: string) => void | boolean;
-export type OnSuggestionSelectFunc = (value: string) => void;
+export type OnSuggestionSelectFunc = (value: unknown) => void;
 
 export interface InputWithSuggestions_Argument {
   input: {
@@ -24,6 +24,7 @@ export interface InputWithSuggestions_Argument {
   debug: Debug;
   zIndex?: number;
   renderScreen(): void;
+  suggestionFormatter(value: unknown): string;
 }
 
 const VALID_CHARACTER_REGEX = /^[\S ]{1}$/;
@@ -85,6 +86,7 @@ export class InputWithSuggestions {
         top: "100%-2",
         parent: this.#inputElement,
         renderScreen: this.#renderScreen,
+        suggestionFormatter: arg.suggestionFormatter,
         instructions: {
           enter: "select",
           escape: "close",

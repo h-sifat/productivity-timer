@@ -4,6 +4,7 @@ import { merge } from "common/util/merge";
 import { deepFreeze } from "common/util/other";
 import { createInstructionsBox } from "./instructions";
 import { BGAndFGColor, BlessedElementStyle } from "../interface";
+import { errorUtil } from "zod/lib/helpers/errorUtil";
 
 export interface SuggestionElement_Arg {
   height?: number;
@@ -11,10 +12,11 @@ export interface SuggestionElement_Arg {
   renderScreen(): void;
   top?: number | string;
   left?: number | string;
-  suggestions?: string[];
+  suggestions?: unknown[];
   right?: number | string;
   bottom?: number | string;
   parent?: blessed.Widgets.Node;
+  suggestionFormatter(value: any): string;
   instructions?: { [k: string]: string | number };
   listStyle?: PartialDeep<BlessedElementStyle & { selected: BGAndFGColor }>;
 }
@@ -26,10 +28,11 @@ const defaultListStyle = deepFreeze({
 
 export class SuggestionsElement {
   #selectedIndex = 0;
-  #suggestions: string[] = [];
+  #suggestions: unknown[] = [];
   readonly #renderScreen: () => void;
   readonly #listElement: blessed.Widgets.ListElement;
   readonly #wrapperElement: blessed.Widgets.BoxElement;
+  readonly #suggestionFormatter: SuggestionElement_Arg["suggestionFormatter"];
 
   constructor(arg: SuggestionElement_Arg) {
     const {
@@ -37,19 +40,22 @@ export class SuggestionsElement {
       renderScreen,
       listStyle = {},
       suggestions = [],
+      suggestionFormatter,
       height: wrapperHeight = 6,
       zIndex: wrapperZIndex = 0,
       ...rest
     } = arg;
     this.#suggestions = suggestions;
     this.#renderScreen = renderScreen;
+    this.#suggestionFormatter = suggestionFormatter;
 
     if (wrapperHeight < 5) throw new Error(`The height must be >= 5`);
 
     this.#wrapperElement = blessed.box({
       height: wrapperHeight,
       ...rest,
-      border: "line",
+      // @ts-ignore
+      border: { type: "line", fg: "green" },
     });
 
     this.#wrapperElement.setIndex(wrapperZIndex);
@@ -65,7 +71,7 @@ export class SuggestionsElement {
         mouse: false,
         scrollable: true,
         height: listHeight,
-        items: suggestions,
+        items: suggestions.map(this.#suggestionFormatter),
         scrollbar: { ch: " " },
         parent: this.#wrapperElement,
         style: mergedListStyle as any,
@@ -124,10 +130,11 @@ export class SuggestionsElement {
     return this.#wrapperElement.hidden;
   }
 
-  set suggestions(suggestions: string[]) {
+  set suggestions(suggestions: unknown[]) {
     this.#suggestions = [...suggestions];
-    // @ts-ignore
-    this.#listElement.setItems(this.#suggestions);
+    this.#listElement.setItems(
+      this.#suggestions.map(this.#suggestionFormatter) as any[]
+    );
     this.#selectedIndex = 0;
     this.show();
     this.#renderScreen();
@@ -139,5 +146,9 @@ export class SuggestionsElement {
 
   get element() {
     return this.#wrapperElement;
+  }
+
+  get suggestionFormatter() {
+    return this.#suggestionFormatter;
   }
 }
