@@ -10,7 +10,15 @@ import { SuggestionsElement } from "./suggestions";
 import { createInstructionsBox } from "./instructions";
 import { formatMessageForBlessedElement } from "../util";
 
-export type OnInputChangeFunc = (value: string) => void | boolean;
+type SetMessage_Argument = { timeoutMs?: number | undefined } & Message;
+
+export type OnInputChangeFunc = (
+  value: string
+) =>
+  | void
+  | boolean
+  | { allowChange: boolean; message: Message; timeoutMs?: number };
+
 export type OnSuggestionSelectFunc = (value: unknown) => void;
 
 export interface InputWithSuggestions_Argument {
@@ -201,7 +209,7 @@ export class InputWithSuggestions {
     this.#renderScreen();
   }
 
-  setMessage(arg: { timeoutMs?: number } & Message) {
+  setMessage(arg: SetMessage_Argument) {
     const { timeoutMs = null } = arg;
     {
       if (timeoutMs && !(typeof timeoutMs === "number" && timeoutMs > 0))
@@ -234,9 +242,16 @@ export class InputWithSuggestions {
   }
 
   #updateInput(newValue: string) {
-    const allowChange = this.#onInputChange(newValue);
-    if (allowChange === undefined || allowChange)
-      this.setValue({ value: newValue });
+    const result = this.#onInputChange(newValue);
+
+    if (typeof result !== "object") {
+      if (result === undefined || result) this.setValue({ value: newValue });
+      return;
+    }
+
+    const { allowChange, message, timeoutMs } = result;
+    if (allowChange) this.setValue({ value: newValue });
+    this.setMessage({ ...message, timeoutMs });
   }
 
   focus() {
