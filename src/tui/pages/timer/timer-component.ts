@@ -1,4 +1,4 @@
-import blessed, { message } from "blessed";
+import blessed from "blessed";
 import contrib from "blessed-contrib";
 import { formatDurationMsAsHMS } from "common/util/date-time";
 

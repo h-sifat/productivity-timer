@@ -4,7 +4,6 @@ import { merge } from "common/util/merge";
 import { deepFreeze } from "common/util/other";
 import { createInstructionsBox } from "./instructions";
 import { BGAndFGColor, BlessedElementStyle } from "../interface";
-import { errorUtil } from "zod/lib/helpers/errorUtil";
 
 export interface SuggestionElement_Arg {
   height?: number;
