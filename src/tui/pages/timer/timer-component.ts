@@ -1,12 +1,12 @@
 import blessed from "blessed";
 import contrib from "blessed-contrib";
+import { formatMessageForBlessedElement } from "tui/util";
 import { formatDurationMsAsHMS } from "common/util/date-time";
 
-import type { Debug, ElementPosition, Message } from "tui/interface";
 import type { Widgets as BlessedWidgets } from "blessed";
 import type { TimerEventLog } from "src/countdown-timer/timer";
+import type { Debug, ElementPosition, Message } from "tui/interface";
 import type { widget as BlessedContribWidget } from "blessed-contrib";
-import { formatMessageForBlessedElement } from "tui/util";
 
 export interface TimerComponent_Argument {
   debug: Debug;
@@ -31,14 +31,19 @@ interface Clear_Argument {
   infos?: Partial<Record<"ref" | "events" | "duration" | "message", boolean>>;
 }
 
+interface TimerEvent {
+  name: string;
+  timestamp: number;
+}
+
 type Update_Argument = Partial<{
   message: Message;
-  refInfo: TimerInfo;
-  event: TimerEventLog;
+  event: TimerEvent;
   durationInfo: DurationInfo;
+  refInfo: Partial<TimerInfo>;
 }>;
 
-const defaultInfo: TimerInfo = Object.freeze({
+const defaultRefInfo: TimerInfo = Object.freeze({
   id: "--",
   name: "--",
   type: "--",
@@ -106,7 +111,7 @@ export class TimerComponent {
       tags: true,
       left: "50%-3",
       scrollable: false,
-      content: this.#formatInfoObject(defaultInfo),
+      content: this.#formatInfoObject(defaultRefInfo),
     });
 
     this.#eventsBox = blessed.box({
@@ -151,12 +156,12 @@ export class TimerComponent {
       .join("\n");
   }
 
-  #formatEvent(event: TimerEventLog) {
+  #formatEvent(event: TimerEvent) {
     const { name, timestamp } = event;
     return `{green-fg}${name}{/}: ${new Date(timestamp).toLocaleString()}`;
   }
 
-  #pushEvent(arg: { event: TimerEventLog; renderScreen: boolean }) {
+  #pushEvent(arg: { event: TimerEvent; renderScreen: boolean }) {
     const { event, renderScreen = true } = arg;
     const formattedEvent = this.#formatEvent(event);
 
@@ -184,22 +189,25 @@ export class TimerComponent {
     this.#clearEvents({ renderScreen: true });
   }
 
-  #setRefInfo(arg: { info: TimerInfo; renderScreen: boolean }) {
+  #setRefInfo(arg: { info: Partial<TimerInfo>; renderScreen: boolean }) {
     const { info, renderScreen = true } = arg;
 
-    const formattedInfo = this.#formatInfoObject(info);
+    const formattedInfo = this.#formatInfoObject({
+      ...defaultRefInfo,
+      ...info,
+    });
     this.#infoBox.setContent(formattedInfo);
 
     if (renderScreen) this.#renderScreen();
   }
 
-  setRefInfo(info: TimerInfo) {
+  setRefInfo(info: Partial<TimerInfo>) {
     this.#setRefInfo({ info, renderScreen: true });
   }
 
   #clearRefInfo(arg: { renderScreen: boolean }) {
     const { renderScreen = true } = arg;
-    this.#setRefInfo({ info: defaultInfo, renderScreen });
+    this.#setRefInfo({ info: defaultRefInfo, renderScreen });
   }
 
   clearRefInfo() {
