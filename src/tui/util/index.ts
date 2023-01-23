@@ -3,7 +3,7 @@ import { Message } from "../interface";
 const colorsForMessageTypes = Object.freeze({
   error: "red",
   info: "cyan",
-  warn: "orange",
+  warn: "#ff8000",
   success: "green",
 });
 export function formatMessageForBlessedElement(message: Message): string {
