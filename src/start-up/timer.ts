@@ -26,6 +26,8 @@ const timerEventNames = Object.freeze([
   "time_up",
   "end_manually",
   "duration_change",
+  "err:time_decrement",
+  "err:wake_up_or_time_increment",
 ]);
 
 export function setUpTimerEventListeners(
@@ -59,7 +61,7 @@ export function setUpTimerEventListeners(
   for (const eventName of timerEventNames)
     timer.on(eventName, (data) => {
       server.broadcast({
-        data: { event: eventName, data },
+        data: { event: eventName, arg: data },
         channel: config.TIMER_BROADCAST_CHANNEL,
       });
     });
