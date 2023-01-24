@@ -30,6 +30,7 @@ export function createInstructionsBox(arg: createInstructionsBox_Argument) {
     style,
     tags: true,
     mouse: true,
+    focusable: false,
     scrollable: true,
     content: Object.entries(instructions)
       .map(([key, action]) => `{${keyColor}-fg}${key}{/}: ${action}`)

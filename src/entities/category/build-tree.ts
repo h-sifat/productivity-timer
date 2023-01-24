@@ -114,9 +114,15 @@ export interface CategoryTree {
  *
  * Finally, we return `tree[DEFAULT_ROOT_ID]` as the root node.
  * */
-export function buildCategoryTree(categories: Category[]) {
-  const tree: CategoryTree = {};
+export function buildCategoryTree(categories: Category[]): CategoryBranch {
   const DEFAULT_ROOT_ID = Symbol();
+  const tree: CategoryTree = {
+    [DEFAULT_ROOT_ID]: {
+      children: [],
+      isMock: true,
+      value: {} as any,
+    },
+  };
 
   for (const category of categories) {
     const currentBranch: CategoryBranch = {
