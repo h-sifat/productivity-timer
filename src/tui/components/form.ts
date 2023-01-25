@@ -32,9 +32,9 @@ export interface Form_Argument<T extends object> {
 const defaultFormStyle = deepFreeze({ focus: { border: { fg: "green" } } });
 
 export interface update_Arg<T> {
-  object: Partial<T>;
   message?: Message;
   formLabel?: string;
+  object: Partial<Record<keyof T, string | null | undefined>> | null;
 }
 
 type Field = Readonly<{
@@ -57,6 +57,17 @@ export class Form<T extends object> {
     readonly [k: string]: Field;
   };
 
+  static calculateHeight(arg: { fieldsCount: number; border: boolean }) {
+    const { fieldsCount, border } = arg;
+    // fields + oneEmptyLine + message + instruction text
+    let height = fieldsCount + 1 + 1 + 1;
+
+    // + border
+    if (border) height += 2;
+
+    return height;
+  }
+
   constructor(arg: Form_Argument<T>) {
     this.#renderScreen = arg.renderScreen;
 
@@ -64,10 +75,10 @@ export class Form<T extends object> {
       const { width = "100%", position = {} } = arg;
       const style = merge({}, defaultFormStyle, arg.style || {});
 
-      // fields + oneEmptyLine + message + instruction text
-      let height = arg.fields.length + 1 + 1 + 1;
-      // + border
-      if (arg.border) height += 2;
+      const height = Form.calculateHeight({
+        border: Boolean(arg.border),
+        fieldsCount: arg.fields.length,
+      });
 
       const formArg: any = { ...position, style, width, keys: true, height };
       if (arg.border) formArg.border = "line";
@@ -125,9 +136,9 @@ export class Form<T extends object> {
     this.#messageElement = blessed.box({
       tags: true,
       content: "",
-      shrink: true,
-      align: "left",
-      scrollable: false,
+      align: "center",
+      focusable: false,
+      scrollable: true,
       parent: this.#formElement,
       top: arg.fields.length + 1,
     });
@@ -164,25 +175,26 @@ export class Form<T extends object> {
 
   update(arg: update_Arg<T>) {
     {
-      const { object: updateObject } = arg;
+      const { object: updateObject = null } = arg;
 
       for (const [field, value] of Object.entries(this.#fields)) {
         const { isDisabled, inputElement } = value;
-        const text =
-          field in updateObject ? String((updateObject as any)[field]) : "";
+        const text = String(((updateObject as any) ?? {})[field] || "");
 
         if (isDisabled) inputElement.setContent(text);
         // @ts-ignore if not disabled then it's a text box element
         else inputElement.setValue(text);
       }
 
-      // convert every value to a string
-      this.#currentObject = Object.freeze(
-        Object.entries(updateObject).reduce((object, [key, value]) => {
-          object[key] = String(value);
-          return object;
-        }, {} as any)
-      );
+      if (updateObject)
+        // convert every value to a string
+        this.#currentObject = Object.freeze(
+          Object.entries(updateObject).reduce((object, [key, value]) => {
+            object[key] = String(value);
+            return object;
+          }, {} as any)
+        );
+      else this.#currentObject = null;
     }
 
     if (arg.message)
