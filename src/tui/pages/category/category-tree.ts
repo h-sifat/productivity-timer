@@ -52,6 +52,7 @@ export class CategoryTreeComponent {
   readonly #debug: Debug;
 
   #onSelect: OnSelect = () => {};
+  #onCursorMove: OnSelect = () => {};
 
   #cursorIndex = 0;
   readonly #foldedCategoryIds: Set<string> = new Set();
@@ -109,7 +110,7 @@ export class CategoryTreeComponent {
     });
 
     this.#wrapper.key("o", () => {
-      const selectedId = this.#treeLineObjects[this.#cursorIndex].id;
+      const selectedId = this.selected?.id;
 
       if (this.#foldedCategoryIds.has(selectedId))
         this.#foldedCategoryIds.delete(selectedId);
@@ -119,12 +120,13 @@ export class CategoryTreeComponent {
     });
 
     this.#wrapper.key("enter", () => {
-      const selectedId = this.#treeLineObjects[this.#cursorIndex].id;
-      this.#onSelect({
-        index: this.#cursorIndex,
-        category: this.#categories[selectedId] || null,
-      });
+      this.#onSelect({ index: this.#cursorIndex, category: this.selected });
     });
+  }
+
+  get selected() {
+    const selectedId = this.#treeLineObjects[this.#cursorIndex].id;
+    return this.#categories[selectedId] || null;
   }
 
   moveCursor(arg: { offset: number; renderScreen: boolean }) {
@@ -140,6 +142,8 @@ export class CategoryTreeComponent {
     this.#listElement.enterSelected(this.#cursorIndex);
 
     if (arg.renderScreen) this.#renderScreen();
+
+    this.#onCursorMove({ index: this.#cursorIndex, category: this.selected });
   }
 
   get element() {
@@ -173,10 +177,16 @@ export class CategoryTreeComponent {
     this.#cursorIndex = 0;
 
     this.#renderListItems({ renderScreen: false });
+    this.#onCursorMove({ category: this.selected, index: this.#cursorIndex });
+
     if (this.#wrapper.parent) this.#renderScreen();
   }
 
   set onSelect(onSelect: OnSelect) {
     this.#onSelect = onSelect;
+  }
+
+  set onCursorMove(onCursorMove: OnSelect) {
+    this.#onCursorMove = onCursorMove;
   }
 }
