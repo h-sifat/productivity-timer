@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { withClient } from "cli/util/client";
 import { isEmptyObject } from "common/util/other";
 import { setNegatedPropsToNull } from "cli/util/edit";
+import CategoryService from "client/services/category";
 import { preprocessCategory } from "cli/util/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import { printObjectAsBox, printErrorAndSetExitCode } from "cli/util";
@@ -36,15 +37,14 @@ async function editCategory(options: editCategory_Options) {
   setNegatedPropsToNull(changes);
 
   await withClient(async (client) => {
-    const { body } = (await client.patch(config.API_CATEGORY_PATH, {
-      headers: {},
-      query: { id },
-      body: { changes },
-    })) as any;
+    const categoryService = new CategoryService({
+      client,
+      url: config.API_CATEGORY_PATH,
+    });
 
-    if (!body.success) throw body.error;
+    const category = await categoryService.edit({ changes: <any>changes, id });
 
-    if (printAsJson) console.log(JSON.stringify(body.data));
-    else printObjectAsBox({ object: preprocessCategory(body.data) });
+    if (printAsJson) console.log(JSON.stringify(category));
+    else printObjectAsBox({ object: preprocessCategory(category) });
   });
 }

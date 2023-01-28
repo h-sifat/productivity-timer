@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { printObjectAsBox } from "cli/util";
 import { withClient } from "cli/util/client";
+import CategoryService from "client/services/category";
 import { preprocessCategory } from "cli/util/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import { MakeCategory_Argument } from "entities/category/category";
@@ -21,15 +22,12 @@ export async function createCategory(options: createCategoryOptions) {
   const { json: printAsJson, ...makeCategoryArg } = options;
 
   await withClient(async (client) => {
-    const { body } = (await client.post(config.API_CATEGORY_PATH, {
-      query: {},
-      headers: {},
-      body: makeCategoryArg,
-    })) as any;
+    const categoryService = new CategoryService({
+      client,
+      url: config.API_CATEGORY_PATH,
+    });
+    const category = await categoryService.add(makeCategoryArg);
 
-    if (!body.success) throw body.error;
-
-    const category = body.data;
     if (printAsJson) return console.log(JSON.stringify(category));
     else printObjectAsBox({ object: preprocessCategory(category) });
   });

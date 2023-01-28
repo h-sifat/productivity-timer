@@ -111,7 +111,8 @@ describe("Functionality", () => {
       requestArg: {
         url,
         method: "patch",
-        body: { id: "1", changes: { name: "a" } },
+        query: { id: "1" },
+        body: { changes: { name: "a" } },
       },
     },
   ])(

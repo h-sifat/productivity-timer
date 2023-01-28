@@ -13,7 +13,7 @@ const validArgs: { [k: string]: any } = deepFreeze({
   findById: { id: "a" },
   delete: { id: "a" },
   findByName: { name: "a" },
-  edit: { id: "a", name: "b" },
+  edit: { id: "a", changes: { name: "b" } },
 });
 
 let projectService: ProjectService;
@@ -87,7 +87,8 @@ describe("Functionality", () => {
       requestArg: {
         url,
         method: "patch",
-        body: { id: "1", changes: { name: "a" } },
+        query: { id: "1" },
+        body: { changes: { name: "a" } },
       },
     },
   ])(

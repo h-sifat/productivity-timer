@@ -36,19 +36,19 @@ export default class CategoryService {
   }
 
   async findAll(): Promise<CategoryInterface[]> {
-    return this.#get({ lookup: "all" });
+    return this.get({ lookup: "all" });
   }
   async findById(arg: { id: string }): Promise<CategoryInterface | null> {
-    return this.#get({ lookup: "selfById", id: arg.id });
+    return this.get({ lookup: "selfById", id: arg.id });
   }
   async findByName(arg: { name: string }): Promise<CategoryInterface[]> {
-    return this.#get({ lookup: "selfByName", name: arg.name });
+    return this.get({ lookup: "selfByName", name: arg.name });
   }
   async findParents(arg: { id: string }): Promise<CategoryInterface[]> {
-    return this.#get({ lookup: "parents", id: arg.id });
+    return this.get({ lookup: "parents", id: arg.id });
   }
   async findChildren(arg: { id: string }): Promise<CategoryInterface[]> {
-    return this.#get({ lookup: "children", id: arg.id });
+    return this.get({ lookup: "children", id: arg.id });
   }
 
   async add(category: MakeCategory_Argument): Promise<CategoryInterface> {
@@ -67,7 +67,8 @@ export default class CategoryService {
     const { body } = (await this.#client.request({
       url: this.#url,
       method: "patch",
-      body: { id, changes },
+      query: { id },
+      body: { changes },
     })) as any;
 
     if (!body.success) throw body.error;
@@ -85,7 +86,7 @@ export default class CategoryService {
     return body.data;
   }
 
-  async #get(query: GetCategoryQuery) {
+  async get(query: GetCategoryQuery) {
     const { body } = (await this.#client.request({
       query,
       method: "get",

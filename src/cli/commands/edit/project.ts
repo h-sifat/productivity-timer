@@ -6,6 +6,7 @@ import {
 import { Command, Option } from "commander";
 import { withClient } from "cli/util/client";
 import { isEmptyObject } from "common/util/other";
+import ProjectService from "client/services/project";
 import { preprocessProject } from "cli/util/project";
 import { setNegatedPropsToNull } from "cli/util/edit";
 import { ProjectStatus } from "entities/project/project";
@@ -58,15 +59,14 @@ export async function editProject(options: EditOptions) {
   setNegatedPropsToNull(changes);
 
   await withClient(async (client) => {
-    const { body } = (await client.patch(config.API_PROJECT_PATH, {
-      headers: {},
-      query: { id },
-      body: { changes },
-    })) as any;
+    const projectService = new ProjectService({
+      client,
+      url: config.API_PROJECT_PATH,
+    });
 
-    if (!body.success) throw body.error;
+    const project = await projectService.edit({ id, changes: <any>changes });
 
-    if (printAsJson) console.log(JSON.stringify(body.data));
-    else printObjectAsBox({ object: preprocessProject(body.data) });
+    if (printAsJson) console.log(JSON.stringify(project));
+    else printObjectAsBox({ object: preprocessProject(project) });
   });
 }

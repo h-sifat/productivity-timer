@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { printObjectAsBox } from "cli/util";
 import { withClient } from "cli/util/client";
+import ProjectService from "client/services/project";
 import { preprocessProject } from "cli/util/project";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
@@ -18,13 +19,14 @@ interface deleteProject_Options {
 }
 export async function deleteProject(options: deleteProject_Options) {
   await withClient(async (client) => {
-    const { body } = (await client.delete(config.API_PROJECT_PATH, {
-      query: { id: options.id },
-    })) as any;
+    const projectService = new ProjectService({
+      client,
+      url: config.API_PROJECT_PATH,
+    });
 
-    if (!body.success) throw body.error;
+    const project = await projectService.delete({ id: options.id });
 
-    if (options.json) console.log(JSON.stringify(body.data));
-    else printObjectAsBox({ object: preprocessProject(body.data) });
+    if (options.json) console.log(JSON.stringify(project));
+    else printObjectAsBox({ object: preprocessProject(project) });
   });
 }

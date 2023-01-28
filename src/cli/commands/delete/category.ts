@@ -1,8 +1,9 @@
 import type { Command } from "commander";
 import { printObjectAsBox } from "cli/util";
 import { withClient } from "cli/util/client";
-import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
+import CategoryService from "client/services/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 
 export function addDeleteCategoryCommand(DeleteCommand: Command) {
   DeleteCommand.command("category")
@@ -18,15 +19,16 @@ interface deleteCategory_Options {
 }
 export async function deleteCategory(options: deleteCategory_Options) {
   await withClient(async (client) => {
-    const { body } = (await client.delete(config.API_CATEGORY_PATH, {
-      query: { id: options.id },
-    })) as any;
+    const categoryService = new CategoryService({
+      client,
+      url: config.API_CATEGORY_PATH,
+    });
 
-    if (!body.success) throw body.error;
+    const categories = await categoryService.delete({ id: options.id });
 
     // here body.data is an array of categories
-    if (options.json) console.log(JSON.stringify(body.data));
-    else if (body.data.length > 1) printCategoriesAsTable(body.data);
-    else printObjectAsBox({ object: preprocessCategory(body.data[0]) });
+    if (options.json) console.log(JSON.stringify(categories));
+    else if (categories.length > 1) printCategoriesAsTable(categories);
+    else printObjectAsBox({ object: preprocessCategory(categories[0]) });
   });
 }

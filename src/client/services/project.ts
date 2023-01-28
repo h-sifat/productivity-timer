@@ -13,7 +13,7 @@ export interface ProjectService_Argument {
 
 export type ProjectInterface = Writable<ProjectFields>;
 
-type GetProjectQuery =
+export type GetProjectQuery =
   | { lookup: "all" }
   | { lookup: "byId"; id: string }
   | { lookup: "byName"; name: string };
@@ -28,13 +28,13 @@ export default class ProjectService {
   }
 
   async findAll(): Promise<ProjectInterface[]> {
-    return this.#getProjects({ lookup: "all" });
+    return this.get({ lookup: "all" });
   }
   async findById(arg: { id: string }): Promise<ProjectInterface | null> {
-    return this.#getProjects({ lookup: "byId", id: arg.id });
+    return this.get({ lookup: "byId", id: arg.id });
   }
-  async findByName(arg: { name: string }): Promise<ProjectInterface[]> {
-    return this.#getProjects({ lookup: "byName", name: arg.name });
+  async findByName(arg: { name: string }): Promise<ProjectInterface | null> {
+    return this.get({ lookup: "byName", name: arg.name });
   }
 
   async add(project: MakeProject_Argument): Promise<ProjectInterface> {
@@ -53,7 +53,8 @@ export default class ProjectService {
     const { body } = (await this.#client.request({
       url: this.#url,
       method: "patch",
-      body: { id, changes },
+      query: { id },
+      body: { changes },
     })) as any;
 
     if (!body.success) throw body.error;
@@ -71,7 +72,7 @@ export default class ProjectService {
     return body.data;
   }
 
-  async #getProjects(query: GetProjectQuery) {
+  async get(query: GetProjectQuery) {
     const { body } = (await this.#client.request({
       query,
       method: "get",

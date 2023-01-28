@@ -1,17 +1,14 @@
-import {
-  getCategoryById,
-  getCategoryByName,
-  printCategoriesAsTable,
-} from "cli/util/category";
 import EPP from "common/util/epp";
 import { Option } from "commander";
 import { Client } from "express-ipc";
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
-import { getProject } from "cli/util/project";
-import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 import { isEmptyObject } from "common/util/other";
+import ProjectService from "client/services/project";
+import CategoryService from "client/services/category";
+import { printCategoriesAsTable } from "cli/util/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 
 export function addTimerStartCommand(program: Command) {
   program
@@ -103,24 +100,35 @@ async function makeStartCommand(
   if ("duration" in options) startCommand.arg!.duration = options.duration;
 
   if ("category" in options) {
+    const categoryService = new CategoryService({
+      client,
+      url: config.API_CATEGORY_PATH,
+    });
+
     if ("id" in options) {
       const { id } = options;
-      const category = await getCategoryById({
-        id,
-        client,
-        throwIfNotFound: true,
-      });
+
+      const category = await categoryService.findById({ id });
+
+      if (!category)
+        throw new EPP({
+          code: "NOT_FOUND",
+          message: `No category found with the id: "${id}"`,
+        });
 
       startCommand.arg!.ref = { type: "category", id, name: category.name };
       return startCommand;
     }
 
     const { name } = options;
-    const categories = await getCategoryByName({
-      name,
-      client,
-      throwIfNotFound: true,
-    });
+
+    const categories = await categoryService.findByName({ name });
+
+    if (!categories.length)
+      throw new EPP({
+        code: "NOT_FOUND",
+        message: `No category found with the name: "${name}"`,
+      });
 
     if (categories.length > 1) {
       printCategoriesAsTable(categories);
@@ -140,14 +148,24 @@ async function makeStartCommand(
     return startCommand;
   }
 
-  // so, now the ref type is project
-  const nameOrId =
-    "id" in options ? { id: options.id } : { name: (<any>options).name };
-  const project = await getProject({
+  const projectService = new ProjectService({
     client,
-    ...nameOrId,
-    throwIfNotFound: true,
+    url: config.API_PROJECT_PATH,
   });
+
+  const project =
+    "id" in options
+      ? await projectService.findById({ id: options.id })
+      : await projectService.findByName({ name: (<any>options).name });
+
+  if (!project) {
+    let message = "No project found with the";
+    message +=
+      "id" in options
+        ? ` id: "${options.id}".`
+        : ` name: "${(<any>options).name}"`;
+    throw new EPP({ code: "NOT_FOUND", message });
+  }
 
   startCommand.arg!.ref = {
     id: project.id,
