@@ -38,7 +38,7 @@ export default class CategoryService {
   async findAll(): Promise<CategoryInterface[]> {
     return this.#get({ lookup: "all" });
   }
-  async findById(arg: { id: string }): Promise<CategoryInterface[]> {
+  async findById(arg: { id: string }): Promise<CategoryInterface | null> {
     return this.#get({ lookup: "selfById", id: arg.id });
   }
   async findByName(arg: { name: string }): Promise<CategoryInterface[]> {
@@ -51,7 +51,7 @@ export default class CategoryService {
     return this.#get({ lookup: "children", id: arg.id });
   }
 
-  async add(category: MakeCategory_Argument) {
+  async add(category: MakeCategory_Argument): Promise<CategoryInterface> {
     const { body } = (await this.#client.request({
       body: category,
       method: "post",
@@ -62,7 +62,7 @@ export default class CategoryService {
     return body.data;
   }
 
-  async edit(arg: EditCategory_Argument) {
+  async edit(arg: EditCategory_Argument): Promise<CategoryInterface> {
     const { id, changes } = arg;
     const { body } = (await this.#client.request({
       url: this.#url,
@@ -74,7 +74,7 @@ export default class CategoryService {
     return body.data;
   }
 
-  async #get(query: GetCategoryQuery): Promise<CategoryInterface[]> {
+  async #get(query: GetCategoryQuery) {
     const { body } = (await this.#client.request({
       query,
       method: "get",

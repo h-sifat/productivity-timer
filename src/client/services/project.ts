@@ -11,6 +11,8 @@ export interface ProjectService_Argument {
   client: Client;
 }
 
+export type ProjectInterface = Writable<ProjectFields>;
+
 type GetProjectQuery =
   | { lookup: "all" }
   | { lookup: "byId"; id: string }
@@ -25,17 +27,17 @@ export default class ProjectService {
     this.#url = arg.url;
   }
 
-  async findAll(): Promise<Writable<ProjectFields>[]> {
+  async findAll(): Promise<ProjectInterface[]> {
     return this.#getProjects({ lookup: "all" });
   }
-  async findById(arg: { id: string }): Promise<Writable<ProjectFields>[]> {
+  async findById(arg: { id: string }): Promise<ProjectInterface | null> {
     return this.#getProjects({ lookup: "byId", id: arg.id });
   }
-  async findByName(arg: { name: string }): Promise<Writable<ProjectFields>[]> {
+  async findByName(arg: { name: string }): Promise<ProjectInterface[]> {
     return this.#getProjects({ lookup: "byName", name: arg.name });
   }
 
-  async add(project: MakeProject_Argument) {
+  async add(project: MakeProject_Argument): Promise<ProjectInterface> {
     const { body } = (await this.#client.request({
       body: project,
       method: "post",
@@ -46,7 +48,7 @@ export default class ProjectService {
     return body.data;
   }
 
-  async edit(arg: EditProject_Argument) {
+  async edit(arg: EditProject_Argument): Promise<ProjectInterface> {
     const { id, changes } = arg;
     const { body } = (await this.#client.request({
       url: this.#url,
