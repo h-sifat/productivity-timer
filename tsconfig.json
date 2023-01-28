@@ -15,6 +15,7 @@
     "paths": {
       "cli/*": ["src/cli/*"],
       "tui/*": ["src/tui/*"],
+      "client/*": ["src/client/*"],
       "common/*": ["src/common/*"],
       "entities/*": ["src/entities/*"],
       "fixtures/*": ["tests/fixtures/*"],
