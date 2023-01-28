@@ -60,6 +60,17 @@ export default class ProjectService {
     return body.data;
   }
 
+  async delete(arg: { id: string }): Promise<ProjectInterface> {
+    const { body } = (await this.#client.request({
+      url: this.#url,
+      method: "delete",
+      query: { id: arg.id },
+    })) as any;
+
+    if (!body.success) throw body.error;
+    return body.data;
+  }
+
   async #getProjects(query: GetProjectQuery) {
     const { body } = (await this.#client.request({
       query,

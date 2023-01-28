@@ -11,6 +11,7 @@ const validArgs: { [k: string]: any } = deepFreeze({
   add: { name: "a" },
   findAll: undefined,
   findById: { id: "a" },
+  delete: { id: "a" },
   findParents: { id: "a" },
   findChildren: { id: "a" },
   findByName: { name: "a" },
@@ -67,7 +68,11 @@ describe("Functionality", () => {
         query: { lookup: "selfById", id: "a" },
       },
     },
-
+    {
+      serviceMethod: "delete",
+      arg: { id: "a" },
+      requestArg: { method: "delete", url, query: { id: "a" } },
+    },
     {
       serviceMethod: "findParents",
       arg: { id: "a" },

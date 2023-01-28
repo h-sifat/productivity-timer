@@ -74,6 +74,17 @@ export default class CategoryService {
     return body.data;
   }
 
+  async delete(arg: { id: string }): Promise<CategoryInterface[]> {
+    const { body } = (await this.#client.request({
+      url: this.#url,
+      method: "delete",
+      query: { id: arg.id },
+    })) as any;
+
+    if (!body.success) throw body.error;
+    return body.data;
+  }
+
   async #get(query: GetCategoryQuery) {
     const { body } = (await this.#client.request({
       query,
