@@ -1,4 +1,15 @@
 export const CLI_NAME = "pt";
+
+let appVersion = "0.0.0_default";
+
+try {
+  // as this __APP_VERSION__ is provided by webpack at bundle time, I'm having
+  // issues testing other codes that rely on this module.
+
+  // @ts-ignore
+  appVersion = __APP_VERSION__;
+} catch {}
+
 export const API_AND_SERVER_CONFIG = {
   API_APP_PATH: "/app",
   API_TIMER_PATH: "/timer",
@@ -10,5 +21,5 @@ export const API_AND_SERVER_CONFIG = {
 
   // server
   SERVER_NAMESPACE: "pt_by_sifat",
-  SERVER_ID: "v" + __APP_VERSION__,
+  SERVER_ID: "v" + appVersion,
 };
