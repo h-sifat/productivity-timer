@@ -110,7 +110,7 @@ export class CategoryTreeComponent {
     });
 
     this.#wrapper.key("o", () => {
-      const selectedId = this.selected?.id;
+      const selectedId: any = this.selected?.id;
 
       if (this.#foldedCategoryIds.has(selectedId))
         this.#foldedCategoryIds.delete(selectedId);
@@ -122,11 +122,6 @@ export class CategoryTreeComponent {
     this.#wrapper.key("enter", () => {
       this.#onSelect({ index: this.#cursorIndex, category: this.selected });
     });
-  }
-
-  get selected() {
-    const selectedId = this.#treeLineObjects[this.#cursorIndex].id;
-    return this.#categories[selectedId] || null;
   }
 
   moveCursor(arg: { offset: number; renderScreen: boolean }) {
@@ -145,22 +140,30 @@ export class CategoryTreeComponent {
 
     this.#onCursorMove({ index: this.#cursorIndex, category: this.selected });
   }
-
-  get element() {
-    return this.#wrapper;
-  }
-
-  #renderListItems(arg: { renderScreen: boolean }) {
+  #renderListItems(arg: {
+    renderScreen: boolean;
+    selectedId?: string | undefined;
+  }) {
     this.#treeLineObjects = getTreeLines({
       folded: this.#foldedCategoryIds,
       rootBranch: buildCategoryTree(Object.values(this.#categories)),
     });
 
-    const treeLines = this.#treeLineObjects.map(({ line, id }, lineIndex) =>
-      lineIndex ? `${line} {grey-fg}(${id}){/}` : line
-    );
+    {
+      const treeLines = this.#treeLineObjects.map(({ line, id }, lineIndex) =>
+        lineIndex ? `${line} {grey-fg}(${id}){/}` : line
+      );
 
-    this.#listElement.setItems(treeLines as any);
+      this.#listElement.setItems(treeLines as any);
+    }
+
+    // try to move the cursor on the selected category
+    {
+      const newIndex = this.#treeLineObjects.findIndex(
+        ({ id }) => id === arg.selectedId
+      );
+      this.#cursorIndex = newIndex === -1 ? 0 : newIndex;
+    }
 
     // @ts-expect-error undocumented feature
     this.#listElement.enterSelected(this.#cursorIndex);
@@ -169,17 +172,30 @@ export class CategoryTreeComponent {
   }
 
   set categories(categories: CategoryFields[]) {
+    const previouslySelectedId = this.selected?.id;
+
     this.#categories = categories.reduce((idToCategoryMap, category) => {
       idToCategoryMap[category.id] = Object.freeze({ ...category });
       return idToCategoryMap;
     }, {} as any);
 
-    this.#cursorIndex = 0;
+    this.#renderListItems({
+      renderScreen: false,
+      selectedId: previouslySelectedId,
+    });
 
-    this.#renderListItems({ renderScreen: false });
     this.#onCursorMove({ category: this.selected, index: this.#cursorIndex });
 
     if (this.#wrapper.parent) this.#renderScreen();
+  }
+
+  get selected() {
+    const lineObject = this.#treeLineObjects[this.#cursorIndex];
+    return lineObject ? this.#categories[lineObject.id] : null;
+  }
+
+  get element() {
+    return this.#wrapper;
   }
 
   set onSelect(onSelect: OnSelect) {
