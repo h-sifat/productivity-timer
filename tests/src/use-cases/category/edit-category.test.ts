@@ -1,19 +1,26 @@
 import getID from "src/data-access/id";
 import Category from "entities/category";
 import makeEditCategory from "use-cases/category/edit-category";
+import { deepFreeze } from "common/util/other";
 
 const db = Object.freeze({
   findById: jest.fn(),
   updateById: jest.fn(),
 });
 const dbMethodsCount = Object.keys(db).length;
+const sideEffect = jest.fn();
 
 const Id = getID({ entity: "category" });
 
-const editCategory = makeEditCategory({ db, isValidId: Id.isValid });
+const editCategory = makeEditCategory({
+  db,
+  sideEffect,
+  isValidId: Id.isValid,
+});
 
 beforeEach(async () => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Validation", () => {
@@ -190,10 +197,10 @@ describe("Validation", () => {
 
 describe("Functionality", () => {
   it("edits a category if everything is valid", async () => {
-    const category = {
+    const category = deepFreeze({
       ...Category.make({ name: "a" }),
       // createdAt: 100,
-    };
+    });
 
     expect(category.description).toBeNull();
 
@@ -229,6 +236,12 @@ describe("Functionality", () => {
     expect(db.updateById).toHaveBeenCalledWith({
       id: category.id,
       edited: editedCategory,
+    });
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledWith({
+      original: category,
+      updated: editedCategory,
     });
   });
 });

@@ -1,3 +1,4 @@
+import type { CategoryFields } from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 // end of type imports
@@ -10,11 +11,12 @@ import required from "common/util/required";
 
 interface MakeAddCategory_Argument {
   db: Pick<CategoryDatabaseInterface, "findByHash" | "findById" | "insert">;
+  sideEffect?: (category: CategoryFields) => void;
 }
 export default function makeAddCategory(
-  arg: MakeAddCategory_Argument
+  factoryArg: MakeAddCategory_Argument
 ): CategoryServiceInterface["addCategory"] {
-  const { db } = arg;
+  const { db } = factoryArg;
 
   return async function addCategory(arg) {
     assert("plain_object", arg, {
@@ -52,6 +54,9 @@ export default function makeAddCategory(
     }
 
     await db.insert(insertingCategory);
+
+    if (factoryArg.sideEffect) factoryArg.sideEffect(insertingCategory);
+
     return insertingCategory;
   };
 }

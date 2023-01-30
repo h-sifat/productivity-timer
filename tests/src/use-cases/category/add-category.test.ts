@@ -7,11 +7,13 @@ const db = Object.freeze({
   findByHash: jest.fn(),
 });
 const dbMethodsCount = Object.keys(db).length;
+const sideEffect = jest.fn();
 
-const addCategory = makeAddCategory({ db });
+const addCategory = makeAddCategory({ db, sideEffect });
 
 beforeEach(async () => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Validation", () => {
@@ -72,6 +74,9 @@ describe("Insertion", () => {
 
     expect(db.insert).toHaveBeenCalledWith(inserted);
     expect(db.findByHash).toHaveBeenCalledWith({ hash: inserted.hash });
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledWith(inserted);
   });
 
   it("throws error if category info is invalid", async () => {
