@@ -12,6 +12,13 @@ import type { Controller } from "../interface";
 import type { TimerRefWithName } from "./interface";
 import { TimerStateNames } from "src/countdown-timer/timer";
 
+export interface TimerCommandResponsePayload {
+  message: string;
+  state: TimerStateNames;
+  ref: TimerRefWithName | null;
+  timeInfo: TimeInfo<TimerRefWithName> | null;
+}
+
 export interface makePostCommand_Argument {
   DEFAULT_TIMER_DURATION: number;
   speaker: Speaker;
@@ -29,6 +36,15 @@ export interface makePostCommand_Argument {
     | "setDuration"
   >;
 }
+
+export type TimerCommandNames =
+  | "end"
+  | "info"
+  | "pause"
+  | "reset"
+  | "start"
+  | "timeInfo"
+  | "setDuration";
 
 export function makePostTimerCommand(
   factoryArg: makePostCommand_Argument
@@ -224,7 +240,12 @@ export function makePostTimerCommand(
       if (result.isMethodCallResult) {
         const { callResult, ref = null, timeInfo = null, state } = result.data;
         const { success, message } = callResult;
-        const payload = { message, ref, timeInfo, state };
+        const payload: TimerCommandResponsePayload = {
+          ref,
+          state,
+          message,
+          timeInfo,
+        };
 
         return success
           ? { body: { success: true, data: payload } }
