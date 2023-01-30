@@ -116,7 +116,7 @@ export class CategoryTreeComponent {
         this.#foldedCategoryIds.delete(selectedId);
       else this.#foldedCategoryIds.add(selectedId);
 
-      this.#renderListItems({ renderScreen: true });
+      this.#renderListItems({ renderScreen: true, selectedId });
     });
 
     this.#wrapper.key("enter", () => {
