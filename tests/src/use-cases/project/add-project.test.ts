@@ -6,11 +6,13 @@ const db = Object.freeze({
   insert: jest.fn(),
 });
 const dbMethodsCount = Object.keys(db).length;
+const sideEffect = jest.fn();
 
-const addProject = makeAddProject({ db });
+const addProject = makeAddProject({ db, sideEffect });
 
 beforeEach(() => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Validation", () => {
@@ -101,7 +103,7 @@ describe("Functionality", () => {
 
     db.findByName.mockResolvedValueOnce(null);
 
-    await addProject({ projectInfo });
+    const insertedProject = await addProject({ projectInfo });
 
     expect(db.findByName).toHaveBeenCalledTimes(1);
     expect(db.insert).toHaveBeenCalledTimes(1);
@@ -110,5 +112,8 @@ describe("Functionality", () => {
 
     // @ts-ignore I don't know why it says lastCall doesn't exists!
     expect(db.insert.mock.lastCall[0]).toMatchObject(projectInfo);
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledWith(insertedProject);
   });
 });

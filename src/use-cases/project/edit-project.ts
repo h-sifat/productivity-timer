@@ -6,10 +6,15 @@ import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import Project from "entities/project";
 import required from "common/util/required";
+import { ProjectFields } from "entities/project/project";
 
 interface MakeEditProject_Argument {
   isValidId: ID["isValid"];
   db: Pick<ProjectDatabaseInterface, "findById" | "updateById">;
+  sideEffect?: (arg: {
+    original: ProjectFields;
+    updated: ProjectFields;
+  }) => void;
 }
 
 export default function makeEditProject(
@@ -42,6 +47,9 @@ export default function makeEditProject(
     {
       const editedProject = Project.edit({ project, changes });
       await db.updateById({ id, edited: editedProject });
+
+      if (builderArg.sideEffect)
+        builderArg.sideEffect({ original: project, updated: editedProject });
 
       return editedProject;
     }

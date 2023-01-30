@@ -7,11 +7,13 @@ const db = Object.freeze({
   updateById: jest.fn(),
 });
 const dbMethodsCount = Object.keys(db).length;
+const sideEffect = jest.fn();
 
-const editProject = makeEditProject({ isValidId, db });
+const editProject = makeEditProject({ isValidId, db, sideEffect });
 
 beforeEach(() => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Validation", () => {
@@ -144,8 +146,6 @@ describe("Functionality", () => {
       deadline: sampleProject.createdAt + 2423456241,
     } as const;
 
-    const editProject = makeEditProject({ isValidId, db });
-
     const editedProject = await editProject({
       id: sampleProject.id,
       changes: edits,
@@ -160,6 +160,12 @@ describe("Functionality", () => {
     expect(db.updateById).toHaveBeenCalledWith({
       id: sampleProject.id,
       edited: { ...sampleProject, ...edits },
+    });
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(sideEffect).toHaveBeenCalledWith({
+      original: sampleProject,
+      updated: editedProject,
     });
   });
 });
