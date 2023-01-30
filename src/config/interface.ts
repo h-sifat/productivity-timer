@@ -44,7 +44,10 @@ export interface ConfigInterface {
   API_CATEGORY_PATH: string;
   API_META_INFO_PATH: string;
   API_WORK_SESSION_PATH: string;
+
   TIMER_BROADCAST_CHANNEL: string;
+  PROJECT_BROADCAST_CHANNEL: string;
+  CATEGORY_BROADCAST_CHANNEL: string;
 
   // server
   SERVER_ID: string;

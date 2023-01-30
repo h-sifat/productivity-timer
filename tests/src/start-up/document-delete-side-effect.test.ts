@@ -5,13 +5,21 @@ const timer = Object.seal({
   reset: jest.fn(),
 });
 
+const fakeServer: any = Object.freeze({
+  broadcast: jest.fn(),
+});
+
 const projectDeleteSideEffect = makeDocumentDeleteSideEffect({
   timer,
+  server: fakeServer,
   documentType: "project",
+  broadcastChannel: "project",
 });
 const categoryDeleteSideEffect = makeDocumentDeleteSideEffect({
   timer,
+  server: fakeServer,
   documentType: "category",
+  broadcastChannel: "category",
 });
 
 const sampleCategory = Object.freeze({ name: "A", id: "1" });

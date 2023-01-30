@@ -14,16 +14,18 @@ import { configureApplication } from "./configure";
 import CountDownTimer from "./countdown-timer/timer";
 import { makeControllers } from "./make-controllers";
 import { makeAppControllers } from "./controllers/app";
+import { makeBackupDatabase } from "data-access/backup";
 import { makeExpressIPCMiddleware } from "./server/util";
 import { addDatabaseEventListeners } from "./start-up/db";
 import { makeTimerController } from "./controllers/timer";
+import { BackupManager } from "data-access/backup-manager";
 import type { TimerInstance } from "./countdown-timer/type";
 import { setUpTimerEventListeners } from "./start-up/timer";
 import type { TimerRef } from "entities/work-session/work-session";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
-import { makeBackupDatabase } from "data-access/backup";
-import { BackupManager } from "data-access/backup-manager";
+import { BROADCAST_CHANNELS } from "./config/other";
+import { makeServiceSideEffects } from "./start-up/make-side-effects";
 
 interface initApplication_Argument {
   log: Log;
@@ -43,6 +45,9 @@ async function initApplication(arg: initApplication_Argument) {
 
   const config = getConfig();
   const server = new Server();
+
+  server.createChannels(Object.values(BROADCAST_CHANNELS));
+
   let databases: AllDatabases;
   const speaker = new Speaker({
     mPlayerPath: config.MPLAYER_PATH,
@@ -147,15 +152,29 @@ async function initApplication(arg: initApplication_Argument) {
     databases,
     sideEffects: {
       category: {
+        ...makeServiceSideEffects({
+          server,
+          methods: ["post", "patch"],
+          channel: BROADCAST_CHANNELS.CATEGORY_BROADCAST_CHANNEL,
+        }),
         delete: makeDocumentDeleteSideEffect({
           timer,
+          server,
           documentType: "category",
+          broadcastChannel: BROADCAST_CHANNELS.CATEGORY_BROADCAST_CHANNEL,
         }),
       },
       project: {
+        ...makeServiceSideEffects({
+          channel: BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL,
+          server,
+          methods: ["post", "patch"],
+        }),
         delete: makeDocumentDeleteSideEffect({
           timer,
+          server,
           documentType: "project",
+          broadcastChannel: BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL,
         }),
       },
     },

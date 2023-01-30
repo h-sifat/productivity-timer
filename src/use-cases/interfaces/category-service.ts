@@ -35,3 +35,9 @@ export type CategoryDeleteSideEffect = (arg: {
   id: string;
   deleted: CategoryFields[];
 }) => Promise<void>;
+
+export type CategoryAddSideEffect = (category: CategoryFields) => void;
+export type CategoryEditSideEffect = (arg: {
+  original: CategoryFields;
+  updated: CategoryFields;
+}) => void;

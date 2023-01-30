@@ -5,9 +5,17 @@ import { makeMetaInformationService } from "use-cases/meta";
 
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import type { ProjectDeleteSideEffect } from "use-cases/interfaces/project-service";
+import type {
+  ProjectAddSideEffect,
+  ProjectDeleteSideEffect,
+  ProjectEditSideEffect,
+} from "use-cases/interfaces/project-service";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
-import type { CategoryDeleteSideEffect } from "use-cases/interfaces/category-service";
+import type {
+  CategoryAddSideEffect,
+  CategoryDeleteSideEffect,
+  CategoryEditSideEffect,
+} from "use-cases/interfaces/category-service";
 import type { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
 export interface makeServices_Argument {
@@ -19,9 +27,13 @@ export interface makeServices_Argument {
   };
   sideEffects: {
     category: {
+      post?: CategoryAddSideEffect | undefined;
+      patch?: CategoryEditSideEffect | undefined;
       delete: CategoryDeleteSideEffect;
     };
     project: {
+      post?: ProjectAddSideEffect | undefined;
+      patch?: ProjectEditSideEffect | undefined;
       delete: ProjectDeleteSideEffect;
     };
   };
@@ -32,10 +44,16 @@ export function makeServices(factoryArg: makeServices_Argument) {
 
   const project = makeProjectService({
     db: databases.project,
+
+    postSideEffect: sideEffects.project.post,
+    patchSideEffect: sideEffects.project.patch,
     deleteSideEffect: sideEffects.project.delete,
   });
   const category = makeCategoryService({
     database: databases.category,
+
+    postSideEffect: sideEffects.category.post,
+    patchSideEffect: sideEffects.category.patch,
     deleteSideEffect: sideEffects.category.delete,
   });
   const workSession = makeWorkSessionService({

@@ -32,3 +32,9 @@ export type ProjectDeleteSideEffect = (arg: {
   id: string;
   deleted: ProjectFields[];
 }) => Promise<void>;
+
+export type ProjectAddSideEffect = (project: ProjectFields) => void;
+export type ProjectEditSideEffect = (arg: {
+  original: ProjectFields;
+  updated: ProjectFields;
+}) => void;

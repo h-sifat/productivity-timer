@@ -1,7 +1,10 @@
 import type { ID } from "common/interfaces/id";
-import type { CategoryFields, Edit_Argument } from "entities/category/category";
+import type { Edit_Argument } from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
+import type {
+  CategoryEditSideEffect,
+  CategoryServiceInterface,
+} from "use-cases/interfaces/category-service";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
@@ -12,10 +15,7 @@ import { FIELDS_ALLOWED_TO_CHANGE } from "entities/category/category";
 export interface MakeEditCategory_Argument {
   isValidId: ID["isValid"];
   db: Pick<CategoryDatabaseInterface, "findById" | "updateById">;
-  sideEffect?: (arg: {
-    original: CategoryFields;
-    updated: CategoryFields;
-  }) => void;
+  sideEffect?: CategoryEditSideEffect | undefined;
 }
 
 export default function makeEditCategory(

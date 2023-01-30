@@ -1,6 +1,8 @@
-import type { CategoryFields } from "entities/category/category";
+import type {
+  CategoryAddSideEffect,
+  CategoryServiceInterface,
+} from "use-cases/interfaces/category-service";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
-import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
 // end of type imports
 
 import EPP from "common/util/epp";
@@ -11,7 +13,7 @@ import required from "common/util/required";
 
 interface MakeAddCategory_Argument {
   db: Pick<CategoryDatabaseInterface, "findByHash" | "findById" | "insert">;
-  sideEffect?: (category: CategoryFields) => void;
+  sideEffect?: CategoryAddSideEffect | undefined;
 }
 export default function makeAddCategory(
   factoryArg: MakeAddCategory_Argument

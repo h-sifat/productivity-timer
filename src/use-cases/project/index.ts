@@ -1,4 +1,6 @@
 import type {
+  ProjectAddSideEffect,
+  ProjectEditSideEffect,
   ProjectDeleteSideEffect,
   ProjectServiceInterface,
 } from "use-cases/interfaces/project-service";
@@ -15,12 +17,14 @@ import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 interface MakeProjectService_Argument {
   db: ProjectDatabaseInterface;
   deleteSideEffect: ProjectDeleteSideEffect;
+  postSideEffect?: ProjectAddSideEffect | undefined;
+  patchSideEffect?: ProjectEditSideEffect | undefined;
 }
 
 export default function makeProjectService(
   arg: MakeProjectService_Argument
 ): ProjectServiceInterface {
-  const { db, deleteSideEffect } = arg;
+  const { db, deleteSideEffect, postSideEffect, patchSideEffect } = arg;
   const Id = getID({ entity: "project" });
   const isValidId = Id.isValid;
 
@@ -30,11 +34,16 @@ export default function makeProjectService(
       isValidId,
       sideEffect: deleteSideEffect,
     }),
-    addProject: makeAddProject({ db }),
+    addProject: makeAddProject({ db, sideEffect: postSideEffect }),
+    editProject: makeEditProject({
+      db,
+      isValidId,
+      sideEffect: patchSideEffect,
+    }),
+
     getMaxId: makeGetProjectMaxId({ db }),
     listProjects: makeListProjects({ db }),
     findByName: makeFindByName({ database: db }),
-    editProject: makeEditProject({ db, isValidId }),
     getProjectById: makeGetProject({ db, isValidId }),
   });
 

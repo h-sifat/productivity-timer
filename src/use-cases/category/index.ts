@@ -8,21 +8,31 @@ import makeRemoveCategory from "./remove-category";
 import makeGetCategoryById from "./get-category-by-id";
 import makeListSubCategories from "./list-sub-categories";
 import makeListParentCategories from "./list-parent-categories";
-import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+
 import type {
+  CategoryAddSideEffect,
+  CategoryEditSideEffect,
   CategoryDeleteSideEffect,
   CategoryServiceInterface,
 } from "use-cases/interfaces/category-service";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 
 export interface MakeCategoryService_Argument {
   database: CategoryDatabaseInterface;
   deleteSideEffect: CategoryDeleteSideEffect;
+  postSideEffect?: CategoryAddSideEffect | undefined;
+  patchSideEffect?: CategoryEditSideEffect | undefined;
 }
 
 export default function makeCategoryService(
   builderArg: MakeCategoryService_Argument
 ): CategoryServiceInterface {
-  const { database: db, deleteSideEffect } = builderArg;
+  const {
+    database: db,
+    postSideEffect,
+    patchSideEffect,
+    deleteSideEffect,
+  } = builderArg;
   const Id = getID({ entity: "category" });
   const isValidId = Id.isValid;
 
@@ -32,13 +42,18 @@ export default function makeCategoryService(
       isValidId,
       sideEffect: deleteSideEffect,
     }),
-    addCategory: makeAddCategory({ db }),
+    editCategory: makeEditCategory({
+      db,
+      isValidId,
+      sideEffect: patchSideEffect,
+    }),
+
     getMaxId: makeGetCategoryMaxId({ db }),
     listCategories: makeListCategories({ db }),
     findByName: makeFindByName({ database: db }),
-    editCategory: makeEditCategory({ db, isValidId }),
     getCategoryById: makeGetCategoryById({ db, isValidId }),
     listSubCategories: makeListSubCategories({ db, isValidId }),
+    addCategory: makeAddCategory({ db, sideEffect: postSideEffect }),
     listParentCategories: makeListParentCategories({ db, isValidId }),
   });
 

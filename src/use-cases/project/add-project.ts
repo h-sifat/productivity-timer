@@ -1,15 +1,17 @@
+import type {
+  ProjectAddSideEffect,
+  ProjectServiceInterface,
+} from "use-cases/interfaces/project-service";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import Project from "entities/project";
 import required from "common/util/required";
-import { ProjectFields } from "entities/project/project";
 
 interface MakeAddProject_Argument {
   db: Pick<ProjectDatabaseInterface, "findByName" | "insert">;
-  sideEffect?: (project: ProjectFields) => void;
+  sideEffect?: ProjectAddSideEffect | undefined;
 }
 
 export default function makeAddProject(

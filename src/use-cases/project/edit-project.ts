@@ -1,20 +1,19 @@
+import type {
+  ProjectEditSideEffect,
+  ProjectServiceInterface,
+} from "use-cases/interfaces/project-service";
 import type { ID } from "common/interfaces/id";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
 import Project from "entities/project";
 import required from "common/util/required";
-import { ProjectFields } from "entities/project/project";
 
 interface MakeEditProject_Argument {
   isValidId: ID["isValid"];
   db: Pick<ProjectDatabaseInterface, "findById" | "updateById">;
-  sideEffect?: (arg: {
-    original: ProjectFields;
-    updated: ProjectFields;
-  }) => void;
+  sideEffect?: ProjectEditSideEffect | undefined;
 }
 
 export default function makeEditProject(
