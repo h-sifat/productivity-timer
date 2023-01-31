@@ -4,6 +4,7 @@ import { addTimerInfoCommand } from "./info";
 import { addPauseTimerCommand } from "./pause";
 import { addResetTimerCommand } from "./reset";
 import { addTimerStartCommand } from "./start";
+import { addStartBreakTimerCommand } from "./break";
 import { addSetTimerDurationCommand } from "./set-duration";
 
 export function addTimerCommands(program: Command) {
@@ -12,5 +13,6 @@ export function addTimerCommands(program: Command) {
   addPauseTimerCommand(program);
   addResetTimerCommand(program);
   addTimerStartCommand(program);
+  addStartBreakTimerCommand(program);
   addSetTimerDurationCommand(program);
 }
