@@ -20,7 +20,7 @@ export interface TimerCommand_Arguments {
       type: "project" | "category";
     };
   };
-  reset: { hard?: boolean; duration?: number };
+  reset: { hardReset?: boolean; duration?: number };
   setDuration: { duration: number };
   startBreak: { duration: number };
 }
@@ -67,9 +67,9 @@ export class TimerService {
     command: TimerCommandNames;
   }): Promise<TimerCommandResponsePayload> {
     const { body } = (await this.#client.request({
-      body: arg,
       method: "post",
       url: this.#url,
+      body: { name: arg.command, arg: arg.arg },
     })) as any;
 
     if (!body.success) throw body.error;

@@ -73,7 +73,7 @@ describe("Error Handling", () => {
       expect(client.request).toHaveBeenCalledWith({
         url,
         method: "post",
-        body: { command, arg: commandArg },
+        body: { name: command, arg: commandArg },
       });
     }
   );
@@ -98,7 +98,7 @@ describe("Functionality", () => {
       expect(client.request).toHaveBeenCalledWith({
         url,
         method: "post",
-        body: { command, arg: commandArg },
+        body: { name: command, arg: commandArg },
       });
     }
   );
