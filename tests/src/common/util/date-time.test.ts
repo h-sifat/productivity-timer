@@ -5,6 +5,7 @@ import {
   isValidUnixMsTimestamp,
   MS_IN_ONE_HOUR,
   MS_IN_ONE_MINUTE,
+  parseDuration,
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
 
@@ -100,5 +101,38 @@ describe("formatDurationMsAsHMS", () => {
     },
   ])(`format($arg) => "$expected"`, ({ arg, expected }) => {
     expect(formatDurationMsAsHMS(arg)).toBe(expected);
+  });
+});
+
+fdescribe("parseDuration", () => {
+  describe("Validation", () => {
+    it.each(["20x", "1m20h", "1s2m", "1s2h", "234.234m", "-23m2s"])(
+      `invalid duration string: %p`,
+      (durationString) => {
+        expect(() => {
+          parseDuration(durationString);
+        }).toThrow(Error);
+      }
+    );
+  });
+
+  describe("Functionality", () => {
+    it.each([
+      { durationString: "20m", output: 20 * MS_IN_ONE_MINUTE },
+      { durationString: "20m1s", output: 20 * MS_IN_ONE_MINUTE + 1000 },
+      {
+        durationString: "1h20m1s",
+        output: MS_IN_ONE_HOUR + 20 * MS_IN_ONE_MINUTE + 1000,
+      },
+      { durationString: "1h1s", output: MS_IN_ONE_HOUR + 1000 },
+      { durationString: "1s", output: 1000 },
+      { durationString: "1h", output: MS_IN_ONE_HOUR },
+      { durationString: "1m", output: MS_IN_ONE_MINUTE },
+    ])(
+      `parseDuration("$durationString") => $output`,
+      ({ durationString, output }) => {
+        expect(parseDuration(durationString)).toBe(output);
+      }
+    );
   });
 });

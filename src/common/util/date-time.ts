@@ -138,3 +138,43 @@ export function formatDurationMsAsHMS(arg: {
   // e.g 11h 20m 21s
   return `${formatted.h}h ${formatted.m}m ${formatted.s}s`;
 }
+
+type shortDurationUnits = "h" | "m" | "s";
+
+const DURATION_PATTERN =
+  /(^(\d+h)?(\d+m)?(\d+s)$)|(^(\d+h)?(\d+m)(\d+s)?$)|(^(\d+h)(\d+m)?(\d+s)?$)/i;
+
+/**
+ * Converts duration strings like: 1h20m1s, 20m20s, 1h20s etc. to milliseconds.
+ * */
+export function parseDuration(durationString: string): number {
+  if (!DURATION_PATTERN.test(durationString))
+    throw new Error(
+      `Invalid duration format. Valid examples: 1h20m2s, 2m2s, 2h1m etc.`
+    );
+
+  const parsed = { h: 0, m: 0, s: 0 };
+
+  {
+    let startIndex = 0;
+    for (let index = 0; index < durationString.length; index++) {
+      const char = durationString[index];
+      if (!"hms".includes(char)) continue;
+
+      parsed[char as shortDurationUnits] = Number(
+        durationString.slice(startIndex, index)
+      );
+      startIndex = index + 1;
+    }
+  }
+
+  return Object.entries(parsed)
+    .map(([fromUnit, duration]) =>
+      convertDuration({
+        duration,
+        toUnit: "millisecond",
+        fromUnit: fromUnit as shortDurationUnits,
+      })
+    )
+    .reduce((a, c) => a + c);
+}
