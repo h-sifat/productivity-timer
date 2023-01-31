@@ -1,18 +1,19 @@
+import {
+  parseCliDurationArg,
+  durationOptionDescription,
+  printTimerMethodCallResult,
+} from "cli/util/timer";
+
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
 import { TimerService } from "client/services/timer";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
-import { durationParser, printTimerMethodCallResult } from "cli/util/timer";
 
 export function addSetTimerDurationCommand(program: Command) {
   program
     .command("set-duration")
     .description("Changes the timer duration while the timer is not running.")
-    .argument(
-      "<duration>",
-      "the timer duration of format `<number>{s|m|h}`. e.g., 10m, 1h etc.",
-      durationParser
-    )
+    .argument("<duration>", durationOptionDescription, parseCliDurationArg)
     .action(setDuration);
 }
 

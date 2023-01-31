@@ -1,10 +1,9 @@
-import { assert } from "handy-types";
 import { printObjectAsBox } from "./box";
 import { TimeInfo } from "src/countdown-timer/type";
-import { convertDuration } from "common/util/date-time";
 import { InvalidArgumentError, Option } from "commander";
 import { TimerStateNames } from "src/countdown-timer/timer";
 import { TimerRefWithName } from "src/controllers/timer/interface";
+import { convertDuration, parseDuration } from "common/util/date-time";
 
 const ONE_MINUTE_MS = convertDuration({
   duration: 1,
@@ -12,28 +11,23 @@ const ONE_MINUTE_MS = convertDuration({
   toUnit: "millisecond",
 });
 
-export const DurationOption = new Option(
-  "-d, --duration <number>{s|m|h}",
-  "specifies the timer duration. e.g., 10m, 1h etc."
-).argParser(durationParser);
-
-export function durationParser(value: any) {
-  const durationWithUnit = String(value);
-
-  if (!/^\d+[hms]$/.test(durationWithUnit))
-    throw new InvalidArgumentError(
-      "Invalid duration. Valid examples: 1h, 20m, 50s etc."
-    );
-
-  const unit = durationWithUnit.slice(-1) as "h" | "m" | "s";
-  const duration = Number(durationWithUnit.slice(0, -1));
-
-  assert<number>("positive_integer", duration, {
-    name: "duration",
-  });
-
-  return convertDuration({ duration, fromUnit: unit, toUnit: "millisecond" });
+export function parseCliDurationArg(durationString: string): number {
+  try {
+    const duration = parseDuration(durationString);
+    if (!duration)
+      throw new InvalidArgumentError("Timer duration must be non-zero!");
+    return duration;
+  } catch (ex) {
+    throw new InvalidArgumentError(ex.message);
+  }
 }
+
+export const durationOptionDescription =
+  "timer duration. e.g., 10s, 10m, 1h, 1h20m, 20m20s, 1h20m2s etc.";
+export const DurationOption = new Option(
+  "-d, --duration <duration-string>",
+  durationOptionDescription
+).argParser(parseCliDurationArg);
 
 export interface printTimer_Arg {
   message?: string;
