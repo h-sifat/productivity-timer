@@ -3,13 +3,7 @@ import { TimeInfo } from "src/countdown-timer/type";
 import { InvalidArgumentError, Option } from "commander";
 import { TimerStateNames } from "src/countdown-timer/timer";
 import { TimerRefWithName } from "src/controllers/timer/interface";
-import { convertDuration, parseDuration } from "common/util/date-time";
-
-const ONE_MINUTE_MS = convertDuration({
-  duration: 1,
-  fromUnit: "minute",
-  toUnit: "millisecond",
-});
+import { parseDuration, formatDurationMsAsHMS } from "common/util/date-time";
 
 export function parseCliDurationArg(durationString: string): number {
   try {
@@ -57,10 +51,9 @@ export function printTimerMethodCallResult(arg: printTimer_Arg) {
   printObjectAsBox({ object: info, title, useColors: false });
 }
 
-export function formatDuration(duration: number) {
-  const fromUnit = "ms";
-  const toUnit = duration < ONE_MINUTE_MS ? "s" : "m";
+function formatDuration(durationMs: number): string {
+  if (!durationMs) return "0s";
 
-  const converted = convertDuration({ duration, fromUnit, toUnit });
-  return `${Math.floor(converted)}${toUnit}`;
+  const formatted = formatDurationMsAsHMS({ duration: durationMs });
+  return formatted.replace(/00[hms] ?/g, "");
 }
