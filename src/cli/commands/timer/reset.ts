@@ -1,7 +1,8 @@
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
-import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
+import { TimerService } from "client/services/timer";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 
 export function addResetTimerCommand(program: Command) {
   program
@@ -13,20 +14,18 @@ export function addResetTimerCommand(program: Command) {
 }
 
 interface resetTimer_Options {
-  hard?: boolean;
   duration?: number;
+  hardReset?: boolean;
 }
 
 export async function resetTimer(options: resetTimer_Options) {
   await withClient(async (client) => {
-    const { body } = (await client.post(config.API_TIMER_PATH, {
-      query: {},
-      headers: {},
-      body: { name: "reset", arg: options },
-    })) as any;
+    const timerService = new TimerService({
+      client,
+      url: config.API_TIMER_PATH,
+    });
 
-    if (!body.success) throw body.error;
-
-    printTimerMethodCallResult(body.data);
+    const data = await timerService.reset(options);
+    printTimerMethodCallResult(data);
   });
 }

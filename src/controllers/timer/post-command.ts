@@ -16,7 +16,7 @@ export interface TimerCommandResponsePayload {
   message: string;
   state: TimerStateNames;
   ref: TimerRefWithName | null;
-  timeInfo: TimeInfo<TimerRefWithName> | null;
+  timeInfo: TimeInfo<TimerRefWithName>;
 }
 
 export interface makePostCommand_Argument {
@@ -130,7 +130,7 @@ export function makePostTimerCommand(
               state: TimerStateNames;
               ref?: TimerRefWithName | null;
               callResult: TimerMethodCallResult;
-              timeInfo?: TimeInfo<TimerRefWithName>;
+              timeInfo: TimeInfo<TimerRefWithName>;
             };
           }
         | { isMethodCallResult: false; data: any };
@@ -238,7 +238,7 @@ export function makePostTimerCommand(
       }
 
       if (result.isMethodCallResult) {
-        const { callResult, ref = null, timeInfo = null, state } = result.data;
+        const { callResult, ref = null, timeInfo, state } = result.data;
         const { success, message } = callResult;
         const payload: TimerCommandResponsePayload = {
           ref,

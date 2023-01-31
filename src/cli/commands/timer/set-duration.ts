@@ -1,11 +1,8 @@
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
-import {
-  DurationOption,
-  durationParser,
-  printTimerMethodCallResult,
-} from "cli/util/timer";
+import { TimerService } from "client/services/timer";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { durationParser, printTimerMethodCallResult } from "cli/util/timer";
 
 export function addSetTimerDurationCommand(program: Command) {
   program
@@ -21,14 +18,12 @@ export function addSetTimerDurationCommand(program: Command) {
 
 async function setDuration(duration: number) {
   await withClient(async (client) => {
-    const { body } = (await client.post(config.API_TIMER_PATH, {
-      query: {},
-      headers: {},
-      body: { name: "setDuration", arg: { duration } },
-    })) as any;
+    const timerService = new TimerService({
+      client,
+      url: config.API_TIMER_PATH,
+    });
 
-    if (!body.success) throw body.error;
-
-    printTimerMethodCallResult(body.data);
+    const data = await timerService.setDuration({ duration });
+    printTimerMethodCallResult(data);
   });
 }

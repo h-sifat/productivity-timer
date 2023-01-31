@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { withClient } from "cli/util/client";
+import { TimerService } from "client/services/timer";
 import { printTimerMethodCallResult } from "cli/util/timer";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
@@ -12,14 +13,12 @@ export function addEndTimerCommand(program: Command) {
 
 async function endTimer() {
   await withClient(async (client) => {
-    const { body } = (await client.post(config.API_TIMER_PATH, {
-      query: {},
-      headers: {},
-      body: { name: "end" },
-    })) as any;
+    const timerService = new TimerService({
+      client,
+      url: config.API_TIMER_PATH,
+    });
 
-    if (!body.success) throw body.error;
-
-    printTimerMethodCallResult(body.data);
+    const data = await timerService.end();
+    printTimerMethodCallResult(data);
   });
 }
