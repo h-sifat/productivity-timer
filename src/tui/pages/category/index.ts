@@ -1,12 +1,10 @@
-import { pick } from "common/util/other";
 import { Form } from "tui/components/form";
 import { Page } from "tui/components/page";
 import { CategoryTreeComponent, OnSelect } from "./category-tree";
 import { unixMsTimestampToUsLocaleDateString } from "common/util/date-time";
 
-import type { Debug } from "tui/interface";
-import type { StoreInterface } from "tui/store";
 import type { Alert } from "tui/components/alert";
+import type { Debug, Message } from "tui/interface";
 import type CategoryService from "client/services/category";
 import type { CategoryFields } from "entities/category/category";
 
@@ -14,7 +12,6 @@ export interface createCategoryPage_Argument {
   alert: Alert;
   debug: Debug;
   renderScreen(): void;
-  store: StoreInterface;
   categoryService: CategoryService;
   prompt(message: string): Promise<boolean>;
 }
@@ -29,6 +26,17 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
     "description",
   ]);
 
+  /*
+   * After updating a category, I want to show the message
+   * "successfully edited ...". But the problem is, as soon as a category gets
+   * updated all the categories are refetched and reloaded in the tree with the
+   * loadCategories function. So, immediately replaces my message with the
+   * default form message. That's why I'm storing the message in this variable
+   * and resetting it to undefined after reload.
+   * */
+  let formMessage: Message | undefined;
+
+  // --------------------- Components ----------------------------------
   const categoryForm = new Form<CategoryFields>({
     border: true,
     renderScreen,
@@ -56,13 +64,18 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
     children: [categoryTreeComponent.element, categoryForm.element],
   });
 
+  // ----------------- Category Tree Event Handling ------------------------
   function handleCategoryChange({ category }: Parameters<OnSelect>[0]) {
     if (category) {
       categoryForm.update({
         formLabel: `[${category.name}]`,
         object: formatCategoryForForm(category),
-        message: { text: "Edit and submit to update.", type: "info" },
+        message: formMessage
+          ? formMessage
+          : { text: "Edit and submit to update.", type: "info" },
       });
+
+      formMessage = undefined;
       return;
     }
 
@@ -78,21 +91,6 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
     handleCategoryChange(arg);
     categoryForm.element.focus();
     renderScreen();
-  };
-
-  categoryForm.onSubmit = async ({ object: category }) => {
-    const filteredChanges = pick(category, ["name", "parentId", "description"]);
-
-    try {
-      if (category.id)
-        await arg.categoryService.edit({
-          id: category.id,
-          changes: filteredChanges,
-        });
-      else await arg.categoryService.add(filteredChanges as any);
-    } catch (ex) {
-      categoryForm.updateMessage({ text: ex.message, type: "error" });
-    }
   };
 
   categoryTreeComponent.element.key("S-a", () => {
@@ -123,6 +121,35 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
     }
   });
 
+  // ----------------- Category Form Event Handling ------------------------
+  categoryForm.onSubmit = async ({ object: category }) => {
+    const filteredChanges = ["name", "parentId", "description"].reduce(
+      (filtered, property) => {
+        const value: string = (<any>category)[property];
+        if (value.length) filtered[property] = value;
+        return filtered;
+      },
+      {} as any
+    );
+
+    try {
+      if (category.id) {
+        const editedCategory = await arg.categoryService.edit({
+          id: category.id,
+          changes: filteredChanges,
+        });
+
+        formMessage = {
+          type: "success",
+          text: `Successfully edited category "${editedCategory.name}"`,
+        };
+      } else await arg.categoryService.add(filteredChanges as any);
+    } catch (ex) {
+      categoryForm.updateMessage({ text: ex.message, type: "error" });
+    }
+  };
+
+  // --------------------- Other --------------------------
   function loadCategories(categories: CategoryFields[]) {
     categoryTreeComponent.categories = categories;
   }
@@ -135,6 +162,7 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
   });
 }
 
+// -------- Utility Functions ------------------------------------
 function formatCategoryForForm(category: CategoryFields) {
   let formatted: any = { ...category };
 
