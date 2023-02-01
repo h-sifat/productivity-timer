@@ -51,6 +51,7 @@ export class SuggestionsElement {
     if (wrapperHeight < 5) throw new Error(`The height must be >= 5`);
 
     this.#wrapperElement = blessed.box({
+      focusable: false,
       height: wrapperHeight,
       ...rest,
       // @ts-ignore
@@ -68,12 +69,13 @@ export class SuggestionsElement {
       this.#listElement = blessed.list({
         keys: false,
         mouse: false,
+        focusable: false,
         scrollable: true,
         height: listHeight,
-        items: suggestions.map(this.#suggestionFormatter),
         scrollbar: { ch: " " },
         parent: this.#wrapperElement,
         style: mergedListStyle as any,
+        items: suggestions.map(this.#suggestionFormatter),
       });
     }
 

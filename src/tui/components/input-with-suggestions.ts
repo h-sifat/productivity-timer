@@ -83,6 +83,7 @@ export class InputWithSuggestions {
       this.#inputElement.on("blur", () => {
         // remove the artificial cursor on blur
         this.setValue({ value: this.value, cursor: false });
+        this.#suggestionsElement.hide();
       });
     }
     {
