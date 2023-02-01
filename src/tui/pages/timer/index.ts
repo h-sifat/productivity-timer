@@ -1,26 +1,50 @@
 import blessed from "blessed";
+import { TimerForm } from "./timer-form";
+import { pick } from "common/util/other";
 import { Page } from "tui/components/page";
 import { TimerComponent } from "./timer-component";
-import { TimerForm, TimerForm_Argument } from "./timer-form";
+import { GetTimerFormSuggestions } from "./suggestions-provider";
 import { connectTimerEventsEmitterToTimerComponent } from "./util";
 import { createInstructionsBox } from "tui/components/instructions";
+import { MS_IN_ONE_MINUTE, parseDuration } from "common/util/date-time";
 
 import type {
-  TimerEventsEmitter,
-  CountDownTimer_TUI_Service,
-} from "./interface";
+  TimerService,
+  TimerCommand_Arguments,
+} from "client/services/timer";
+import type { TimerEventsEmitter } from "./interface";
 import type { BlessedKeyEvent, Debug } from "tui/interface";
 
+const SHORT_BREAK_DURATION = MS_IN_ONE_MINUTE * 5;
+const LONG_BREAK_DURATION = MS_IN_ONE_MINUTE * 15;
+
 const KeyBindings: {
-  [k: string]: { command: string; keyLabel: string; description: string };
+  [k: string]: {
+    arg?: any;
+    command: string;
+    keyLabel: string;
+    description: string;
+  };
 } = Object.entries({
   e: "end",
   c: "reset",
   p: "pause",
   s: "start",
   r: "restart",
-  b: { command: "info", keyLabel: "b", description: "stop beeping" },
+  b: {
+    keyLabel: "b",
+    command: "startBreak",
+    arg: { duration: SHORT_BREAK_DURATION },
+    description: `break (${SHORT_BREAK_DURATION / MS_IN_ONE_MINUTE}m)`,
+  },
+  "S-b": {
+    keyLabel: "shift-b",
+    command: "startBreak",
+    arg: { duration: LONG_BREAK_DURATION },
+    description: `break (${LONG_BREAK_DURATION / MS_IN_ONE_MINUTE}m)`,
+  },
   "S-s": { command: "start", keyLabel: "shift-s", description: "start new" },
+  m: { command: "getInfo", keyLabel: "m", description: "stop beeping" },
 
   // too lazy to implement another form
   // d: { command: "setDuration", keyLabel: "d", description: "change duration" },
@@ -38,9 +62,9 @@ const KeyBindings: {
 export interface createTimerPage_Argument {
   debug: Debug;
   renderScreen(): void;
+  CountDownTimerService: TimerService;
   timerEventsEmitter: TimerEventsEmitter;
-  CountDownTimerService: CountDownTimer_TUI_Service;
-  getRefInputSuggestions: TimerForm_Argument["getRefInputSuggestions"];
+  getTimerFormSuggestions: GetTimerFormSuggestions;
 }
 export function createTimerPage(arg: createTimerPage_Argument) {
   const { debug, renderScreen } = arg;
@@ -85,21 +109,43 @@ export function createTimerPage(arg: createTimerPage_Argument) {
     renderScreen,
     position: { top: 2 },
     dimension: { width: "90%" },
-    getRefInputSuggestions: arg.getRefInputSuggestions,
+    getRefInputSuggestions: arg.getTimerFormSuggestions,
   });
 
-  startNewTimerForm.onSubmit = async (startArg) => {
-    if (!startArg.duration && !startArg.ref) return;
+  wrapper.append(startNewTimerForm.element);
+  startNewTimerForm.element.hide();
+
+  startNewTimerForm.onSubmit = async (data) => {
+    const { duration, ref = null } = data;
+    if (!duration && !ref) return;
 
     try {
+      const startArg: TimerCommand_Arguments["start"] = { ref: null };
+      if (ref) {
+        const suggestions = arg.getTimerFormSuggestions(ref, {
+          exactMatch: true,
+        });
+        if (!suggestions.length)
+          throw new Error(
+            `No ${ref.type} found with ${ref.identifierType} "${ref.identifier}".`
+          );
+        else if (suggestions.length > 1)
+          throw new Error(`Ambiguous ${ref.identifierType}.`);
+
+        const projectOrCategory = suggestions[0];
+        startArg.ref = {
+          type: ref.type,
+          ...pick(projectOrCategory, ["name", "id"]),
+        };
+      }
+
+      if (duration) startArg.duration = parseDuration(duration);
+
       await arg.CountDownTimerService.start(startArg);
     } catch (ex) {
       timerComponent.setMessage({ text: ex.message, type: "error" });
     }
   };
-
-  wrapper.append(startNewTimerForm.element);
-  startNewTimerForm.element.hide();
 
   wrapper.on("keypress", async (_, key: BlessedKeyEvent) => {
     switch (key.full) {
@@ -109,14 +155,23 @@ export function createTimerPage(arg: createTimerPage_Argument) {
 
       default:
         if (!(key.full in KeyBindings)) return;
-        const command = KeyBindings[key.full].command;
+        const keyBinding = KeyBindings[key.full];
 
         try {
-          await arg.CountDownTimerService[command]();
+          await (<any>arg.CountDownTimerService)[keyBinding.command](
+            keyBinding.arg
+          );
         } catch (ex) {
           timerComponent.setMessage({ text: ex.message, type: "error" });
         }
     }
+  });
+
+  // if we come back to the timer page and the form is still open
+  // then focus the form element.
+  wrapper.on("focus", () => {
+    if (!startNewTimerForm.element.hidden) startNewTimerForm.element.focus();
+    renderScreen();
   });
 
   const timerPage = new Page({

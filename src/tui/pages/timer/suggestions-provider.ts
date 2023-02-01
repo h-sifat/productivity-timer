@@ -14,8 +14,14 @@ function getFuseOptions() {
   };
 }
 
-export type GetProjectById = (id: string) => ProjectFields | null;
-export type GetCategoryById = (id: string) => CategoryFields | null;
+function documentMapper(document: any) {
+  return pick(document, selectedKeys);
+}
+
+export type GetTimerFormSuggestions = (
+  ref: TimerRefFromForm,
+  options?: { exactMatch?: boolean }
+) => { name: string; id: string }[];
 
 type AllFuses = {
   project: Fuse<ProjectFields>;
@@ -28,13 +34,18 @@ export class SuggestionsProvider {
     category: new Fuse([], getFuseOptions()),
   };
 
-  getSuggestions(
+  getSuggestions = (
     ref: TimerRefFromForm,
     options: { exactMatch?: boolean } = {}
-  ): { name: string; id: string }[] {
+  ): { name: string; id: string }[] => {
+    if (!ref.identifier.length)
+      return <any[]>this.#getDocuments(ref.type).map(documentMapper);
+
     if (ref.identifierType === "name") {
       if (options.exactMatch) {
-        const documents = <any[]>this.#getDocuments(ref.type);
+        const documents = <any[]>(
+          this.#getDocuments(ref.type).map(documentMapper)
+        );
         return documents.filter((document) => document.name === ref.identifier);
       }
 
@@ -43,9 +54,9 @@ export class SuggestionsProvider {
     }
 
     // ref.identifierType = id
-    const documents = <any[]>this.#getDocuments(ref.type);
+    const documents = <any[]>this.#getDocuments(ref.type).map(documentMapper);
     return documents.filter((document) => document.id === ref.identifier);
-  }
+  };
 
   update(arg: { project?: ProjectFields[]; category?: CategoryFields[] }) {
     if (arg.project) this.#fuses.project.setCollection(arg.project);
