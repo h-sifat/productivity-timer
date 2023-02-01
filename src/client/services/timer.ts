@@ -38,6 +38,11 @@ export class TimerService {
     return this.#sendCommand({ command: "start", arg });
   }
 
+  async restart() {
+    await this.reset();
+    return await this.start();
+  }
+
   async startBreak(arg: TimerCommand_Arguments["startBreak"]) {
     return this.start({ duration: arg.duration, ref: null });
   }
