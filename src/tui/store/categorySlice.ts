@@ -8,9 +8,7 @@ import type { AppDispatch, StoreInterface } from ".";
 import { pick } from "common/util/other";
 import { createIdToIndexMap } from "./util";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import CategoryService, {
-  CategoryService_Argument,
-} from "client/services/category";
+import type CategoryService from "client/services/category";
 
 // Slice
 const categorySlice = createSlice({
@@ -52,11 +50,10 @@ export default categoryReducer;
 
 // Thunks
 export const loadCategories =
-  (arg: CategoryService_Argument) => async (dispatch: AppDispatch) => {
-    const projectService = new CategoryService(arg);
+  (categoryService: CategoryService) => async (dispatch: AppDispatch) => {
     try {
       dispatch(actions.categoriesFetchStarted());
-      const categories = await projectService.findAll();
+      const categories = await categoryService.findAll();
       dispatch(actions.categoriesFetched(categories));
     } catch (ex) {
       dispatch(actions.categoriesFetchFailed(pick(ex, ["message", "code"])));

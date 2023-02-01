@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import categoryReducer from "./categorySlice";
 import projectReducer from "./projectSlice";
 
-const store = configureStore({
+export const store = configureStore({
   reducer: {
     project: projectReducer,
     category: categoryReducer,

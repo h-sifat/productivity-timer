@@ -1,12 +1,10 @@
-import ProjectService, {
-  ProjectService_Argument,
-} from "client/services/project";
 import type {
   ProjectState,
   ProjectInterface,
   ErrorMessageAndCode,
 } from "./interface";
 import type { AppDispatch, StoreInterface } from ".";
+import type ProjectService from "client/services/project";
 
 import { pick } from "common/util/other";
 import { createIdToIndexMap } from "./util";
@@ -53,8 +51,7 @@ export default projectReducer;
 
 // Thunks
 export const loadProjects =
-  (arg: ProjectService_Argument) => async (dispatch: AppDispatch) => {
-    const projectService = new ProjectService(arg);
+  (projectService: ProjectService) => async (dispatch: AppDispatch) => {
     try {
       dispatch(actions.projectsFetchStarted());
       const projects = await projectService.findAll();
@@ -65,6 +62,5 @@ export const loadProjects =
   };
 
 // Selectors
-
 export const selectProjects = (store: StoreInterface) =>
   store.getState().project.projectsArray;
