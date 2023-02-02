@@ -1,6 +1,6 @@
 export const CLI_NAME = "pt";
 
-let appVersion = "0.0.0_default";
+let appVersion = "1.0.0";
 
 try {
   // as this __APP_VERSION__ is provided by webpack at bundle time, I'm having
