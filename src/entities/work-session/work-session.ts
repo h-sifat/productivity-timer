@@ -381,12 +381,12 @@ class FakeTimerForEventsValidation {
     const canEnd = ["paused", "running"].includes(this.#state);
     if (!canEnd) this.#throwInvalidEventOrder();
 
-    this.#state = "ended";
-    this.#incrementElapsedTime(timestamp);
-
+    if (this.#state !== "paused") this.#incrementElapsedTime(timestamp);
     this.#lastEventTimestamp = timestamp;
 
     this.#assertElapsedNotTooGreaterThanTargetDuration();
+
+    this.#state = "ended";
   }
 
   protected time_up(timestamp: any) {

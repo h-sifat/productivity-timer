@@ -202,14 +202,23 @@ describe("WorkSession.validator.assertValidEvents", () => {
     }
   );
 
-  it(`doesn't throw error events is valid`, () => {
-    const events = [
-      makeEvent("start", 100),
-      makeEvent("pause", 200), // 100ms
-      makeEvent("start", 400),
-      makeEvent("time_up", 600), // 300ms
-    ];
-
+  it.each([
+    {
+      events: [
+        makeEvent("start", 100),
+        makeEvent("pause", 200), // 100ms
+        makeEvent("start", 400),
+        makeEvent("time_up", 600), // 300ms
+      ],
+    },
+    {
+      events: [
+        makeEvent("start", 100),
+        makeEvent("pause", 200), // 100ms
+        makeEvent("end_manually", 500 + DEFAULT_MAX_ALLOWED_ELAPSED_TIME_DIFF),
+      ],
+    },
+  ])(`doesn't throw error events are valid`, ({ events }) => {
     expect(() => {
       assertValidEvents(events, {
         targetDuration: 300, // 300ms
