@@ -21,6 +21,8 @@ export function createAlertElement(): {
     align: "center",
     scrollable: true,
 
+    focusable: false,
+
     tags: true,
     border: "line",
     style: { focus: { border: { fg: "green" } }, label: { fg: "green" } },

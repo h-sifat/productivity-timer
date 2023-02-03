@@ -24,9 +24,9 @@ export interface NavigationBar_Argument {
 export type OnTabChange = (arg: { index: number; name: string }) => void;
 
 const defaultStyles = deepFreeze({
-  bg: "gray",
-  items: { bg: "gray", fg: "white" },
-  selected: { bg: "black", fg: "white" },
+  bg: "black",
+  items: { bg: "black", fg: "white" },
+  selected: { bg: "green", fg: "white", bold: true },
 });
 
 export class NavigationBar {

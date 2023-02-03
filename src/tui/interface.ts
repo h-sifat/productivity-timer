@@ -51,5 +51,5 @@ export type ElementDimension = Partial<
 
 export interface Message {
   text: string;
-  type: "normal" | "info" | "warn" | "error" | "success";
+  type: "normal" | "info" | "warn" | "error" | "success" | "disabled";
 }

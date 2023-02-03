@@ -16,7 +16,7 @@ import type {
   BlessedElementStyle,
 } from "tui/interface";
 import type { Widgets } from "blessed";
-import type { ReadonlyDeep } from "type-fest";
+import type { ReadonlyDeep, Writable } from "type-fest";
 
 export interface Table_Argument<T extends object> {
   label?: string;
@@ -24,7 +24,7 @@ export interface Table_Argument<T extends object> {
   position?: ElementPosition;
   tableStyle?: BlessedElementStyle;
   dimension?: ElementDimension;
-  formatObject?: (o: T) => any;
+  formatObject?: (o: Writable<T>) => any;
 
   additionalInstructions?: object;
 
@@ -32,7 +32,7 @@ export interface Table_Argument<T extends object> {
   renderScreen(): void;
 }
 
-export type OnSubmit<T> = (arg: {
+export type OnProjectSubmit<T> = (arg: {
   index: number;
   object: ReadonlyDeep<T> | null;
 }) => void;
@@ -49,9 +49,10 @@ function getDefaultStyles() {
 }
 
 export class Table<T extends object> {
-  readonly #formatObject: (o: T) => any;
   readonly #wrapper: Widgets.BoxElement;
   readonly #listtable: Widgets.ListTableElement;
+
+  readonly #formatObject: (o: Writable<T>) => any;
 
   #cursorIndex = 0;
   readonly #columns: readonly string[];
@@ -60,8 +61,8 @@ export class Table<T extends object> {
   readonly #debug: Debug;
   readonly #renderScreen: () => void;
 
-  #onSubmit: OnSubmit<T> = () => {};
-  #onCursorMove: OnSubmit<T> = () => {};
+  #onSubmit: OnProjectSubmit<T> = () => {};
+  #onCursorMove: OnProjectSubmit<T> = () => {};
 
   constructor(arg: Table_Argument<T>) {
     this.#debug = arg.debug;
@@ -194,11 +195,11 @@ export class Table<T extends object> {
     return this.#listtable;
   }
 
-  set onSubmit(onSubmit: OnSubmit<T>) {
+  set onSubmit(onSubmit: OnProjectSubmit<T>) {
     this.#onSubmit = onSubmit;
   }
 
-  set onCursorMove(onCursorMove: OnSubmit<T>) {
+  set onCursorMove(onCursorMove: OnProjectSubmit<T>) {
     this.#onCursorMove = onCursorMove;
   }
 }

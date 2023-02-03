@@ -31,6 +31,8 @@ export type DurationUnit =
   | "h"
   | "m"
   | "s"
+  | "d"
+  | "day"
   | "ms"
   | "hour"
   | "minute"

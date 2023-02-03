@@ -60,7 +60,9 @@ const msPerUnit = Object.freeze({
   s: 1000,
   m: 60000,
   h: 3600000,
+  d: 86400000,
   second: 1000,
+  day: 86400000,
   hour: 3600000,
   minute: 60000,
   millisecond: 1,
@@ -102,6 +104,7 @@ export const unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateS
 
 export const MS_IN_ONE_MINUTE = 60_000;
 export const MS_IN_ONE_HOUR = 60 * MS_IN_ONE_MINUTE;
+export const MS_IN_ONE_DAY = 24 * MS_IN_ONE_HOUR;
 
 /**
  * converts millisecond duration to hh:mm:ss format
