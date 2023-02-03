@@ -6,8 +6,8 @@ import {
 } from "common/util/other";
 import blessed from "blessed";
 import { merge } from "common/util/merge";
-import { createInstructionsBox } from "./instructions";
 import { assert, handyTypes } from "handy-types";
+import { createInstructionsBox } from "./instructions";
 
 import type {
   Debug,
@@ -25,6 +25,8 @@ export interface Table_Argument<T extends object> {
   tableStyle?: BlessedElementStyle;
   dimension?: ElementDimension;
   formatObject?: (o: T) => any;
+
+  additionalInstructions?: object;
 
   debug: Debug;
   renderScreen(): void;
@@ -98,14 +100,22 @@ export class Table<T extends object> {
       scrollbar: { ch: " ", style: { bg: "white" }, track: { bg: "black" } },
     });
 
-    createInstructionsBox({
-      bottom: 0,
-      height: 1,
-      border: false,
-      parent: this.#wrapper,
-      align: "center",
-      instructions: { "j/down": "down", "k/up": "up", enter: "select" },
-    });
+    {
+      const { additionalInstructions = {} } = arg;
+      createInstructionsBox({
+        bottom: 0,
+        height: 1,
+        border: false,
+        parent: this.#wrapper,
+        align: "center",
+        instructions: {
+          ...additionalInstructions,
+          "k/up": "up",
+          enter: "select",
+          "j/down": "down",
+        },
+      });
+    }
 
     // -------------------- Event Handling ------------------
     this.#wrapper.key(["j", "down"], () => {
