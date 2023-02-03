@@ -4,6 +4,7 @@ const colorsForMessageTypes = Object.freeze({
   error: "red",
   info: "cyan",
   warn: "#ff8000",
+  disabled: "grey",
   success: "green",
 });
 export function formatMessageForBlessedElement(message: Message): string {

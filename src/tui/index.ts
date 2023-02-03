@@ -15,6 +15,7 @@ import ProjectService from "client/services/project";
 import { TimerService } from "client/services/timer";
 import { PromptComponent } from "./components/prompt";
 import { createCategoryPage } from "./pages/category";
+import { createProjectPage } from "./pages/project";
 import CategoryService from "client/services/category";
 import { createAlertElement } from "./components/alert";
 import { loadProjects, selectProjects } from "./store/projectSlice";
@@ -69,7 +70,7 @@ async function main(arg: { client: Client }) {
 
   const suggestionsProvider = new SuggestionsProvider();
 
-  client.subscribe(Object.values(BROADCAST_CHANNELS));
+  await client.subscribe(Object.values(BROADCAST_CHANNELS));
   const timerEventsEmitter = new EventEmitter();
   const timerService = new TimerService({ url: config.API_TIMER_PATH, client });
 
@@ -97,6 +98,7 @@ async function main(arg: { client: Client }) {
 
     suggestionsProvider.update({ project: projects, category: categories });
     Categories.loadCategories(categories);
+    Projects.loadProjects(projects);
   }
 
   store.subscribe(() => {
@@ -120,16 +122,25 @@ async function main(arg: { client: Client }) {
     prompt: (message) => prompt.ask(message),
   });
 
+  const Projects = createProjectPage({
+    alert,
+    debug,
+    renderScreen,
+    projectService,
+    prompt: (message) => prompt.ask(message),
+  });
+
   const pages: { [k: string]: Page } = Object.freeze({
     Timer: timerPage,
+    Projects: Projects.page,
     Categories: Categories.page,
   });
 
   const navbar = new NavigationBar({
     debug,
     showTabSerialNumber: false,
+    tabs: ["Timer", "Categories", "Projects"],
     style: { selected: { bg: "green", fg: "white" } },
-    tabs: ["Timer", "Categories"],
   });
 
   // ------------- Appending Elements to the screen ---------------------
