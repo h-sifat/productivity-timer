@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { CLI_NAME } from "src/config/other";
+import { addTuiCommands } from "./commands/tui";
 import { addEditCommand } from "./commands/edit";
 import { addListCommand } from "./commands/list";
 import { addTimerCommands } from "./commands/timer";
@@ -26,6 +27,9 @@ addDeleteCommand(program);
 
 // Timer
 addTimerCommands(program);
+
+// TUI
+addTuiCommands(program);
 
 try {
   program.parse();
