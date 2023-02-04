@@ -68,7 +68,7 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
   function handleCategoryChange({ category }: Parameters<OnSelect>[0]) {
     if (category) {
       categoryForm.update({
-        formLabel: `[${category.name}]`,
+        formLabel: category.name ? `[${category.name}]` : `[New sub-category]`,
         object: formatCategoryForForm(category),
         message: formMessage
           ? formMessage
