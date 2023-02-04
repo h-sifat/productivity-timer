@@ -108,7 +108,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
     debug,
     renderScreen,
     position: { top: 2 },
-    dimension: { width: "90%" },
+    dimension: { width: "35%+40" },
     getRefInputSuggestions: arg.getTimerFormSuggestions,
   });
 

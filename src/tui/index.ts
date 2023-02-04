@@ -22,6 +22,7 @@ import { loadProjects, selectProjects } from "./store/projectSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
+import { createClockPage } from "./pages/clock";
 
 const screen = blessed.screen({
   debug: true,
@@ -43,19 +44,12 @@ const isAnInputElementFocused = () => screen?.focused instanceof blessed.input;
 withClient(
   (client) =>
     new Promise((resolve) => {
-      main({ client });
-
-      // Control-C.
-      screen.key(["C-c"], async function () {
-        resolve(); // this will disconnect the client from the server
-        screen.destroy();
-        process.exitCode = 0;
-      });
+      main({ client, closeClient: resolve });
     })
 );
 
 // ----------------- Main Script ---------------------------------
-async function main(arg: { client: Client }) {
+async function main(arg: { client: Client; closeClient(): void }) {
   const { client } = arg;
 
   const categoryService = new CategoryService({
@@ -130,8 +124,11 @@ async function main(arg: { client: Client }) {
     prompt: (message) => prompt.ask(message),
   });
 
+  const Clock = createClockPage({ debug, renderScreen });
+
   const pages: { [k: string]: Page } = Object.freeze({
     Timer: timerPage,
+    Clock: Clock.page,
     Projects: Projects.page,
     Categories: Categories.page,
   });
@@ -139,8 +136,10 @@ async function main(arg: { client: Client }) {
   const navbar = new NavigationBar({
     debug,
     showTabSerialNumber: false,
-    tabs: ["Timer", "Categories", "Projects"],
+
+    selected: "Timer",
     style: { selected: { bg: "green", fg: "white" } },
+    tabs: ["Clock", "Timer", "Categories", "Projects"],
   });
 
   // ------------- Appending Elements to the screen ---------------------
@@ -183,6 +182,14 @@ async function main(arg: { client: Client }) {
 
     renderScreen();
   };
+
+  // App quit key binding: Control-C.
+  screen.key(["C-c"], async function () {
+    arg.closeClient(); // this will disconnect the client from the server
+    screen.destroy();
+    Clock.stopUpdating();
+    process.exitCode = 0;
+  });
 
   // --------- Rendering the screen and showing the first page --------------
   state.currentPage.show();
