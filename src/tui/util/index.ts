@@ -1,3 +1,4 @@
+import { Widgets } from "blessed";
 import type { BGAndFGColor, Message } from "../interface";
 
 const colorsForMessageTypes = Object.freeze({
@@ -65,4 +66,19 @@ export function padTextToForCenterAlignment(
     text +
     paddingChar.repeat(paddingCounts.right)
   );
+}
+
+/**
+ * I could not update the style of a label through the element.style property.
+ * So, I dug a little bit into the blessed's source code and discovered that a
+ * label on any element is internally created with a box and it can be accessed
+ * through the "_label" property. */
+export function setElementsLabelStyle(arg: {
+  element: Widgets.BlessedElement;
+  style: any;
+}) {
+  const { element, style } = arg;
+
+  // @ts-expect-error internal property
+  if (element._label) element._label.style = style;
 }
