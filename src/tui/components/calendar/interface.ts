@@ -4,3 +4,8 @@ export interface DayNameInterface {
 }
 
 export type DateMatrixOfMonth = (Date | null)[][];
+
+export interface Coordinate {
+  x: number;
+  y: number;
+}

@@ -1,9 +1,15 @@
-import { cloneDeep } from "lodash";
+import type {
+  Coordinate,
+  DateMatrixOfMonth,
+  DayNameInterface,
+} from "./interface";
+import type { ReadonlyDeep } from "type-fest";
+
+import { cloneDeep, omit } from "lodash";
 import { deepFreeze } from "common/util/other";
 import { getDay, getDaysInMonth } from "date-fns";
-import type { DateMatrixOfMonth, DayNameInterface } from "./interface";
 
-export const MONTHS = Object.freeze([
+export const MONTHS_NAMES = Object.freeze([
   "January",
   "February",
   "March",
@@ -55,19 +61,22 @@ export function getDayNamesBasedOnStartingDay(
 export interface getDateMatrixOfMonth_Argument {
   year: number;
   monthIndex: number;
-  dayNamesArray: DayNameInterface[];
+  dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
 }
+
+export const MONTH_DATE_MATRIX_INFO = Object.freeze({
+  NUM_OF_DAYS_IN_ROW: 7,
+  NUM_OF_ROWS_IN_MONTH: 6,
+} as const);
+
 export function getDateMatrixOfMonth(
   arg: getDateMatrixOfMonth_Argument
 ): DateMatrixOfMonth {
   const { year, monthIndex, dayNamesArray } = arg;
 
-  const NUM_OF_DAYS_IN_ROW = 7;
-  const NUM_OF_ROWS_IN_MONTH = 6;
-
   const dateMatrix: DateMatrixOfMonth = Array.from(
-    { length: NUM_OF_ROWS_IN_MONTH },
-    () => new Array(NUM_OF_DAYS_IN_ROW).fill(null)
+    { length: MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH },
+    () => new Array(MONTH_DATE_MATRIX_INFO.NUM_OF_DAYS_IN_ROW).fill(null)
   );
 
   {
@@ -85,8 +94,8 @@ export function getDateMatrixOfMonth(
       const date = new Date(year, monthIndex, dateNumber);
       dateMatrix[y][x] = date;
 
-      if (x < NUM_OF_DAYS_IN_ROW - 1) x++;
-      else if (y < NUM_OF_ROWS_IN_MONTH) {
+      if (x < MONTH_DATE_MATRIX_INFO.NUM_OF_DAYS_IN_ROW - 1) x++;
+      else if (y < MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH) {
         x = 0;
         y++;
       } else throw new Error(`Index out of matrix.`);
@@ -96,24 +105,37 @@ export function getDateMatrixOfMonth(
   return dateMatrix;
 }
 
-export interface generateCalenderText_Arg {
-  monthName: string;
-  dayNames: string[];
-  spaceBetweenDate?: number;
-  dateMatrix: DateMatrixOfMonth;
+export type FormatDateNumber_Argument = {
+  cursor: Coordinate;
+  dateObject: Date | null;
+  formattedDateNumber: string;
+};
 
-  formatDateNumber?: (arg: {
-    dateObject: Date | null;
-    formattedDateNumber: string;
-  }) => string;
+export interface generateCalendarText_Arg {
+  dayNames: readonly string[];
+  spaceBetweenDate?: number;
+  dateMatrix: ReadonlyDeep<DateMatrixOfMonth>;
+  month: { name: string; index: number };
+
+  formatDateNumber?: (arg: FormatDateNumber_Argument) => string;
   formatMonthName?: (name: string) => string;
   formatJoinedDayNames?: (name: string) => string;
 }
 
-export function generateCalenderText(arg: generateCalenderText_Arg) {
+export function calculateCalendarTextWidth(
+  arg: { spaceBetweenDate?: number } = {}
+) {
+  const DAYS_IN_WEEK = 7;
+  const CHAR_PER_DATE = 2;
+  const { spaceBetweenDate = 1 } = arg;
+
+  return DAYS_IN_WEEK * CHAR_PER_DATE + (DAYS_IN_WEEK - 1) * spaceBetweenDate;
+}
+
+export function generateCalendarText(arg: generateCalendarText_Arg) {
   const {
+    month,
     dayNames,
-    monthName,
     dateMatrix,
     spaceBetweenDate = 1,
 
@@ -123,11 +145,11 @@ export function generateCalenderText(arg: generateCalenderText_Arg) {
   } = arg;
 
   return [
-    formatMonthName(monthName),
+    formatMonthName(month.name),
     formatJoinedDayNames(dayNames.join(" ".repeat(spaceBetweenDate))),
-    ...dateMatrix.map((row) =>
+    ...dateMatrix.map((row, rowIndex) =>
       row
-        .map((dateObject) => {
+        .map((dateObject, columnIndex) => {
           let formattedDateNumber: string;
 
           if (!dateObject) formattedDateNumber = "  "; // 2 char
@@ -137,10 +159,25 @@ export function generateCalenderText(arg: generateCalenderText_Arg) {
               dateObject.getDate() < 10 ? " " + dateNumber : String(dateNumber);
           }
 
-          return { dateObject, formattedDateNumber };
+          return { dateObject, formattedDateNumber, columnIndex };
         })
-        .map(formatDateNumber)
+        .map((arg) =>
+          formatDateNumber({
+            ...omit(arg, ["columnIndex"]),
+            // the cursor will be helpful for formatting date numbers
+            cursor: {
+              x: arg.columnIndex,
+              y:
+                rowIndex +
+                month.index * MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH,
+            },
+          })
+        )
         .join(" ".repeat(spaceBetweenDate))
     ),
   ].join("\n");
+}
+
+export function isCoordinateEqual(a: Coordinate, b: Coordinate) {
+  return a.x === b.x && a.y === b.y;
 }

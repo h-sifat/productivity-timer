@@ -102,6 +102,10 @@ export const unixMsTimestampToUsLocaleDateString: UnixMsTimestampToUsLocaleDateS
     return new Date(timestamp).toLocaleDateString("en-US");
   };
 
+export function toLocaleDateString(date: Date) {
+  return date.toLocaleDateString("en-US");
+}
+
 export const MS_IN_ONE_MINUTE = 60_000;
 export const MS_IN_ONE_HOUR = 60 * MS_IN_ONE_MINUTE;
 export const MS_IN_ONE_DAY = 24 * MS_IN_ONE_HOUR;
