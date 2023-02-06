@@ -1,5 +1,5 @@
-import { Coordinate } from "./interface";
 import { getCircularArrayIndex } from "common/util/other";
+import { Coordinate } from "tui/components/calendar/interface";
 
 export type ScrollDirection = "up" | "down" | "left" | "right";
 
@@ -46,12 +46,12 @@ export function movePointInMatrix(arg: movePointInMatrix_Argument) {
     length: numOfColumns,
   });
 
-  const sideEffectYStep = Math.floor((point.x + offset) / numOfColumns);
+  const yOffsetSideEffect = Math.floor((point.x + offset) / numOfColumns);
 
   const newY = getCircularArrayIndex({
     index: point.y,
     length: numOfRows,
-    offset: sideEffectYStep,
+    offset: yOffsetSideEffect,
   });
 
   return { x: newX, y: newY };

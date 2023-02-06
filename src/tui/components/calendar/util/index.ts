@@ -1,8 +1,8 @@
 import type {
   Coordinate,
-  DateMatrixOfMonth,
   DayNameInterface,
-} from "./interface";
+  DateMatrixOfMonth,
+} from "tui/components/calendar/interface";
 import type { ReadonlyDeep } from "type-fest";
 
 import { cloneDeep, omit } from "lodash";
@@ -82,11 +82,7 @@ export function getDateMatrixOfMonth(
   {
     const startDate = new Date(year, monthIndex, 1);
 
-    let x = (() => {
-      const startDayIndex = getDay(startDate);
-      return dayNamesArray.findIndex(({ index }) => index === startDayIndex);
-    })();
-
+    let x = dayNamesArray.findIndex(({ index }) => index === getDay(startDate));
     let y = 0;
 
     const daysInMonth = getDaysInMonth(startDate);

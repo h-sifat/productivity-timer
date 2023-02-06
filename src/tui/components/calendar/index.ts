@@ -1,58 +1,70 @@
 import type {
+  DateRange,
   Coordinate,
+  CalendarStyle,
+  CalendarElements,
   DayNameInterface,
   DateMatrixOfMonth,
 } from "./interface";
+
 import {
   MONTHS_NAMES,
   isCoordinateEqual,
   generateCalendarText,
   getDateMatrixOfMonth,
   MONTH_DATE_MATRIX_INFO,
+  generateCalendarText_Arg,
   FormatDateNumber_Argument,
   calculateCalendarTextWidth,
   getDayNamesBasedOnStartingDay,
 } from "./util";
-import blessed from "blessed";
+
+import {
+  DateRangeSchema,
+  isDateWithinRange,
+  isYearWithinRange,
+} from "./util/date-time";
+
+import {
+  formatFgAndBg,
+  setElementsLabelStyle,
+  formatTextForBlessedElement,
+  padTextToForCenterAlignment,
+} from "tui/util";
+
+import {
+  movePointInMatrix,
+  movePointInMatrix_Argument,
+} from "./util/move-cursor";
+import { makeCalendarElements } from "./util/make-elements";
+import { mergeWithDefaultCalendarStyles } from "./util/style";
+
 import { isSameDay } from "date-fns";
-import { merge } from "common/util/merge";
 import { deepFreeze } from "common/util/other";
-import { formatFgAndBg, padTextToForCenterAlignment } from "tui/util";
-
-import type {
-  Debug,
-  BGAndFGColor,
-  BlessedKeypressHandler,
-} from "tui/interface";
-import type { generateCalendarText_Arg } from "./util";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
-import { movePointInMatrix, movePointInMatrix_Argument } from "./move-cursor";
-import { createInstructionsBox } from "../instructions";
+import type { Debug, BlessedKeypressHandler, TextStyle } from "tui/interface";
+import { assert } from "handy-types";
 
-type CalendarStyle = Record<"cursor" | "current", BGAndFGColor> & {
-  dayNames: Partial<BGAndFGColor>;
-};
-
+// ------------------- Types and Interfaces -----------------
 export interface Calendar_Argument {
   debug: Debug;
   year: number;
   renderScreen(): void;
   firstDayOfWeek: string;
+  additionalKeyBindings?: object;
+  allowedRange?: Partial<DateRange>;
   style?: PartialDeep<CalendarStyle>;
+  customDateFormatter?: CustomDateFormatter;
 }
 
 type ScrollDirection = "up" | "down" | "left" | "right";
 
 interface getCalendarText_Arg {
   shouldFormatCursor?: boolean;
-  month: { name: string; index: number };
-}
-
-function getDefaultStyles(): CalendarStyle {
-  return {
-    dayNames: { fg: "green" },
-    cursor: { fg: "black", bg: "white" },
-    current: { fg: "white", bg: "green" },
+  month: {
+    name: string;
+    index: number;
+    dateMatrix: ReadonlyDeep<DateMatrixOfMonth>;
   };
 }
 
@@ -66,12 +78,29 @@ interface CalendarText {
   visitedCellsCache: { [k: string]: string };
 }
 
+interface YearCalendarState {
+  months: Readonly<Month>[];
+  renderedTextOfMonths: CalendarText[];
+  yearDateMatrix: ReadonlyDeep<DateMatrixOfMonth>;
+}
+
+type CustomDateFormatter = (
+  arg: FormatDateNumber_Argument
+) => Partial<TextStyle> | undefined;
+
+// ------------ Global Constants -------------------
 const KeyBindings = Object.freeze({
   "k/up": "up",
+  enter: "select",
+  "h/left": "left",
   "j/down": "down",
-  "shift-i": "input",
-  "shift-(h,l)": "change year",
+  "l/right": "right",
+  "S-(h,l)": "change year",
 });
+
+const NUM_OF_ROWS_IN_YEAR_DATE_MATRIX =
+  MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH * 12;
+// ------------ End Global Constants -------------------
 
 export class Calendar {
   static readonly CALENDAR_TEXT_WIDTH = calculateCalendarTextWidth();
@@ -84,146 +113,91 @@ export class Calendar {
   readonly #debug: Debug;
   readonly #renderScreen: () => void;
 
-  readonly #year: number;
-  readonly #firstDayOfWeek: string;
-  readonly #shortDayNames: readonly string[];
-  readonly #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
+  // ---- States --------------
+  #today = new Date();
+  #currentYear: number;
+
+  #isCursorHidden = false;
+  readonly #cursor: Coordinate = Object.seal({ x: 0, y: 0 });
+
+  readonly #state: { [year: string]: YearCalendarState } = {};
+  // ---- End States --------------
 
   readonly #style: CalendarStyle;
+  readonly #elements: CalendarElements;
+  readonly #shortDayNames: readonly string[];
+  readonly #allowedRange: Readonly<Partial<DateRange>>;
+  readonly #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
 
-  readonly #months: Month[];
-  readonly #calendarTextOfAllMonths: CalendarText[];
-  readonly #dateMatrixOfTheWholeYear: ReadonlyDeep<DateMatrixOfMonth>;
-
-  readonly #today = new Date();
-  #cursor: Coordinate = Object.seal({ x: 0, y: 0 });
-
-  #wrapperElement = blessed.box({
-    border: "line",
-    width: Calendar.ELEMENT_WIDTH,
-    scrollable: false,
-    style: {
-      focus: { border: { fg: "green" } },
-    },
-  });
-
-  #todayElement = blessed.box({
-    parent: this.#wrapperElement,
-
-    top: 1,
-    tags: true,
-    align: "center",
-    content: "hello",
-  });
-
-  #calendarElement = blessed.box({
-    parent: this.#wrapperElement,
-    width: "100%",
-    left: -1,
-    top: 2,
-    bottom: 3,
-
-    border: "line",
-
-    keys: true,
-
-    tags: true,
-    align: "center",
-
-    scrollable: true,
-    style: {
-      label: { fg: "green" },
-    },
-    scrollbar: {
-      ch: " ",
-      style: { fg: "white", bg: "grey" },
-    },
-  });
-
-  #instructionElement = createInstructionsBox({
-    bottom: 0,
-    height: 3,
-    border: false,
-    align: "center",
-    instructions: KeyBindings,
-    parent: this.#wrapperElement,
-  });
+  // ------- Other ---------------
+  #customDateFormatter: CustomDateFormatter;
 
   constructor(arg: Calendar_Argument) {
     this.#debug = arg.debug;
     this.#renderScreen = arg.renderScreen;
 
-    this.#style = merge(getDefaultStyles(), arg.style || {});
+    this.#customDateFormatter = arg.customDateFormatter || (() => undefined);
 
-    this.#year = arg.year;
-    this.#firstDayOfWeek = arg.firstDayOfWeek;
+    {
+      const { additionalKeyBindings = {} } = arg;
+      this.#elements = makeCalendarElements({
+        wrapperWidth: Calendar.ELEMENT_WIDTH,
+        instructions: { ...KeyBindings, ...additionalKeyBindings },
+      });
+    }
+
+    {
+      const range = DateRangeSchema.parse(arg.allowedRange || {});
+      this.#allowedRange = Object.freeze(range);
+    }
+
+    this.#style = mergeWithDefaultCalendarStyles(arg.style);
 
     this.#dayNamesArray = deepFreeze(
-      getDayNamesBasedOnStartingDay({
-        startDay: this.#firstDayOfWeek,
-      })
+      getDayNamesBasedOnStartingDay({ startDay: arg.firstDayOfWeek })
     );
     this.#shortDayNames = Object.freeze(
       this.#dayNamesArray.map(({ name }) => name.short)
     );
 
-    this.#months = MONTHS_NAMES.map((name, monthIndex) => {
-      const month: Partial<Month> = { name };
-
-      const dateMatrix = getDateMatrixOfMonth({
-        monthIndex,
-        year: this.#year,
-        dayNamesArray: this.#dayNamesArray,
-      });
-
-      month.dateMatrix = deepFreeze(dateMatrix);
-      return month as Month;
-    });
-
-    this.#calendarTextOfAllMonths = this.#months.map(({ name }, index) => {
-      const calendarText: Partial<CalendarText> = {
-        visitedCellsCache: {},
-      };
-
-      calendarText.noCursor = this.#getCalendarText({
-        month: { name, index },
-        shouldFormatCursor: false,
-      });
-
-      return calendarText as CalendarText;
-    });
-
-    this.#dateMatrixOfTheWholeYear = this.#months
-      .map(({ dateMatrix }) => dateMatrix)
-      .reduce(
-        (yearMatrix, monthDateMatrix) => yearMatrix.concat(monthDateMatrix),
-        [] as DateMatrixOfMonth
-      );
+    assert<number>("non_negative_integer", arg.year, { name: "year" });
+    this.#currentYear = arg.year;
+    this.#state[arg.year] = this.#initYearCalendarState({ year: arg.year });
 
     this.#addWrapperEventHandlers();
-    this.#addKeyPressEventListeners();
+
     // draw the initial calendar
-    this.#moveCursor({ scrollDirection: "right", step: 0 });
+    if (this.#isCursorHidden) this.#updateCalenderContent();
+    else this.#moveCursor({ scrollDirection: "right", step: 0 });
   }
 
   #addWrapperEventHandlers() {
-    this.#wrapperElement.on("focus", () => {
-      this.#calendarElement.style.border = { fg: "green" };
-      // this.#calendarElement.style.label = { fg: "green" };
+    this.#elements.wrapper.on("focus", () => {
+      this.#elements.calendar.style.border = { fg: "green" };
+      setElementsLabelStyle({
+        style: { fg: "green" },
+        element: this.#elements.calendar,
+      });
       this.#renderScreen();
     });
 
-    this.#wrapperElement.on("blur", () => {
-      this.#calendarElement.style.border = { fg: "white" };
-      this.#wrapperElement.style.border = { fg: "white" };
-      // this.#calendarElement.style.label = { fg: "green" };
+    this.#elements.wrapper.on("blur", () => {
+      this.#elements.calendar.style.border = { fg: "white" };
+      this.#elements.wrapper.style.border = { fg: "white" };
+      setElementsLabelStyle({
+        style: { fg: "white" },
+        element: this.#elements.calendar,
+      });
+
       this.#renderScreen();
     });
+
+    this.#addKeyPressEventListeners();
   }
 
   #addKeyPressEventListeners() {
     const keyPressHandler: BlessedKeypressHandler = (_, key) => {
-      if (!("name" in key)) return;
+      if (!("name" in key)) return true;
 
       const rowIncrementOnShift = MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH;
 
@@ -245,12 +219,14 @@ export class Calendar {
 
         case "l":
         case "right":
-          scrollDirection = "right";
+          if (key.shift) this.#changeYear({ newYear: this.#currentYear + 1 });
+          else scrollDirection = "right";
           break;
 
         case "h":
         case "left":
-          scrollDirection = "left";
+          if (key.shift) this.#changeYear({ newYear: this.#currentYear - 1 });
+          else scrollDirection = "left";
           break;
       }
 
@@ -261,18 +237,74 @@ export class Calendar {
       return true;
     };
 
-    this.#wrapperElement.on("keypress", keyPressHandler);
+    this.#elements.wrapper.on("keypress", keyPressHandler);
+  }
+
+  #initYearCalendarState(arg: { year: number }): YearCalendarState {
+    const { year } = arg;
+
+    const months: YearCalendarState["months"] = MONTHS_NAMES.map(
+      (name, monthIndex) => {
+        const month: Partial<Month> = { name };
+
+        const dateMatrix = getDateMatrixOfMonth({
+          year,
+          monthIndex,
+          dayNamesArray: this.#dayNamesArray,
+        });
+
+        month.dateMatrix = deepFreeze(dateMatrix);
+        return month as Month;
+      }
+    );
+
+    const renderedTextOfMonths: YearCalendarState["renderedTextOfMonths"] =
+      months.map(({ name, dateMatrix }, index) => {
+        const noCursor = this.#getCalendarText({
+          month: { name, index, dateMatrix },
+          shouldFormatCursor: false,
+        });
+
+        return { noCursor, visitedCellsCache: {} };
+      });
+
+    const yearDateMatrix = months
+      .map(({ dateMatrix }) => dateMatrix)
+      .reduce(
+        (yearMatrix, monthDateMatrix) => yearMatrix.concat(monthDateMatrix),
+        [] as DateMatrixOfMonth
+      );
+
+    return { months, renderedTextOfMonths, yearDateMatrix };
+  }
+
+  #changeYear(arg: { newYear: number }) {
+    const { newYear } = arg;
+
+    if (!isYearWithinRange(newYear, this.#allowedRange))
+      // @TODO show error message
+      return;
+
+    if (!this.#state[newYear])
+      this.#state[newYear] = this.#initYearCalendarState({ year: newYear });
+
+    this.#currentYear = newYear;
+    this.#updateCalenderContent({ renderScreen: true });
   }
 
   #moveCursor(arg: { step: number; scrollDirection: ScrollDirection }) {
+    if (this.#isCursorHidden) return;
+
     // calculate new cursor position
     {
+      const yearDateMatrix = this.#state[this.#currentYear].yearDateMatrix;
+
       const commonMovePointInMatrixArg: Omit<
         movePointInMatrix_Argument,
         "step" | "point"
       > = {
         direction: arg.scrollDirection,
-        numOfRows: this.#dateMatrixOfTheWholeYear.length,
+        numOfRows: NUM_OF_ROWS_IN_YEAR_DATE_MATRIX,
         numOfColumns: MONTH_DATE_MATRIX_INFO.NUM_OF_DAYS_IN_ROW,
       };
 
@@ -280,15 +312,18 @@ export class Calendar {
       let date: Date | null | undefined;
       let currentCursor = { ...this.#cursor };
 
-      // This loop skips all empty cells
-      while (!date) {
+      // This loop skips all empty cells and disabled dates
+      while (!date || !isDateWithinRange(date, this.#allowedRange)) {
         currentCursor = movePointInMatrix({
           step,
           point: currentCursor,
           ...commonMovePointInMatrixArg,
         });
 
-        date = this.#getDateAtCursor(currentCursor);
+        date = this.#getDateAtCursor({
+          cursor: currentCursor,
+          yearDateMatrix,
+        });
 
         // if step was something other than 1
         // (e.g., initially 0, or when shift is pressed) then reset it now
@@ -300,13 +335,9 @@ export class Calendar {
     }
 
     // Update content
-    this.#calendarElement.setContent(this.#joinAllMonthsCalendarText());
-    this.#calendarElement.setLabel({ text: `[${this.#year}]`, side: "right" });
-    this.#todayElement.setContent(
-      `Today: {green-fg}${this.#today.toDateString()}{/}`
-    );
+    this.#updateCalenderContent({ renderScreen: false });
 
-    // I'm using step 0 to draw the first calendar. But at this point as the
+    // I'm using step 0 to render the first cursor. But at this point as the
     // element hasn't rendered yet, setting the scroll position throws
     // an error.
     if (arg.step !== 0)
@@ -318,22 +349,40 @@ export class Calendar {
     this.#renderScreen();
   }
 
+  #updateCalenderContent(arg: { renderScreen?: boolean } = {}) {
+    this.#elements.calendar.setContent(
+      this.#joinAllMonthsCalendarText({
+        calendarState: this.#state[this.#currentYear],
+      })
+    );
+    this.#elements.calendar.setLabel({
+      text: `[${this.#currentYear}]`,
+      side: "right",
+    });
+    this.#elements.todayText.setContent(
+      `Today: {green-fg}${this.#today.toDateString()}{/}`
+    );
+
+    const { renderScreen = true } = arg;
+    if (renderScreen) this.#renderScreen();
+  }
+
   #updateScrollPosition(arg: {
     renderScreen?: boolean;
     direction: ScrollDirection;
   }) {
+    if (this.#isCursorHidden) return;
     const monthNumber = this.#yearMatrixCursorToMonthIndex(this.#cursor) + 1;
 
-    if (monthNumber === 1) this.#calendarElement.setScrollPerc(0);
-    else if (monthNumber === 12) this.#calendarElement.setScrollPerc(100);
+    if (monthNumber === 1) this.#elements.calendar.setScrollPerc(0);
+    else if (monthNumber === 12) this.#elements.calendar.setScrollPerc(100);
     else {
       // monthNumber * 2 = Every previous month's Month name + Day names rows
       const cursorRowNumber = this.#cursor.y + monthNumber * 2;
       const numOfMonthAndDayNamesRowsInWholeYear = 12 * 2;
 
       const totalRows =
-        this.#dateMatrixOfTheWholeYear.length +
-        numOfMonthAndDayNamesRowsInWholeYear;
+        NUM_OF_ROWS_IN_YEAR_DATE_MATRIX + numOfMonthAndDayNamesRowsInWholeYear;
 
       let scrollPercentage = (cursorRowNumber / totalRows) * 100;
 
@@ -342,10 +391,11 @@ export class Calendar {
       if (arg.direction === "up") scrollPercentage -= 5;
       if (arg.direction === "down") scrollPercentage += 5;
 
-      this.#calendarElement.setScrollPerc(scrollPercentage);
+      this.#elements.calendar.setScrollPerc(scrollPercentage);
     }
 
-    if (arg.renderScreen) this.#renderScreen();
+    const { renderScreen = true } = arg;
+    if (renderScreen) this.#renderScreen();
   }
 
   #getCalendarText(arg: getCalendarText_Arg) {
@@ -353,45 +403,51 @@ export class Calendar {
 
     return generateCalendarText({
       month,
+      dateMatrix: month.dateMatrix,
       dayNames: this.#shortDayNames,
       formatMonthName: this.#formatMonthName,
-      dateMatrix: this.#months[month.index].dateMatrix,
       formatJoinedDayNames: this.#formatJoinedDayNames,
       formatDateNumber: (formatterArg) =>
         this.#formatDateNumber({ ...formatterArg, shouldFormatCursor }),
     });
   }
 
+  // ----------------- Formatters -------------------------
   #formatDateNumber = (
     arg: FormatDateNumber_Argument & {
       shouldFormatCursor?: boolean | undefined;
     }
   ) => {
     const {
-      cursor,
+      cursor: currentDateCoordinate,
       formattedDateNumber,
       shouldFormatCursor = true,
       dateObject: formattingDate,
     } = arg;
 
-    // cursor style
-    if (shouldFormatCursor && isCoordinateEqual(this.#cursor, cursor))
-      return formatFgAndBg({
-        style: this.#style.cursor,
-        value: formattedDateNumber,
-      });
-
-    // current date style
-    if (formattingDate && isSameDay(this.#today, formattingDate)) {
-      const styled = formatFgAndBg({
-        style: this.#style.current,
-        value: formattedDateNumber,
-      });
-      return `{bold}${styled}{/bold}`;
+    if (
+      formattingDate &&
+      !isDateWithinRange(formattingDate, this.#allowedRange)
+    ) {
+      return `{grey-fg}${formattedDateNumber}{/grey-fg}`;
     }
 
-    // normal
-    return formattedDateNumber;
+    let style: Partial<TextStyle> | undefined;
+
+    // cursor style
+    if (
+      shouldFormatCursor &&
+      isCoordinateEqual(this.#cursor, currentDateCoordinate)
+    )
+      style = this.#style.cursor;
+    // current date style
+    else if (formattingDate && isSameDay(this.#today, formattingDate))
+      style = this.#style.today;
+    else style = this.#customDateFormatter(arg);
+
+    return style
+      ? formatTextForBlessedElement({ style, text: formattedDateNumber })
+      : formattedDateNumber;
   };
 
   #formatMonthName: Required<generateCalendarText_Arg>["formatMonthName"] = (
@@ -404,26 +460,32 @@ export class Calendar {
     });
 
   #formatJoinedDayNames: Required<generateCalendarText_Arg>["formatJoinedDayNames"] =
-    (names) => formatFgAndBg({ style: this.#style.dayNames, value: names });
+    (names) => formatFgAndBg({ style: this.#style.dayName, value: names });
 
   #cursorToKey({ x, y }: Coordinate) {
     return `${x}:${y}`;
   }
+  // ----------------- End Formatters -------------------------
 
-  #joinAllMonthsCalendarText() {
-    const cursorKey = this.#cursorToKey(this.#cursor);
-    const monthIndexOfCursor = this.#yearMatrixCursorToMonthIndex(this.#cursor);
+  #joinAllMonthsCalendarText(arg: { calendarState: YearCalendarState }) {
+    const { calendarState } = arg;
 
-    return this.#calendarTextOfAllMonths
+    return calendarState.renderedTextOfMonths
       .map(({ noCursor, visitedCellsCache }, currentMonthIndex) => {
-        if (monthIndexOfCursor !== currentMonthIndex) return noCursor;
+        if (
+          this.#isCursorHidden ||
+          this.#yearMatrixCursorToMonthIndex(this.#cursor) !== currentMonthIndex
+        )
+          return noCursor;
 
+        const cursorKey = this.#cursorToKey(this.#cursor);
         if (!visitedCellsCache[cursorKey])
           visitedCellsCache[cursorKey] = this.#getCalendarText({
             shouldFormatCursor: true,
             month: {
               index: currentMonthIndex,
-              name: this.#months[currentMonthIndex].name,
+              name: calendarState.months[currentMonthIndex].name,
+              dateMatrix: calendarState.months[currentMonthIndex].dateMatrix,
             },
           });
 
@@ -432,15 +494,27 @@ export class Calendar {
       .join("\n");
   }
 
+  // -------------------- Utils --------------------
+
   #yearMatrixCursorToMonthIndex(cursor: Coordinate) {
     return Math.floor(cursor.y / MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH);
   }
 
-  #getDateAtCursor({ x, y }: Coordinate) {
-    return this.#dateMatrixOfTheWholeYear[y][x];
+  #getDateAtCursor(arg: {
+    cursor: Coordinate;
+    yearDateMatrix: YearCalendarState["yearDateMatrix"];
+  }) {
+    const { cursor, yearDateMatrix } = arg;
+    return yearDateMatrix[cursor.y][cursor.x];
   }
 
+  // ----- Getters -------------
   get element() {
-    return this.#wrapperElement;
+    return this.#elements.wrapper;
+  }
+
+  // ------- Setters -----------
+  set customDateFormatter(func: CustomDateFormatter) {
+    this.#customDateFormatter = func;
   }
 }
