@@ -1,5 +1,6 @@
 import { Widgets } from "blessed";
-import type { BGAndFGColor, Message } from "../interface";
+import { ReadonlyDeep } from "type-fest";
+import type { BGAndFGColor, Message, TextStyle } from "tui/interface";
 
 const colorsForMessageTypes = Object.freeze({
   error: "red",
@@ -23,6 +24,25 @@ export function formatFgAndBg(arg: {
   let formatted = arg.value;
   for (const [fgOrBg, color] of Object.entries(arg.style)) {
     formatted = `{${color}-${fgOrBg}}${formatted}{/${color}-${fgOrBg}}`;
+  }
+
+  return formatted;
+}
+
+export function formatTextForBlessedElement(arg: {
+  text: string;
+  style: Partial<ReadonlyDeep<TextStyle>>;
+}) {
+  let formatted = arg.text;
+  for (let [attribute, value] of Object.entries(arg.style)) {
+    let tag: string;
+
+    if (attribute === "fg" || attribute == "bg") tag = `${value}-${attribute}`;
+    // e.g., bold: true
+    else if (value) tag = attribute;
+    else continue;
+
+    formatted = `{${tag}}${formatted}{/${tag}}`;
   }
 
   return formatted;

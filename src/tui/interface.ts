@@ -53,3 +53,12 @@ export interface Message {
   text: string;
   type: "normal" | "info" | "warn" | "error" | "success" | "disabled";
 }
+
+export interface TextStyle {
+  bg: string;
+  fg: string;
+  bold: boolean;
+  blink: boolean;
+  inverse: boolean;
+  underline: boolean;
+}
