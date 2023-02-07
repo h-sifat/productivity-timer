@@ -62,3 +62,10 @@ export interface TextStyle {
   inverse: boolean;
   underline: boolean;
 }
+
+export interface TimerManagerInterface {
+  clearTimeout(id: any): void;
+  clearInterval(id: any): void;
+  setTimeout(f: (...arg: any[]) => any | Promise<any>, interval: number): any;
+  setInterval(f: (...arg: any[]) => any | Promise<any>, interval: number): any;
+}
