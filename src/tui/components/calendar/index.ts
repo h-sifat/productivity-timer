@@ -13,6 +13,7 @@ import type {
   ElementPosition,
   ElementDimension,
   BlessedKeypressHandler,
+  TimerManagerInterface,
 } from "tui/interface";
 
 import {
@@ -48,7 +49,7 @@ import { makeCalendarElements } from "./util/make-elements";
 import { mergeWithDefaultCalendarStyles } from "./util/style";
 
 import { assert } from "handy-types";
-import { isSameDay } from "date-fns";
+import { endOfDay, isSameDay, startOfTomorrow } from "date-fns";
 import { deepFreeze } from "common/util/other";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
 
@@ -62,6 +63,7 @@ export interface Calendar_Argument {
   additionalKeyBindings?: object;
   allowedRange?: Partial<DateRange>;
   style?: PartialDeep<CalendarStyle>;
+  timerManager: TimerManagerInterface;
   customDateFormatter?: CustomDateFormatter;
   dimension?: Pick<ElementDimension, "height">;
 }
@@ -186,6 +188,35 @@ export class Calendar {
     // draw the initial calendar
     if (this.#isCursorHidden) this.#updateCalenderContent();
     else this.#moveCursor({ scrollDirection: "right", step: 0 });
+
+    // Setting up current date updater
+    {
+      let timerId: any;
+      const currentDateUpdater = () => {
+        const newDate = new Date();
+
+        if (isSameDay(newDate, this.#today)) {
+          arg.timerManager.clearTimeout(timerId);
+        } else {
+          this.#today = newDate;
+          const year = this.#today.getFullYear();
+
+          // clear the cache
+          this.#state[year] = this.#initYearCalendarState({ year });
+          this.#updateCalenderContent({ renderScreen: true });
+        }
+
+        const msLeftBeforeNextDay =
+          endOfDay(this.#today).getTime() - newDate.getTime();
+
+        timerId = arg.timerManager.setTimeout(
+          currentDateUpdater,
+          msLeftBeforeNextDay + /* arbitrary offset */ 2000
+        );
+      };
+
+      currentDateUpdater();
+    }
   }
 
   #addWrapperEventHandlers() {
