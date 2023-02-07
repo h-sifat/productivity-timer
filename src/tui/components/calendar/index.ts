@@ -39,11 +39,11 @@ import {
 import { makeCalendarElements } from "./util/make-elements";
 import { mergeWithDefaultCalendarStyles } from "./util/style";
 
+import { assert } from "handy-types";
 import { isSameDay } from "date-fns";
 import { deepFreeze } from "common/util/other";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
 import type { Debug, BlessedKeypressHandler, TextStyle } from "tui/interface";
-import { assert } from "handy-types";
 
 // ------------------- Types and Interfaces -----------------
 export interface Calendar_Argument {
@@ -88,6 +88,10 @@ type CustomDateFormatter = (
   arg: FormatDateNumber_Argument
 ) => Partial<TextStyle> | undefined;
 
+type OnCursorMove_Argument = { date: Date; cursor: Coordinate };
+export type OnCursorMove = (arg: OnCursorMove_Argument) => void;
+export type ShouldCursorMove = (arg: OnCursorMove_Argument) => boolean;
+
 // ------------ Global Constants -------------------
 const KeyBindings = Object.freeze({
   "k/up": "up",
@@ -130,7 +134,10 @@ export class Calendar {
   readonly #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
 
   // ------- Other ---------------
+  #onSelect: OnCursorMove = () => {};
+  #onCursorMove: OnCursorMove = () => {};
   #customDateFormatter: CustomDateFormatter;
+  #shouldCursorMove: ShouldCursorMove = () => true;
 
   constructor(arg: Calendar_Argument) {
     this.#debug = arg.debug;
@@ -238,6 +245,9 @@ export class Calendar {
     };
 
     this.#elements.wrapper.on("keypress", keyPressHandler);
+    this.#elements.wrapper.key("enter", () => {
+      this.#onSelect({ cursor: this.#cursor, date: this.dateAtCursor });
+    });
   }
 
   #initYearCalendarState(arg: { year: number }): YearCalendarState {
@@ -330,6 +340,8 @@ export class Calendar {
         step = 1;
       }
 
+      if (!this.#shouldCursorMove({ date, cursor: currentCursor })) return;
+
       this.#cursor.x = currentCursor.x;
       this.#cursor.y = currentCursor.y;
     }
@@ -347,6 +359,8 @@ export class Calendar {
       });
 
     this.#renderScreen();
+
+    this.#onCursorMove({ cursor: this.#cursor, date: this.dateAtCursor });
   }
 
   #updateCalenderContent(arg: { renderScreen?: boolean } = {}) {
@@ -509,6 +523,13 @@ export class Calendar {
   }
 
   // ----- Getters -------------
+  get dateAtCursor(): Date {
+    return this.#getDateAtCursor({
+      cursor: this.#cursor,
+      yearDateMatrix: this.#state[this.#currentYear].yearDateMatrix,
+    })!;
+  }
+
   get element() {
     return this.#elements.wrapper;
   }
@@ -516,5 +537,17 @@ export class Calendar {
   // ------- Setters -----------
   set customDateFormatter(func: CustomDateFormatter) {
     this.#customDateFormatter = func;
+  }
+
+  set onCursorMove(f: OnCursorMove) {
+    this.#onCursorMove = f;
+  }
+
+  set shouldCursorMove(f: ShouldCursorMove) {
+    this.#shouldCursorMove = f;
+  }
+
+  set onSelect(f: OnCursorMove) {
+    this.#onSelect = f;
   }
 }
