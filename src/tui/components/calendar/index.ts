@@ -7,6 +7,14 @@ import type {
   DateMatrixOfMonth,
 } from "./interface";
 
+import type {
+  Debug,
+  TextStyle,
+  ElementPosition,
+  ElementDimension,
+  BlessedKeypressHandler,
+} from "tui/interface";
+
 import {
   MONTHS_NAMES,
   isCoordinateEqual,
@@ -43,7 +51,6 @@ import { assert } from "handy-types";
 import { isSameDay } from "date-fns";
 import { deepFreeze } from "common/util/other";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
-import type { Debug, BlessedKeypressHandler, TextStyle } from "tui/interface";
 
 // ------------------- Types and Interfaces -----------------
 export interface Calendar_Argument {
@@ -51,10 +58,12 @@ export interface Calendar_Argument {
   year: number;
   renderScreen(): void;
   firstDayOfWeek: string;
+  position?: ElementPosition;
   additionalKeyBindings?: object;
   allowedRange?: Partial<DateRange>;
   style?: PartialDeep<CalendarStyle>;
   customDateFormatter?: CustomDateFormatter;
+  dimension?: Pick<ElementDimension, "height">;
 }
 
 type ScrollDirection = "up" | "down" | "left" | "right";
@@ -148,8 +157,9 @@ export class Calendar {
     {
       const { additionalKeyBindings = {} } = arg;
       this.#elements = makeCalendarElements({
-        wrapperWidth: Calendar.ELEMENT_WIDTH,
+        position: arg.position || {},
         instructions: { ...KeyBindings, ...additionalKeyBindings },
+        dimension: { ...arg.dimension, width: Calendar.ELEMENT_WIDTH },
       });
     }
 

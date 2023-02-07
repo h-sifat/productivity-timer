@@ -1,15 +1,24 @@
 import blessed from "blessed";
+import { pick } from "common/util/other";
 import { createInstructionsBox } from "tui/components/instructions";
+
+import type { ElementDimension } from "tui/interface";
+import type { Calendar_Argument } from "tui/components/calendar";
 import type { CalendarElements } from "tui/components/calendar/interface";
 
-export function makeCalendarElements(arg: {
-  wrapperWidth: number;
-  instructions: { [k: string]: string };
-}): CalendarElements {
+export function makeCalendarElements(
+  arg: {
+    instructions: { [k: string]: string };
+    dimension?: ElementDimension;
+  } & Pick<Calendar_Argument, "position">
+): CalendarElements {
+  const { dimension = {}, position = {} } = arg;
+
   const wrapper = blessed.box({
     border: "line",
     scrollable: false,
-    width: arg.wrapperWidth,
+    ...pick(dimension, ["width", "height"]),
+    ...pick(position, ["top", "bottom", "left", "right"]),
 
     style: { focus: { border: { fg: "green" } } },
   });
