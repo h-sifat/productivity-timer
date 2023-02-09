@@ -16,8 +16,10 @@ import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/
 
 import EPP from "common/util/epp";
 import WorkSession from "entities/work-session";
-import { DeepFreezeTypeMapper } from "common/interfaces/other";
 import { MakeGetMaxId } from "data-access/interface";
+import { DeepFreezeTypeMapper } from "common/interfaces/other";
+import { validateDailyStat } from "./stats";
+import { deepFreeze } from "common/util/other";
 
 const assertValidWorkSession: WorkSessionValidator["validate"] =
   WorkSession.validator.validate;
@@ -62,6 +64,7 @@ const SELECT_WS_AS_JSON_QUERY_PREFIX = `select json_object(
 
 const PREPARED_QUERY_NAMES = Object.freeze({
   getMaxId: "ws/getMaxId",
+  getStats: "ws/getStats",
   insert_work_session: "ws/insert_work_session",
   insert_work_session_elapsed_time_by_date:
     "ws/insert_work_session_elapsed_time_by_date",
@@ -88,6 +91,35 @@ const PREPARED_QUERY_STATEMENTS: {
   find_work_sessions_by_date_range:
     SELECT_WS_AS_JSON_QUERY_PREFIX +
     "where ws.startedAt >= $fromDate AND ws.startedAt <= $toDate;",
+
+  getStats: `select 
+    json_object(
+        'date', date,
+        'totalDurationMs', sum(duration),
+        'durationPerRefs', json_group_array(
+          json_object('duration', duration, 'ref', json_object('id', id, 'type', type))
+        )
+    ) as data
+  from (
+    select 
+      date, id, type, sum(elapsed_time_ms) as duration
+    from (
+      /* ----- Getting ref (id, type) --------- */
+      select
+        elapsed_time_ms,
+        wsetbd.date as date,
+        /* || '' -> converts number id to string */
+        ifnull(ws.categoryId, ws.projectId) || '' as id,
+        iif(ws.categoryId is null, 'project', 'category') as type
+      from work_session_elapsed_time_by_date as wsetbd
+      join work_sessions as ws
+        on ws.id = wsetbd.work_session_id
+      /* ----- End Getting ref (id, type) --------- */
+    )
+    group by date, id, type
+    order by date asc
+  )
+  group by date;`,
 });
 
 interface BuildWorkSessionDatabase_Argument {
@@ -121,6 +153,7 @@ export default function buildWorkSessionDatabase(
   const workSessionDb: WorkSessionDatabaseInterface = Object.freeze({
     insert,
     getMaxId,
+    getStats,
     findByDateRange,
   });
 
@@ -246,6 +279,26 @@ export default function buildWorkSessionDatabase(
     }) as WorkSessionFields[];
   }
 
+  async function getStats() {
+    db.prepare({
+      overrideIfExists: false,
+      name: PREPARED_QUERY_NAMES.getStats,
+      statement: PREPARED_QUERY_STATEMENTS.getStats,
+    });
+
+    const dailyStats = (await db.executePrepared({
+      name: PREPARED_QUERY_NAMES.getStats,
+    })) as { data: string }[];
+
+    const stats = dailyStats.map((dailyStat) => JSON.parse(dailyStat.data));
+
+    try {
+      return deepFreeze(validateDailyStat(stats)) as any;
+    } catch (ex) {
+      throwDatabaseCorruptedError({ originalError: ex, record: dailyStats });
+    }
+  }
+
   // ---------- Utility functions --------------------------
   function validate(
     workSession: any
@@ -253,19 +306,7 @@ export default function buildWorkSessionDatabase(
     try {
       assertValidWorkSession(workSession);
     } catch (ex) {
-      const errorMessage = `The table ${TABLE_NAME} or it's sub-tables contains invalid record(s).`;
-
-      notifyDatabaseCorruption({
-        table: TABLE_NAME,
-        message: errorMessage,
-        otherInfo: { record: workSession, originalError: ex },
-      });
-
-      throw new EPP({
-        code: "DB_CORRUPTED",
-        otherInfo: { record: workSession, originalError: ex },
-        message: errorMessage,
-      });
+      throwDatabaseCorruptedError({ originalError: ex, record: workSession });
     }
   }
 
@@ -273,19 +314,35 @@ export default function buildWorkSessionDatabase(
     try {
       return __normalizeRecordToDocument__(record) as WorkSessionFields;
     } catch (ex) {
-      const errorMessage = `Database corrupted! It returned corrupted work-session document.`;
-
-      notifyDatabaseCorruption({
-        table: TABLE_NAME,
-        message: errorMessage,
-        otherInfo: { record, originalError: ex },
-      });
-
-      throw new EPP({
-        code: "DB_CORRUPTED",
-        otherInfo: { record, originalError: ex },
-        message: errorMessage,
+      throwDatabaseCorruptedError({
+        record,
+        originalError: ex,
+        message: `Database corrupted! It returned corrupted work-session document.`,
       });
     }
+  }
+
+  function throwDatabaseCorruptedError(arg: {
+    record: any;
+    message?: string;
+    originalError: any;
+  }): never {
+    const {
+      record,
+      originalError,
+      message = `The table ${TABLE_NAME} or it's sub-tables contains invalid record(s).`,
+    } = arg;
+
+    notifyDatabaseCorruption({
+      message: message,
+      table: TABLE_NAME,
+      otherInfo: { record, originalError },
+    });
+
+    throw new EPP({
+      message: message,
+      code: "DB_CORRUPTED",
+      otherInfo: { record, originalError },
+    });
   }
 }

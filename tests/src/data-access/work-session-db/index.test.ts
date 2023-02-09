@@ -12,11 +12,11 @@ import Category from "entities/category";
 import { deepFreeze } from "common/util/other";
 import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 import buildCategoryDatabase from "data-access/category-db";
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
-import SqliteDatabase from "data-access/db/mainprocess-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const notifyDatabaseCorruption = jest.fn();
@@ -269,4 +269,47 @@ describe("Handling Data Corruption", () => {
       });
     });
   }
+});
+
+describe("getStats", () => {
+  it(`returns an empty array if there are no work sessions in the db`, async () => {
+    const stats = await workSessionDb.getStats();
+    expect(stats).toHaveLength(0);
+  });
+
+  it(`returns all the stats`, async () => {
+    const category = Category.make({ name: "study" });
+
+    await categoryDb.insert(category);
+
+    const workSession = deepFreeze({
+      id: "1",
+      ref: { type: "category", id: category.id },
+      elapsedTime: {
+        total: 1500000,
+        byDate: { "10/19/2022": 899000, "10/20/2022": 601000 },
+      },
+      events: [
+        { name: "start", timestamp: 1666201500000 },
+        { name: "time_up", timestamp: 1666203000000 },
+      ],
+      startedAt: "10/19/2022",
+      targetDuration: 1500000,
+    } as const);
+
+    await workSessionDb.insert(workSession);
+
+    const stats = await workSessionDb.getStats();
+
+    expect(Object.isFrozen(stats)).toBeTruthy();
+    expect(stats).toHaveLength(
+      Object.keys(workSession.elapsedTime.byDate).length
+    );
+
+    stats.forEach(({ durationPerRefs }) => {
+      durationPerRefs.forEach(({ ref }) =>
+        expect(ref).toEqual(workSession.ref)
+      );
+    });
+  });
 });

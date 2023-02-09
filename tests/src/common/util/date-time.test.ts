@@ -104,7 +104,7 @@ describe("formatDurationMsAsHMS", () => {
   });
 });
 
-fdescribe("parseDuration", () => {
+describe("parseDuration", () => {
   describe("Validation", () => {
     it.each(["20x", "1m20h", "1s2m", "1s2h", "234.234m", "-23m2s"])(
       `invalid duration string: %p`,
