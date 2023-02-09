@@ -4,6 +4,7 @@ import { Request } from "src/controllers/interface";
 import makeGetWorkSessions from "src/controllers/work-session/get-work-sessions";
 
 const workSessionService = Object.freeze({
+  getStats: jest.fn(),
   listWorkSessionsByDateRange: jest.fn(),
 });
 
@@ -23,37 +24,61 @@ const defaultRequest: Request = deepFreeze({
 });
 
 describe("Validation", () => {
-  {
-    const errorCode = "MISSING_FROM_DATE";
-
-    it(`throws ewc "${errorCode}" if the fromDate query is missing`, async () => {
-      const request = { ...defaultRequest, query: {} };
-
-      const response = await getWorkSessions(request);
-      expect(response).toEqual({
-        body: {
-          success: false,
-          error: { message: expect.any(String), code: errorCode },
-        },
-      });
-
-      for (const service of Object.values(workSessionService))
-        expect(service).not.toHaveBeenCalled();
+  it.each([
+    {
+      query: { lookup: "work-sessions", arg: {} },
+      case: `throws error if query.lookup = "work-sessions" and "from" is missing from query.arg`,
+    },
+    {
+      query: { lookup: "work-sessions", arg: { from: "" } },
+      case: `throws error if query.lookup = "work-sessions" and "from" is not a non-empty string`,
+    },
+    {
+      query: { lookup: "unknown", arg: { a: 1 } },
+      case: `throws error if query.lookup  is invalid`,
+    },
+  ] as const)(`$case`, async ({ query }) => {
+    const request = { ...defaultRequest, query: {} };
+    const response = await getWorkSessions(request);
+    expect(response).toMatchObject({
+      body: {
+        success: false,
+        error: { message: expect.any(String) },
+      },
     });
-  }
+
+    for (const service of Object.values(workSessionService))
+      expect(service).not.toHaveBeenCalled();
+  });
 });
 
 describe("Functionality", () => {
   it.each([
-    { query: { fromDate: "1/1/2022" } },
-    { query: { fromDate: "1/1/2022", toDate: "2/2/2022" } },
+    {
+      query: { lookup: "work-sessions", arg: { from: "1/1/2022" } },
+      serviceName: "listWorkSessionsByDateRange",
+      serviceCallArg: { from: "1/1/2022" },
+    },
+    {
+      query: {
+        lookup: "work-sessions",
+        arg: { from: "1/1/2022", to: "2/2/2022" },
+      },
+      serviceCallArg: { from: "1/1/2022", to: "2/2/2022" },
+      serviceName: "listWorkSessionsByDateRange",
+    },
+    {
+      query: { lookup: "stats" },
+      serviceName: "getStats",
+      serviceCallArg: undefined,
+    },
   ])(
-    `calls the workSessionService.listWorkSessionsByDateRange and returns the response`,
-    async ({ query }) => {
+    `calls the workSessionService.$serviceName and returns the response`,
+    async ({ query, serviceName, serviceCallArg = undefined }) => {
       const fakeServiceResponse = [{ startedAt: "1/1/1970" }];
-      workSessionService.listWorkSessionsByDateRange.mockResolvedValueOnce(
-        fakeServiceResponse
-      );
+      const service = (workSessionService as any)[serviceName];
+
+      service.mockResolvedValueOnce(fakeServiceResponse);
 
       const request = { ...defaultRequest, query };
       const response = await getWorkSessions(request);
@@ -62,32 +87,41 @@ describe("Functionality", () => {
         body: { success: true, data: fakeServiceResponse },
       });
 
-      expect(
-        workSessionService.listWorkSessionsByDateRange
-      ).toHaveBeenCalledTimes(1);
+      expect(service).toHaveBeenCalledTimes(1);
 
-      const expectedServiceCallArgument =
-        "toDate" in query
-          ? { from: query.fromDate, to: query.toDate }
-          : { from: query.fromDate };
-
-      expect(
-        workSessionService.listWorkSessionsByDateRange
-      ).toHaveBeenCalledWith(expectedServiceCallArgument);
+      if (serviceCallArg) expect(service).toHaveBeenCalledWith(serviceCallArg);
     }
   );
+});
 
-  it(`returns any error thrown by the service(s)`, async () => {
-    const error = new EPP("Invalid from date", "INVALID_FROM_DATE");
-    workSessionService.listWorkSessionsByDateRange.mockRejectedValueOnce(error);
+describe("Error Handling", () => {
+  it.each([
+    {
+      query: { lookup: "stats" },
+      serviceName: "getStats",
+    },
+    {
+      serviceName: "listWorkSessionsByDateRange",
+      query: { lookup: "work-sessions", arg: { from: "1/1/2022" } },
+    },
+  ])(
+    `query.lookup: "$query.lookup" | returns error if $serviceName throws error`,
+    async ({ serviceName, query }) => {
+      const fakeError = new EPP("Your code sucks.", "code_sucks");
+      const service = (workSessionService as any)[serviceName];
+      service.mockRejectedValueOnce(fakeError);
 
-    const request = { ...defaultRequest, query: { fromDate: "1/1/2022" } };
-    const response = await getWorkSessions(request);
-    expect(response).toEqual({
-      body: {
-        success: false,
-        error: { code: error.code, message: error.message },
-      },
-    });
-  });
+      const request = { ...defaultRequest, query };
+      const response = await getWorkSessions(request);
+
+      expect(response).toEqual({
+        body: {
+          success: false,
+          error: { message: fakeError.message, code: fakeError.code },
+        },
+      });
+
+      expect(service).toHaveBeenCalledTimes(1);
+    }
+  );
 });

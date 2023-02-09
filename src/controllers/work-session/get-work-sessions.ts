@@ -1,12 +1,26 @@
 import type { Controller } from "../interface";
 import type { WorkSessionServiceInterface } from "use-cases/interfaces/work-session-service";
 
-import required from "common/util/required";
+import { z } from "zod";
+import { formatError } from "common/validator/zod";
+
+const QuerySchema = z.discriminatedUnion("lookup", [
+  z.object({
+    lookup: z.literal("work-sessions"),
+    arg: z.object({
+      from: z.string().min(1),
+      to: z.string().min(1).optional(),
+    }),
+  }),
+  z.object({ lookup: z.literal("stats") }),
+]);
+
+export type GetWorkSessionsQuerySchemaInterface = z.infer<typeof QuerySchema>;
 
 export interface MakeGetWorkSessions_Argument {
   workSessionService: Pick<
     WorkSessionServiceInterface,
-    "listWorkSessionsByDateRange"
+    "listWorkSessionsByDateRange" | "getStats"
   >;
 }
 export default function makeGetWorkSessions(
@@ -14,34 +28,29 @@ export default function makeGetWorkSessions(
 ): Controller {
   const { workSessionService } = builderArg;
 
-  /**
-   * RequestURL | Method to use
-   * ---------- | ------
-   * get /work-sessions?`fromDate=1/1/2022&toDate=1/5/2022` | listByDateRange
-   * */
   return async function getWorkSessions(request) {
-    const { query } = request;
     try {
-      const {
-        fromDate = required("fromDate", {
-          code: "MISSING_FROM_DATE",
-          objectName: "url parameters",
-        }),
-      } = query;
+      const query = QuerySchema.parse(request.query);
 
-      const listByDateRangeArgument =
-        "toDate" in query
-          ? { from: fromDate, to: query.toDate }
-          : { from: fromDate };
+      let data: any;
+      switch (query.lookup) {
+        case "work-sessions":
+          data = await workSessionService.listWorkSessionsByDateRange(
+            query.arg as any
+          );
+          break;
+        case "stats":
+          data = await workSessionService.getStats();
+          break;
 
-      const workSessions = await workSessionService.listWorkSessionsByDateRange(
-        listByDateRangeArgument
-      );
-
-      return { body: { success: true, data: workSessions } };
+        default:
+          const __exhaustiveCheck: never = query;
+      }
+      return { body: { success: true, data } };
     } catch (ex) {
+      const message = ex instanceof z.ZodError ? formatError(ex) : ex.message;
       return {
-        body: { success: false, error: { message: ex.message, code: ex.code } },
+        body: { success: false, error: { message, code: ex.code } },
       };
     }
   };
