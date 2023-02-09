@@ -1,4 +1,5 @@
 import type { QueryMethodArguments } from "./work-session-db";
+import type WorkSessionDatabaseInterface from "./work-session-db";
 import type { DeepFreezeTypeMapper } from "common/interfaces/other";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
@@ -6,7 +7,7 @@ interface AddWorkSession_Argument {
   workSessionInfo: Omit<QueryMethodArguments["insert"], "id">;
 }
 
-export interface WorkSessionServiceInterface {
+export type WorkSessionServiceInterface = {
   getMaxId(): Promise<number>;
   addWorkSession(
     arg: AddWorkSession_Argument
@@ -15,4 +16,4 @@ export interface WorkSessionServiceInterface {
     from: string;
     to?: string;
   }): Promise<WorkSessionFields[]>;
-}
+} & Pick<WorkSessionDatabaseInterface, "getStats">;
