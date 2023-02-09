@@ -51,7 +51,7 @@ export function printTimerMethodCallResult(arg: printTimer_Arg) {
   printObjectAsBox({ object: info, title, useColors: false });
 }
 
-function formatDuration(durationMs: number): string {
+export function formatDuration(durationMs: number): string {
   if (!durationMs) return "0s";
 
   const formatted = formatDurationMsAsHMS({ duration: durationMs });

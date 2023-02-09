@@ -40,6 +40,7 @@
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
     "boxen": "^7.0.1",
+    "cli-pie": "^2.4.2",
     "cli-table": "^0.3.11",
     "commander": "^9.4.1",
     "date-fns": "^2.29.3",

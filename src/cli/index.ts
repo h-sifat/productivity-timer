@@ -7,6 +7,7 @@ import { addTimerCommands } from "./commands/timer";
 import { addCreateCommand } from "./commands/create";
 import { addDeleteCommand } from "./commands/delete";
 import { addServerRelatedCommands } from "./commands/server";
+import { addStatCommand } from "./commands/stats";
 
 const program = new Command();
 
@@ -30,6 +31,9 @@ addTimerCommands(program);
 
 // TUI
 addTuiCommands(program);
+
+// Statistics
+addStatCommand(program);
 
 try {
   program.parse();
