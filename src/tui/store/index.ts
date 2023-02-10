@@ -1,9 +1,11 @@
-import { configureStore } from "@reduxjs/toolkit";
-import categoryReducer from "./categorySlice";
+import statsReducer from "./statsSlice";
 import projectReducer from "./projectSlice";
+import categoryReducer from "./categorySlice";
+import { configureStore } from "@reduxjs/toolkit";
 
 export const store = configureStore({
   reducer: {
+    stats: statsReducer,
     project: projectReducer,
     category: categoryReducer,
   },
