@@ -140,7 +140,7 @@ export class Calendar {
 
   readonly #style: CalendarStyle;
   readonly #elements: CalendarElements;
-  readonly #allowedRange: Readonly<Partial<DateRange>>;
+  #allowedRange: Readonly<Partial<DateRange>>;
 
   #shortDayNames: readonly string[];
   #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
@@ -188,7 +188,7 @@ export class Calendar {
 
     // draw the initial calendar
     if (this.#isCursorHidden) this.#updateCalenderContent();
-    else this.#moveCursor({ scrollDirection: "right", step: 0 });
+    else this.#moveCursorToInitialPosition();
 
     // Setting up current date updater
     {
@@ -565,6 +565,23 @@ export class Calendar {
   }
 
   // ------------ Updater Methods -------------------
+  setAllowedRange(arg: { range: Partial<DateRange>; currentYear: number }) {
+    const range = DateRangeSchema.parse(arg.range || {});
+    this.#allowedRange = Object.freeze(range);
+
+    assert<number>("non_negative_integer", arg.currentYear, { name: "year" });
+    this.#currentYear = arg.currentYear;
+
+    for (const key in this.#state) delete this.#state[key];
+
+    this.#state[this.#currentYear] = this.#initYearCalendarState({
+      year: this.#currentYear,
+    });
+
+    this.#updateCalenderContent({ renderScreen: true });
+    this.#moveCursorToInitialPosition();
+  }
+
   #setFirstDayOfWeek(arg: {
     dayName: string;
     updateCalendarContent?: boolean;
