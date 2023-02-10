@@ -1,5 +1,7 @@
 // @ts-expect-error no type definition
 import Pie from "cli-pie";
+import { sub } from "date-fns";
+import { assert } from "handy-types";
 import { formatString } from "cli/util";
 import type { Command } from "commander";
 import type { Writable } from "type-fest";
@@ -9,18 +11,13 @@ import { formatDuration } from "cli/util/timer";
 import { getPieRadius } from "cli/util/console";
 import ProjectService from "client/services/project";
 import CategoryService from "client/services/category";
+import { toLocaleDateString } from "common/util/date-time";
 import WorkSessionService from "client/services/work-session";
 import type { ProjectFields } from "entities/project/project";
 import type { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 import { WorkSessionFields } from "entities/work-session/work-session";
 import type { TimerRefWithName } from "src/controllers/timer/interface";
-import {
-  toLocaleDateString,
-  unixMsTimestampToUsLocaleDateString,
-} from "common/util/date-time";
-import { assert } from "handy-types";
-import { sub } from "date-fns";
 
 type ModifiedWorkSession = Omit<WorkSessionFields, "ref"> & {
   ref: Required<TimerRefWithName>;
@@ -31,7 +28,7 @@ export function addStatCommand(program: Command) {
     .command("stats")
     .description("Shows statistics and work history.")
     .option(
-      "-d, --date <date-string-or-number>",
+      "-d, --date <mm-dd-yyyy-or-number>",
       "show the stats of a specific date or <number> days before the today."
     )
     .action(showStats);
@@ -49,7 +46,7 @@ async function showStats(options: showStats_Options) {
       `Stats of: ${formatString({
         string: statsDate.toDateString(),
         color: "green",
-      })}\n`
+      })}`
     );
 
     const workSessionService = new WorkSessionService({
@@ -87,6 +84,7 @@ async function showStats(options: showStats_Options) {
 
     const todaysWorkSessions: ModifiedWorkSession[] = (
       await workSessionService.getWorkSessions({
+        to: toLocaleDateString(statsDate),
         from: toLocaleDateString(statsDate),
       })
     ).map((workSession) => {
@@ -116,10 +114,13 @@ function printDailyStats(workSessions: ModifiedWorkSession[]) {
     totalWorkTimeMs += elapsedTime.total;
   });
 
-  const pie = new Pie(getPieRadius(), Object.values(pieItems), {
-    legend: true,
-  });
-  console.log(pie.toString());
+  if (workSessions.length) {
+    console.log();
+    const pie = new Pie(getPieRadius(), Object.values(pieItems), {
+      legend: true,
+    });
+    console.log(pie.toString());
+  }
 
   console.log(
     `Total work time: ${formatString({
@@ -128,18 +129,19 @@ function printDailyStats(workSessions: ModifiedWorkSession[]) {
     })}`
   );
 
-  printTables({
-    columns: ["name", "duration"],
-    objects: Object.values(pieItems).map(
-      ({ label: name, value: durationMs }) => ({
-        name,
-        duration: formatString({
-          color: "green",
-          string: formatDuration(durationMs),
-        }),
-      })
-    ),
-  });
+  if (workSessions.length)
+    printTables({
+      columns: ["name", "duration"],
+      objects: Object.values(pieItems).map(
+        ({ label: name, value: durationMs }) => ({
+          name,
+          duration: formatString({
+            color: "green",
+            string: formatDuration(durationMs),
+          }),
+        })
+      ),
+    });
 }
 
 function getStatsDate(options: showStats_Options) {
@@ -149,7 +151,7 @@ function getStatsDate(options: showStats_Options) {
 
   if (/^\d+$/.test(dateStr)) {
     const daysToSubtractFromToday = Number(dateStr);
-    assert<number>("non_negative_integer", daysToSubtractFromToday, {
+    assert<number>("positive_integer", daysToSubtractFromToday, {
       name: "date",
     });
 
