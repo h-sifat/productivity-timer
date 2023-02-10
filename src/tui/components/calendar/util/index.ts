@@ -41,12 +41,12 @@ const DAY_NAMES_LOWERCASE = Object.freeze(
 );
 
 export interface getDayNames_Argument {
-  startDay: string;
+  firstDay: string;
 }
 export function getDayNamesBasedOnStartingDay(
   arg: getDayNames_Argument
 ): DayNameInterface[] {
-  const startDay = arg.startDay.toLowerCase();
+  const startDay = arg.firstDay.toLowerCase();
   const startDayIndex = DAY_NAMES_LOWERCASE.findIndex((names) =>
     names.includes(startDay)
   );

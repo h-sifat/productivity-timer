@@ -49,7 +49,7 @@ import { makeCalendarElements } from "./util/make-elements";
 import { mergeWithDefaultCalendarStyles } from "./util/style";
 
 import { assert } from "handy-types";
-import { endOfDay, isSameDay, startOfTomorrow } from "date-fns";
+import { endOfDay, isSameDay } from "date-fns";
 import { deepFreeze } from "common/util/other";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
 
@@ -99,7 +99,7 @@ type CustomDateFormatter = (
   arg: FormatDateNumber_Argument
 ) => Partial<TextStyle> | undefined;
 
-type OnCursorMove_Argument = { date: Date; cursor: Coordinate };
+type OnCursorMove_Argument = { date: Date | null; cursor: Coordinate };
 export type OnCursorMove = (arg: OnCursorMove_Argument) => void;
 export type ShouldCursorMove = (arg: OnCursorMove_Argument) => boolean;
 
@@ -140,9 +140,10 @@ export class Calendar {
 
   readonly #style: CalendarStyle;
   readonly #elements: CalendarElements;
-  readonly #shortDayNames: readonly string[];
   readonly #allowedRange: Readonly<Partial<DateRange>>;
-  readonly #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
+
+  #shortDayNames: readonly string[];
+  #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
 
   // ------- Other ---------------
   #onSelect: OnCursorMove = () => {};
@@ -173,7 +174,7 @@ export class Calendar {
     this.#style = mergeWithDefaultCalendarStyles(arg.style);
 
     this.#dayNamesArray = deepFreeze(
-      getDayNamesBasedOnStartingDay({ startDay: arg.firstDayOfWeek })
+      getDayNamesBasedOnStartingDay({ firstDay: arg.firstDayOfWeek })
     );
     this.#shortDayNames = Object.freeze(
       this.#dayNamesArray.map(({ name }) => name.short)
@@ -563,12 +564,43 @@ export class Calendar {
     return yearDateMatrix[cursor.y][cursor.x];
   }
 
+  // ------------ Updater Methods -------------------
+  #setFirstDayOfWeek(arg: {
+    dayName: string;
+    updateCalendarContent?: boolean;
+  }) {
+    this.#dayNamesArray = deepFreeze(
+      getDayNamesBasedOnStartingDay({ firstDay: arg.dayName })
+    );
+    this.#shortDayNames = Object.freeze(
+      this.#dayNamesArray.map(({ name }) => name.short)
+    );
+
+    // now we need to change all the rendered calendar texts
+    Object.keys(this.#state).forEach((year) => {
+      this.#state[year] = this.#initYearCalendarState({ year: +year });
+    });
+
+    if (arg.updateCalendarContent || true)
+      this.#updateCalenderContent({ renderScreen: true });
+
+    if (!this.dateAtCursor) this.#moveCursorToInitialPosition();
+  }
+
+  setFirstDayOfWeek(dayName: string) {
+    this.#setFirstDayOfWeek({ dayName, updateCalendarContent: true });
+  }
+
+  #moveCursorToInitialPosition() {
+    this.#moveCursor({ scrollDirection: "right", step: 0 });
+  }
+
   // ----- Getters -------------
-  get dateAtCursor(): Date {
+  get dateAtCursor() {
     return this.#getDateAtCursor({
       cursor: this.#cursor,
       yearDateMatrix: this.#state[this.#currentYear].yearDateMatrix,
-    })!;
+    });
   }
 
   get element() {
