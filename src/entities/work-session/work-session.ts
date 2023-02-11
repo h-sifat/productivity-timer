@@ -382,11 +382,11 @@ class FakeTimerForEventsValidation {
     if (!canEnd) this.#throwInvalidEventOrder();
 
     if (this.#state !== "paused") this.#incrementElapsedTime(timestamp);
-    this.#lastEventTimestamp = timestamp;
 
     this.#assertElapsedNotTooGreaterThanTargetDuration();
 
     this.#state = "ended";
+    this.#lastEventTimestamp = timestamp;
   }
 
   protected time_up(timestamp: any) {
@@ -413,7 +413,7 @@ class FakeTimerForEventsValidation {
 
   #assertElapsedNotTooGreaterThanTargetDuration() {
     const isElapsedTooGreaterThanTargetDuration =
-      Math.abs(this.#elapsedTime - this.#targetDuration) >
+      this.#elapsedTime - this.#targetDuration >
       this.#MAX_ALLOWED_ELAPSED_TIME_DIFF;
 
     if (isElapsedTooGreaterThanTargetDuration)
