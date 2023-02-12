@@ -1,6 +1,7 @@
 import statsReducer from "./statsSlice";
 import projectReducer from "./projectSlice";
 import categoryReducer from "./categorySlice";
+import metaInfoReducer from "./metaInfoSlice";
 import { configureStore } from "@reduxjs/toolkit";
 
 export const store = configureStore({
@@ -8,6 +9,7 @@ export const store = configureStore({
     stats: statsReducer,
     project: projectReducer,
     category: categoryReducer,
+    metaInfo: metaInfoReducer,
   },
 });
 

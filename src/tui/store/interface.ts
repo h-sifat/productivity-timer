@@ -3,6 +3,7 @@ import type { ProjectFields } from "entities/project/project";
 import type { CategoryFields } from "entities/category/category";
 import type { DailyStat } from "use-cases/interfaces/work-session-db";
 import type { WorkSessionFields } from "entities/work-session/work-session";
+import { PublicMetaInfoInterface } from "entities/meta";
 
 export interface IdToIndexMap {
   [id: string]: number;
@@ -26,6 +27,12 @@ export interface CategoryState {
   idToIndexMap: IdToIndexMap;
   categoriesArray: CategoryFields[];
   error: ErrorMessageAndCode | null;
+}
+
+export interface MetaInfoState {
+  status: ResourceStatus;
+  error: ErrorMessageAndCode | null;
+  metaInfo: PublicMetaInfoInterface | null;
 }
 
 export interface ShortStats {
