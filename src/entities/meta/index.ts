@@ -52,7 +52,7 @@ export const MIN_DAILY_WORK_TARGET_MS = convertDuration({
 });
 
 export const PublicMetaFields: (keyof PublicMetaInfoInterface)[] =
-  Object.freeze(["dailyWorkTargetMs"]) as any;
+  Object.freeze(["dailyWorkTargetMs", "firstDayOfWeek"]) as any;
 
 const PublicMetaInfoSchema = z
   .object({

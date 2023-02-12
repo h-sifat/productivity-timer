@@ -14,6 +14,7 @@ export const BROADCAST_CHANNELS = {
   TIMER_BROADCAST_CHANNEL: "timer",
   PROJECT_BROADCAST_CHANNEL: "project",
   CATEGORY_BROADCAST_CHANNEL: "category",
+  META_INFO_BROADCAST_CHANNEL: "meta-info",
 };
 
 export const API_AND_SERVER_CONFIG = {

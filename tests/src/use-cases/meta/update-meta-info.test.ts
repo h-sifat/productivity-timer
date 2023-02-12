@@ -5,11 +5,13 @@ const db = Object.freeze({
   get: jest.fn(),
   set: jest.fn(),
 });
+const sideEffect = jest.fn();
 
-const updateMetaInfo = makeUpdateMetaInfo({ db });
+const updateMetaInfo = makeUpdateMetaInfo({ db, sideEffect });
 
 beforeEach(() => {
   Object.values(db).forEach((method) => method.mockReset());
+  sideEffect.mockReset();
 });
 
 describe("Functionality", () => {
@@ -27,10 +29,11 @@ describe("Functionality", () => {
     expect(db.get).toHaveBeenCalledTimes(1);
     expect(db.set).toHaveBeenCalledTimes(1);
     expect(db.set).toHaveBeenCalledWith(edited);
+    expect(sideEffect).not.toHaveBeenCalled();
   });
 
   it(`throws error if changes is invalid`, async () => {
-    expect.assertions(3);
+    expect.assertions(4);
 
     const changes: any = Object.freeze({ unknown: 24343 });
     const audience = "private";
@@ -41,6 +44,16 @@ describe("Functionality", () => {
       expect(ex.code).toBe("INVALID_CHANGES");
       expect(db.get).toHaveBeenCalledTimes(1);
       expect(db.set).not.toHaveBeenCalled();
+      expect(sideEffect).not.toHaveBeenCalled();
     }
+  });
+
+  it(`calls the sideEffect function after successful edit if the audience is "public"`, async () => {
+    await updateMetaInfo({
+      audience: "public",
+      changes: { firstDayOfWeek: "Mon" },
+    });
+
+    expect(sideEffect).toHaveBeenCalledTimes(1);
   });
 });

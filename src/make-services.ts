@@ -3,20 +3,21 @@ import makeCategoryService from "use-cases/category";
 import makeWorkSessionService from "use-cases/work-session";
 import { makeMetaInformationService } from "use-cases/meta";
 
-import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type {
   ProjectAddSideEffect,
-  ProjectDeleteSideEffect,
   ProjectEditSideEffect,
+  ProjectDeleteSideEffect,
 } from "use-cases/interfaces/project-service";
-import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 import type {
   CategoryAddSideEffect,
-  CategoryDeleteSideEffect,
   CategoryEditSideEffect,
+  CategoryDeleteSideEffect,
 } from "use-cases/interfaces/category-service";
+import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
+import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
+import type { MetaInfoUpdateSideEffect } from "use-cases/interfaces/meta-service";
 import type { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
+import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 
 export interface makeServices_Argument {
   databases: {
@@ -27,14 +28,17 @@ export interface makeServices_Argument {
   };
   sideEffects: {
     category: {
+      delete: CategoryDeleteSideEffect;
       post?: CategoryAddSideEffect | undefined;
       patch?: CategoryEditSideEffect | undefined;
-      delete: CategoryDeleteSideEffect;
     };
     project: {
+      delete: ProjectDeleteSideEffect;
       post?: ProjectAddSideEffect | undefined;
       patch?: ProjectEditSideEffect | undefined;
-      delete: ProjectDeleteSideEffect;
+    };
+    meta: {
+      patch?: MetaInfoUpdateSideEffect | undefined;
     };
   };
 }
@@ -59,7 +63,10 @@ export function makeServices(factoryArg: makeServices_Argument) {
   const workSession = makeWorkSessionService({
     db: databases.workSession,
   });
-  const metaInfo = makeMetaInformationService({ db: databases.metaInfo });
+  const metaInfo = makeMetaInformationService({
+    db: databases.metaInfo,
+    patchSideEffect: sideEffects.meta.patch,
+  });
 
   return Object.freeze({ project, category, workSession, metaInfo } as const);
 }

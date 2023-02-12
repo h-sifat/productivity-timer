@@ -19,3 +19,7 @@ export type MetaInfoServiceInterface = {
   get<T extends Filter>(arg: T): ResponseType<T>;
   update<T extends UpdateArg>(arg: T): ResponseType<T>;
 };
+
+export type MetaInfoUpdateSideEffect = (
+  metaInfo: PublicMetaInfoInterface
+) => void;

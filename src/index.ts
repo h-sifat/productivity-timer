@@ -4,13 +4,14 @@ import { getConfig } from "./config";
 import { Log } from "./start-up/interface";
 import { notify } from "common/util/notify";
 import { AllDatabases } from "./data-access";
-import { makeServices } from "./make-services";
+import { makeServices, makeServices_Argument } from "./make-services";
 import WorkSession from "entities/work-session";
 import { log, TAB_CHAR } from "./start-up/util";
 import { makeAllDatabase } from "./data-access";
 import { Server } from "express-ipc/dist/server";
 import { makeFileConsole } from "common/util/fs";
 import { configureApplication } from "./configure";
+import { BROADCAST_CHANNELS } from "./config/other";
 import CountDownTimer from "./countdown-timer/timer";
 import { makeControllers } from "./make-controllers";
 import { makeAppControllers } from "./controllers/app";
@@ -22,10 +23,9 @@ import { BackupManager } from "data-access/backup-manager";
 import type { TimerInstance } from "./countdown-timer/type";
 import { setUpTimerEventListeners } from "./start-up/timer";
 import type { TimerRef } from "entities/work-session/work-session";
+import { makeServiceSideEffects } from "./start-up/make-side-effects";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
-import { BROADCAST_CHANNELS } from "./config/other";
-import { makeServiceSideEffects } from "./start-up/make-side-effects";
 
 interface initApplication_Argument {
   log: Log;
@@ -166,9 +166,9 @@ async function initApplication(arg: initApplication_Argument) {
       },
       project: {
         ...makeServiceSideEffects({
-          channel: BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL,
           server,
           methods: ["post", "patch"],
+          channel: BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL,
         }),
         delete: makeDocumentDeleteSideEffect({
           timer,
@@ -177,6 +177,13 @@ async function initApplication(arg: initApplication_Argument) {
           broadcastChannel: BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL,
         }),
       },
+      meta: makeServiceSideEffects<
+        makeServices_Argument["sideEffects"]["meta"]
+      >({
+        server,
+        methods: ["patch"],
+        channel: BROADCAST_CHANNELS.META_INFO_BROADCAST_CHANNEL,
+      }),
     },
   });
 
