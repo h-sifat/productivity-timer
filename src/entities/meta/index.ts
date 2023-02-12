@@ -1,14 +1,19 @@
 import { z } from "zod";
 import EPP from "common/util/epp";
-import { createMD5Hash } from "common/util/other";
+import { cloneDeep } from "common/util/other";
 import { formatError } from "common/validator/zod";
+import { hashObject } from "common/util/hash-object";
 import { convertDuration } from "common/util/date-time";
+import { DAY_NAMES_LOWERCASE } from "tui/components/calendar/util";
+
+const AllValidDayNamesInLowercase = cloneDeep(DAY_NAMES_LOWERCASE).flat();
 
 export interface PrivateMetaInfoInterface {
   lastBackupTime: number | null;
 }
 
 export interface PublicMetaInfoInterface {
+  firstDayOfWeek: string;
   dailyWorkTargetMs: number | null;
 }
 
@@ -31,6 +36,7 @@ export interface MetaInformationEntity {
 export const DEFAULT_META_INFO = Object.freeze({
   lastBackupTime: null,
   dailyWorkTargetMs: null,
+  firstDayOfWeek: "Saturday",
 });
 
 const MAX_DAILY_WORK_TARGET_MS = convertDuration({
@@ -65,6 +71,14 @@ const PublicMetaInfoSchema = z
         z.null(),
       ])
       .default(null),
+
+    firstDayOfWeek: z
+      .string()
+      .refine(
+        (name) => AllValidDayNamesInLowercase.includes(name.toLowerCase()),
+        { message: `Invalid first day of week name.` }
+      )
+      .default("Saturday"),
   })
   .strict();
 
@@ -125,12 +139,7 @@ function validateMetaInformation(
 }
 
 export function generateMetaInfoHash(metaInfo: MetaInformationInterface) {
-  const serialized = Object.entries(metaInfo)
-    .sort(([kA], [kB]) => kA.localeCompare(kB))
-    .map(([k, v]) => k + String(v))
-    .join("");
-
-  return createMD5Hash(serialized);
+  return hashObject(metaInfo);
 }
 
 export const MetaInformation: MetaInformationEntity = Object.freeze({

@@ -34,7 +34,7 @@ export const DAY_NAMES = deepFreeze([
   { name: { long: "Saturday", medium: "Sat", short: "Sa" }, index: 6 }, // Sat -> 6
 ] as const);
 
-const DAY_NAMES_LOWERCASE = Object.freeze(
+export const DAY_NAMES_LOWERCASE = Object.freeze(
   DAY_NAMES.map(({ name }) => Object.values(name)).map((arr) =>
     Object.freeze(arr.map((s) => s.toLowerCase()))
   )

@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { DeepFreezeTypeMapper, PickObject } from "common/interfaces/other";
 import { cloneDeep as lodash_cloneDeep } from "lodash";
+import { Writable } from "type-fest";
 
 export function createMD5Hash(arg: string): string {
   return createHash("md5").update(String(arg)).digest("base64");
@@ -47,7 +48,7 @@ export const pick: PickObject = function _pick(object, keys) {
   }, Object.create(null));
 };
 
-export const cloneDeep = <T>(o: T): T => lodash_cloneDeep(o);
+export const cloneDeep = <T>(o: T): Writable<T> => lodash_cloneDeep(o);
 
 export interface getCircularArrayIndex_Arg {
   offset: number;

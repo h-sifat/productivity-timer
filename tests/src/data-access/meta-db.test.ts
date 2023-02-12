@@ -70,6 +70,7 @@ describe("get/set", () => {
 
   it(`sets the meta info`, async () => {
     const insertedMetaInfo = Object.freeze({
+      firstDayOfWeek: "Sat",
       lastBackupTime: Date.now(),
       dailyWorkTargetMs: MIN_DAILY_WORK_TARGET_MS,
     });

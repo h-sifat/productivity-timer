@@ -56,6 +56,12 @@ describe("editMetaInfo", () => {
         changes: { unknown: "hi" },
         case: "changes contains unknown props",
       },
+      {
+        audience: "public",
+        metaInfo: DEFAULT_META_INFO,
+        changes: { firstDayOfWeek: "Bla" },
+        case: "changes contains invalid firstDayOfWeek",
+      },
     ] as const)(
       `throws ewc "${errorCode}" if $case | audience: $audience`,
       ({ changes, audience, metaInfo }) => {
@@ -87,7 +93,10 @@ describe("editMetaInfo", () => {
       {
         metaInfo,
         audience: "public",
-        changes: { dailyWorkTargetMs: MS_IN_ONE_HOUR * 6 },
+        changes: {
+          firstDayOfWeek: "Sun",
+          dailyWorkTargetMs: MS_IN_ONE_HOUR * 6,
+        },
       },
     ] as const)(
       `it edits the metaInfo | audience: $audience`,
