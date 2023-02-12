@@ -2,8 +2,11 @@ import type {
   MetaInfoServiceInterface,
   MetaInfoUpdateSideEffect,
 } from "use-cases/interfaces/meta-service";
-import { MetaInformation } from "entities/meta";
 import type { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
+
+import { pick } from "common/util/other";
+import { MetaInformation } from "entities/meta";
+import { PublicMetaFields } from "entities/meta";
 
 export interface makeUpdateMetaInfo_Arg {
   sideEffect?: MetaInfoUpdateSideEffect | undefined;
@@ -22,8 +25,11 @@ export function makeUpdateMetaInfo(
 
     await db.set(edited);
 
-    if (audience === "public") sideEffect(metaInfo);
+    const filtered =
+      audience === "private" ? edited : (pick(edited, PublicMetaFields) as any);
 
-    return edited;
+    if (audience === "public") sideEffect(filtered);
+
+    return filtered;
   };
 }
