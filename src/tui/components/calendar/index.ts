@@ -56,15 +56,11 @@ import type { ReadonlyDeep, PartialDeep } from "type-fest";
 // ------------------- Types and Interfaces -----------------
 export interface Calendar_Argument {
   debug: Debug;
-  year: number;
   renderScreen(): void;
-  firstDayOfWeek: string;
   position?: ElementPosition;
   additionalKeyBindings?: object;
-  allowedRange?: Partial<DateRange>;
   style?: PartialDeep<CalendarStyle>;
   timerManager: TimerManagerInterface;
-  customDateFormatter?: CustomDateFormatter;
   dimension?: Pick<ElementDimension, "height">;
 }
 
@@ -130,7 +126,7 @@ export class Calendar {
 
   // ---- States --------------
   #today = new Date();
-  #currentYear: number;
+  #currentYear: number | null = null;
 
   #isCursorHidden = false;
   readonly #cursor: Coordinate = Object.seal({ x: 0, y: 0 });
@@ -140,22 +136,20 @@ export class Calendar {
 
   readonly #style: CalendarStyle;
   readonly #elements: CalendarElements;
-  #allowedRange: Readonly<Partial<DateRange>>;
+  #allowedRange: Readonly<Partial<DateRange>> = {};
 
-  #shortDayNames: readonly string[];
-  #dayNamesArray: ReadonlyDeep<DayNameInterface[]>;
+  #shortDayNames: readonly string[] | null = null;
+  #dayNamesArray: ReadonlyDeep<DayNameInterface[]> | null = null;
 
   // ------- Other ---------------
   #onSelect: OnCursorMove = () => {};
   #onCursorMove: OnCursorMove = () => {};
-  #customDateFormatter: CustomDateFormatter;
   #shouldCursorMove: ShouldCursorMove = () => true;
+  #customDateFormatter: CustomDateFormatter = () => undefined;
 
   constructor(arg: Calendar_Argument) {
     this.#debug = arg.debug;
     this.#renderScreen = arg.renderScreen;
-
-    this.#customDateFormatter = arg.customDateFormatter || (() => undefined);
 
     {
       const { additionalKeyBindings = {} } = arg;
@@ -166,29 +160,9 @@ export class Calendar {
       });
     }
 
-    {
-      const range = DateRangeSchema.parse(arg.allowedRange || {});
-      this.#allowedRange = Object.freeze(range);
-    }
-
     this.#style = mergeWithDefaultCalendarStyles(arg.style);
 
-    this.#dayNamesArray = deepFreeze(
-      getDayNamesBasedOnStartingDay({ firstDay: arg.firstDayOfWeek })
-    );
-    this.#shortDayNames = Object.freeze(
-      this.#dayNamesArray.map(({ name }) => name.short)
-    );
-
-    assert<number>("non_negative_integer", arg.year, { name: "year" });
-    this.#currentYear = arg.year;
-    this.#state[arg.year] = this.#initYearCalendarState({ year: arg.year });
-
     this.#addWrapperEventHandlers();
-
-    // draw the initial calendar
-    if (this.#isCursorHidden) this.#updateCalenderContent();
-    else this.#moveCursorToInitialPosition();
 
     // Setting up current date updater
     {
@@ -202,8 +176,11 @@ export class Calendar {
           this.#today = newDate;
           const year = this.#today.getFullYear();
 
-          // clear the cache
-          this.#state[year] = this.#initYearCalendarState({ year });
+          if (isYearWithinRange(year, this.#allowedRange)) {
+            // clear the cache
+            this.#state[year] = this.#initYearCalendarState({ year });
+          }
+
           this.#updateCalenderContent({ renderScreen: true });
         }
 
@@ -268,19 +245,21 @@ export class Calendar {
 
         case "l":
         case "right":
-          if (key.shift) this.#changeYear({ newYear: this.#currentYear + 1 });
+          if (key.shift && this.#currentYear)
+            this.#changeYear({ newYear: this.#currentYear + 1 });
           else scrollDirection = "right";
           break;
 
         case "h":
         case "left":
-          if (key.shift) this.#changeYear({ newYear: this.#currentYear - 1 });
+          if (key.shift && this.#currentYear)
+            this.#changeYear({ newYear: this.#currentYear - 1 });
           else scrollDirection = "left";
           break;
       }
 
       if (scrollDirection && step) {
-        this.#moveCursor({ step, scrollDirection });
+        this.#moveCursor({ step, direction: scrollDirection });
         return false;
       }
       return true;
@@ -293,6 +272,9 @@ export class Calendar {
   }
 
   #initYearCalendarState(arg: { year: number }): YearCalendarState {
+    if (!this.#dayNamesArray)
+      throw new Error(`The day names array is not initialized.`);
+
     const { year } = arg;
 
     const months: YearCalendarState["months"] = MONTHS_NAMES.map(
@@ -302,7 +284,7 @@ export class Calendar {
         const dateMatrix = getDateMatrixOfMonth({
           year,
           monthIndex,
-          dayNamesArray: this.#dayNamesArray,
+          dayNamesArray: this.#dayNamesArray!,
         });
 
         month.dateMatrix = deepFreeze(dateMatrix);
@@ -313,8 +295,8 @@ export class Calendar {
     const renderedTextOfMonths: YearCalendarState["renderedTextOfMonths"] =
       months.map(({ name, dateMatrix }, index) => {
         const noCursor = this.#getCalendarText({
-          month: { name, index, dateMatrix },
           shouldFormatCursor: false,
+          month: { name, index, dateMatrix },
         });
 
         return { noCursor, visitedCellsCache: {} };
@@ -344,8 +326,8 @@ export class Calendar {
     this.#updateCalenderContent({ renderScreen: true });
   }
 
-  #moveCursor(arg: { step: number; scrollDirection: ScrollDirection }) {
-    if (this.#isCursorHidden) return;
+  #moveCursor(arg: { step: number; direction: ScrollDirection }) {
+    if (this.#isCursorHidden || !this.#currentYear) return;
 
     // calculate new cursor position
     {
@@ -355,7 +337,7 @@ export class Calendar {
         movePointInMatrix_Argument,
         "step" | "point"
       > = {
-        direction: arg.scrollDirection,
+        direction: arg.direction,
         numOfRows: NUM_OF_ROWS_IN_YEAR_DATE_MATRIX,
         numOfColumns: MONTH_DATE_MATRIX_INFO.NUM_OF_DAYS_IN_ROW,
       };
@@ -372,10 +354,7 @@ export class Calendar {
           ...commonMovePointInMatrixArg,
         });
 
-        date = this.#getDateAtCursor({
-          cursor: currentCursor,
-          yearDateMatrix,
-        });
+        date = this.#getDateAtCursor({ cursor: currentCursor, yearDateMatrix });
 
         // if step was something other than 1
         // (e.g., initially 0, or when shift is pressed) then reset it now
@@ -397,7 +376,7 @@ export class Calendar {
     if (arg.step !== 0)
       this.#updateScrollPosition({
         renderScreen: false,
-        direction: arg.scrollDirection,
+        direction: arg.direction,
       });
 
     this.#renderScreen();
@@ -406,21 +385,23 @@ export class Calendar {
   }
 
   #updateCalenderContent(arg: { renderScreen?: boolean } = {}) {
-    this.#elements.calendar.setContent(
-      this.#joinAllMonthsCalendarText({
-        calendarState: this.#state[this.#currentYear],
-      })
-    );
-    this.#elements.calendar.setLabel({
-      text: `[${this.#currentYear}]`,
-      side: "right",
-    });
+    if (this.#currentYear) {
+      this.#elements.calendar.setContent(
+        this.#joinAllMonthsCalendarText({
+          calendarState: this.#state[this.#currentYear],
+        })
+      );
+      this.#elements.calendar.setLabel({
+        text: `[${this.#currentYear}]`,
+        side: "right",
+      });
+    }
+
     this.#elements.todayText.setContent(
       `Today: {green-fg}${this.#today.toDateString()}{/}`
     );
 
-    const { renderScreen = true } = arg;
-    if (renderScreen) this.#renderScreen();
+    if (arg.renderScreen || true) this.#renderScreen();
   }
 
   #updateScrollPosition(arg: {
@@ -433,7 +414,7 @@ export class Calendar {
     if (monthNumber === 1) this.#elements.calendar.setScrollPerc(0);
     else if (monthNumber === 12) this.#elements.calendar.setScrollPerc(100);
     else {
-      // monthNumber * 2 = Every previous month's Month name + Day names rows
+      // monthNumber * 2 = previous months' name + day names rows
       const cursorRowNumber = this.#cursor.y + monthNumber * 2;
       const numOfMonthAndDayNamesRowsInWholeYear = 12 * 2;
 
@@ -455,6 +436,9 @@ export class Calendar {
   }
 
   #getCalendarText(arg: getCalendarText_Arg) {
+    if (!this.#shortDayNames)
+      throw new Error(`The dayNames is not initialized.`);
+
     const { month, shouldFormatCursor } = arg;
 
     return generateCalendarText({
@@ -475,10 +459,10 @@ export class Calendar {
     }
   ) => {
     const {
-      cursor: currentDateCoordinate,
       formattedDateNumber,
       shouldFormatCursor = true,
       dateObject: formattingDate,
+      cursor: currentDateCoordinate,
     } = arg;
 
     if (
@@ -565,7 +549,10 @@ export class Calendar {
   }
 
   // ------------ Updater Methods -------------------
-  setAllowedRange(arg: { range: Partial<DateRange>; currentYear: number }) {
+  setAllowedRangeAndCurrentYear(arg: {
+    currentYear: number;
+    range: Partial<DateRange>;
+  }) {
     const range = DateRangeSchema.parse(arg.range || {});
     this.#allowedRange = Object.freeze(range);
 
@@ -609,15 +596,17 @@ export class Calendar {
   }
 
   #moveCursorToInitialPosition() {
-    this.#moveCursor({ scrollDirection: "right", step: 0 });
+    this.#moveCursor({ direction: "right", step: 0 });
   }
 
   // ----- Getters -------------
   get dateAtCursor() {
-    return this.#getDateAtCursor({
-      cursor: this.#cursor,
-      yearDateMatrix: this.#state[this.#currentYear].yearDateMatrix,
-    });
+    return this.#currentYear
+      ? this.#getDateAtCursor({
+          cursor: this.#cursor,
+          yearDateMatrix: this.#state[this.#currentYear].yearDateMatrix,
+        })
+      : null;
   }
 
   get element() {

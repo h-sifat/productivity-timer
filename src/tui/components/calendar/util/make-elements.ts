@@ -47,12 +47,16 @@ export function makeCalendarElements(
     tags: true,
     align: "center",
 
+    content: "Loading...",
+
     scrollable: true,
     scrollbar: {
       ch: " ",
       style: { fg: "white", bg: "grey" },
     },
   });
+
+  calendar.setLabel({ text: "[0000]", side: "right" });
 
   const instruction = createInstructionsBox({
     bottom: 0,
