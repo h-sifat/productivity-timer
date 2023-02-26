@@ -181,7 +181,7 @@ export class Calendar {
             this.#state[year] = this.#initYearCalendarState({ year });
           }
 
-          this.#updateCalenderContent({ renderScreen: true });
+          this.#renderCalenderContent({ renderScreen: true });
         }
 
         const msLeftBeforeNextDay =
@@ -195,6 +195,8 @@ export class Calendar {
 
       currentDateUpdater();
     }
+
+    this.#setFirstDayOfWeek({ dayName: "Sat", updateCalendarContent: false });
   }
 
   #addWrapperEventHandlers() {
@@ -323,7 +325,7 @@ export class Calendar {
       this.#state[newYear] = this.#initYearCalendarState({ year: newYear });
 
     this.#currentYear = newYear;
-    this.#updateCalenderContent({ renderScreen: true });
+    this.#renderCalenderContent({ renderScreen: true });
   }
 
   #moveCursor(arg: { step: number; direction: ScrollDirection }) {
@@ -368,7 +370,7 @@ export class Calendar {
     }
 
     // Update content
-    this.#updateCalenderContent({ renderScreen: false });
+    this.#renderCalenderContent({ renderScreen: false });
 
     // I'm using step 0 to render the first cursor. But at this point as the
     // element hasn't rendered yet, setting the scroll position throws
@@ -384,7 +386,7 @@ export class Calendar {
     this.#onCursorMove({ cursor: this.#cursor, date: this.dateAtCursor });
   }
 
-  #updateCalenderContent(arg: { renderScreen?: boolean } = {}) {
+  #renderCalenderContent(arg: { renderScreen?: boolean } = {}) {
     if (this.#currentYear) {
       this.#elements.calendar.setContent(
         this.#joinAllMonthsCalendarText({
@@ -549,15 +551,12 @@ export class Calendar {
   }
 
   // ------------ Updater Methods -------------------
-  setAllowedRangeAndCurrentYear(arg: {
-    currentYear: number;
-    range: Partial<DateRange>;
-  }) {
+  setCurrentYear(arg: { year: number; range?: Partial<DateRange> }) {
     const range = DateRangeSchema.parse(arg.range || {});
     this.#allowedRange = Object.freeze(range);
 
-    assert<number>("non_negative_integer", arg.currentYear, { name: "year" });
-    this.#currentYear = arg.currentYear;
+    assert<number>("non_negative_integer", arg.year, { name: "year" });
+    this.#currentYear = arg.year;
 
     for (const key in this.#state) delete this.#state[key];
 
@@ -565,7 +564,7 @@ export class Calendar {
       year: this.#currentYear,
     });
 
-    this.#updateCalenderContent({ renderScreen: true });
+    this.#renderCalenderContent({ renderScreen: true });
     this.#moveCursorToInitialPosition();
   }
 
@@ -586,7 +585,7 @@ export class Calendar {
     });
 
     if (arg.updateCalendarContent || true)
-      this.#updateCalenderContent({ renderScreen: true });
+      this.#renderCalenderContent({ renderScreen: true });
 
     if (!this.dateAtCursor) this.#moveCursorToInitialPosition();
   }
@@ -597,6 +596,25 @@ export class Calendar {
 
   #moveCursorToInitialPosition() {
     this.#moveCursor({ direction: "right", step: 0 });
+  }
+
+  hideCursor() {
+    this.#isCursorHidden = true;
+  }
+
+  update() {
+    this.#renderCalenderContent({ renderScreen: true });
+  }
+
+  clearCache() {
+    for (const year in this.#state) delete this.#state[year];
+
+    if (this.#currentYear)
+      this.#state[this.#currentYear] = this.#initYearCalendarState({
+        year: this.#currentYear,
+      });
+
+    this.#renderCalenderContent({ renderScreen: true });
   }
 
   // ----- Getters -------------
@@ -628,5 +646,10 @@ export class Calendar {
 
   set onSelect(f: OnCursorMove) {
     this.#onSelect = f;
+  }
+
+  // getters
+  get isFirstDayOfWeekSet() {
+    return Boolean(this.#dayNamesArray);
   }
 }
