@@ -1,9 +1,13 @@
-import type { WorkSessionJSONRecord } from "./interface";
+import type {
+  WorkSessionInputJSONRecord,
+  WorkSessionOutputJSONRecord,
+} from "./interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
 import { deepFreeze } from "common/util/other";
 import { DeepFreezeTypeMapper } from "common/interfaces/other";
 import { unixMsTimestampToUsLocaleDateString } from "common/util/date-time";
+import { TimerRefWithName } from "src/controllers/timer/interface";
 
 const eventNamesLongToShort = Object.freeze({
   start: "s",
@@ -21,8 +25,8 @@ const eventNamesShortToLong = Object.freeze({
 
 export function normalizeDocumentToRecord(
   document: WorkSessionFields | DeepFreezeTypeMapper<WorkSessionFields>
-): WorkSessionJSONRecord {
-  const record: Partial<WorkSessionJSONRecord> = {};
+): WorkSessionInputJSONRecord {
+  const record: Partial<WorkSessionInputJSONRecord> = {};
 
   record.id = Number(document.id);
   record.targetDuration = document.targetDuration;
@@ -40,17 +44,21 @@ export function normalizeDocumentToRecord(
     timestamp,
   }));
 
-  return record as WorkSessionJSONRecord;
+  return record as WorkSessionInputJSONRecord;
 }
 
 export function normalizeRecordToDocument(
-  record: WorkSessionJSONRecord
+  record: WorkSessionOutputJSONRecord
 ): WorkSessionFields {
-  const document: Partial<WorkSessionFields> = {};
+  const document: Partial<WorkSessionFields<TimerRefWithName>> = {};
 
   document.id = record.id.toString();
   document.targetDuration = record.targetDuration;
-  document.ref = { id: record.ref.id.toString(), type: record.ref.type };
+  document.ref = {
+    name: record.ref.name,
+    type: record.ref.type,
+    id: record.ref.id.toString(),
+  };
   document.startedAt = unixMsTimestampToUsLocaleDateString(record.startedAt);
 
   document.elapsedTime = {

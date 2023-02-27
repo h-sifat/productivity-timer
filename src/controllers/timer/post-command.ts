@@ -54,7 +54,7 @@ export function makePostTimerCommand(
   const TimerRefSchema = z
     .object({
       id: z.string().trim().min(1),
-      name: z.string().trim().min(1).optional(),
+      name: z.string().trim().min(1),
       type: z.union([z.literal("category"), z.literal("project")]),
     })
     .strict();

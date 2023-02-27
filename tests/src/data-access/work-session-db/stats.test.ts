@@ -6,7 +6,9 @@ import type { DailyStat } from "use-cases/interfaces/work-session-db";
 const validDailyStat: ReadonlyDeep<DailyStat> = deepFreeze({
   date: Date.now(),
   totalDurationMs: 1000,
-  durationPerRefs: [{ duration: 1000, ref: { id: "a", type: "category" } }],
+  durationPerRefs: [
+    { duration: 1000, ref: { id: "a", type: "category", name: "Timer" } },
+  ],
 });
 
 it(`doesn't throw error if stat is valid`, () => {

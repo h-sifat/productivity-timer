@@ -1,5 +1,6 @@
 import type { ReadonlyDeep } from "type-fest";
 import type { DeepFreezeTypeMapper } from "common/interfaces/other";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 
 export interface QueryMethodArguments {
@@ -10,10 +11,7 @@ export interface QueryMethodArguments {
 export interface DailyStat {
   date: number;
   totalDurationMs: number;
-  durationPerRefs: {
-    duration: number;
-    ref: { id: string; type: "project" | "category" };
-  }[];
+  durationPerRefs: { duration: number; ref: TimerRefWithName }[];
 }
 export type StatisticsInterface = DailyStat[];
 
@@ -21,7 +19,7 @@ export default interface WorkSessionDatabaseInterface {
   getMaxId(): Promise<number>;
   findByDateRange(
     arg: QueryMethodArguments["findByDateRange"]
-  ): Promise<WorkSessionFields[]>;
+  ): Promise<WorkSessionFields<TimerRefWithName>[]>;
   getStats: () => Promise<ReadonlyDeep<StatisticsInterface>>;
   insert(arg: QueryMethodArguments["insert"]): Promise<void>;
 }

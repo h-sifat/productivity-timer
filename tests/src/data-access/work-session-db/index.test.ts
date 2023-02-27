@@ -9,7 +9,7 @@ import {
   normalizeRecordToDocument,
 } from "data-access/work-session-db/util";
 import Category from "entities/category";
-import { deepFreeze } from "common/util/other";
+import { cloneDeep, deepFreeze } from "common/util/other";
 import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
 import SqliteDatabase from "data-access/db/mainprocess-db";
@@ -134,7 +134,9 @@ describe("insert", () => {
     });
 
     expect(results).toHaveLength(1);
-    expect(results).toEqual([workSession]);
+    expect(results).toEqual([
+      { ...workSession, ref: { ...workSession.ref, name: category.name } },
+    ]);
   });
 });
 
@@ -217,9 +219,16 @@ describe("findByDateRange", () => {
 
     result.sort(sortPredicate);
 
-    const expectResult = [workSessions[fromDate], workSessions[toDate]].sort(
-      sortPredicate
-    );
+    const expectResult = [workSessions[fromDate], workSessions[toDate]]
+      .map((ws) => {
+        const wsClone = cloneDeep(ws);
+
+        // @ts-expect-error
+        wsClone.ref.name = category.name;
+
+        return wsClone;
+      })
+      .sort(sortPredicate);
 
     expect(result).toHaveLength(2);
     expect(result).toEqual(expectResult);
@@ -308,7 +317,10 @@ describe("getStats", () => {
 
     stats.forEach(({ durationPerRefs }) => {
       durationPerRefs.forEach(({ ref }) =>
-        expect(ref).toEqual(workSession.ref)
+        expect({ ...ref, name: category.name }).toEqual({
+          ...workSession.ref,
+          name: category.name,
+        })
       );
     });
   });

@@ -1,3 +1,4 @@
+import { cloneDeep } from "common/util/other";
 import {
   normalizeDocumentToRecord,
   normalizeRecordToDocument,
@@ -21,10 +22,19 @@ describe("normalizeDocumentToRecord", () => {
 
 describe("normalizeRecordToDocument", () => {
   test("normalizeRecordToDocument should convert a record to a document", () => {
-    const record = normalizeDocumentToRecord(SAMPLE_WORK_SESSION);
-    const document = normalizeRecordToDocument(record);
+    const workSession = cloneDeep(SAMPLE_WORK_SESSION);
+    const record = normalizeDocumentToRecord(workSession);
 
-    expect(document).toEqual(SAMPLE_WORK_SESSION);
+    const name = "Timer";
+    const document = normalizeRecordToDocument({
+      ...record,
+      ref: { ...record.ref, name },
+    });
+
+    expect(document).toEqual({
+      ...workSession,
+      ref: { ...workSession.ref, name },
+    });
     expect(Object.isFrozen(document)).toBeTruthy();
   });
 });

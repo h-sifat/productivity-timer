@@ -1,16 +1,25 @@
-import { TimerRef } from "entities/work-session/work-session";
+import type { TimerRef } from "entities/work-session/work-session";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
 
 export interface WorkSessionRecordEvents {
   timestamp: number;
   name: "s" | "p" | "e" | "t";
 }
 
-export type WorkSessionJSONRecord = {
+export type WorkSessionOutputJSONRecord = WorkSessionJSONRecord<
+  Omit<TimerRefWithName, "id"> & { id: number }
+>;
+
+export type WorkSessionInputJSONRecord = WorkSessionJSONRecord<
+  Omit<TimerRef, "id"> & { id: number }
+>;
+
+type WorkSessionJSONRecord<Ref> = {
+  ref: Ref;
   id: number;
   startedAt: number;
   targetDuration: number;
   events: WorkSessionRecordEvents[];
-  ref: Omit<TimerRef, "id"> & { id: number };
   elapsedTime: { total: number; byDate: [number, number][] };
 };
 
@@ -19,7 +28,7 @@ export type WorkSessionCategoryAndProjectIds =
   | { categoryId: number; projectId: null };
 
 export type WorkSessionTableRecord = Pick<
-  WorkSessionJSONRecord,
+  WorkSessionInputJSONRecord,
   "id" | "startedAt" | "targetDuration"
 > & { totalElapsedTime: number } & WorkSessionCategoryAndProjectIds;
 

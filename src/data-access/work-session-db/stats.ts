@@ -14,6 +14,7 @@ const StaticsSchema = z.array(
             ref: z
               .object({
                 id: z.string().min(1),
+                name: z.string().min(1),
                 type: z.union([z.literal("category"), z.literal("project")]),
               })
               .strict(),

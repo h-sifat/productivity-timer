@@ -9,7 +9,11 @@ const FAKE_TIMER_TIME_INFO = Object.freeze({
   duration: 2312,
   elapsedTime: 3423,
 });
-const FAKE_TIMER_REF = Object.freeze({ id: "123", type: "category" });
+const FAKE_TIMER_REF = Object.freeze({
+  id: "123",
+  name: "Todo",
+  type: "category",
+});
 
 const timer = Object.seal({
   // states

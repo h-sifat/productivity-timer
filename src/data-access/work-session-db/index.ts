@@ -1,6 +1,7 @@
 import type {
-  WorkSessionJSONRecord,
   WorkSessionTableRecord,
+  WorkSessionInputJSONRecord,
+  WorkSessionOutputJSONRecord,
   WorkSessionTimerEventsRecord,
   WorkSessionCategoryAndProjectIds,
   WorkSessionElapsedTimeByDateRecord,
@@ -11,6 +12,7 @@ import type {
   WorkSessionValidator,
 } from "entities/work-session/work-session";
 import type SqliteDatabase from "data-access/db/mainprocess-db";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/work-session-db";
 
@@ -35,7 +37,8 @@ const SELECT_WS_AS_JSON_QUERY_PREFIX = `select json_object(
     'ref', 
       json_object(
         'id', ifnull(c.id, p.id),
-        'type', iif(c.id is null, 'project', 'category')
+        'type', iif(c.id is null, 'project', 'category'),
+        'name', iif(c.id is null, p.name, c.name)
       ),
 
     'events', (
@@ -97,12 +100,12 @@ const PREPARED_QUERY_STATEMENTS: {
         'date', date,
         'totalDurationMs', sum(duration),
         'durationPerRefs', json_group_array(
-          json_object('duration', duration, 'ref', json_object('id', id, 'type', type))
+          json_object('duration', duration, 'ref', json_object('id', id, 'type', type, 'name', name))
         )
     ) as data
   from (
     select 
-      date, id, type, sum(elapsed_time_ms) as duration
+      date, id, type, name, sum(elapsed_time_ms) as duration
     from (
       /* ----- Getting ref (id, type) --------- */
       select
@@ -110,10 +113,15 @@ const PREPARED_QUERY_STATEMENTS: {
         wsetbd.date as date,
         /* || '' -> converts number id to string */
         ifnull(ws.categoryId, ws.projectId) || '' as id,
-        iif(ws.categoryId is null, 'project', 'category') as type
+        iif(ws.categoryId is null, 'project', 'category') as type,
+        iif(ws.categoryId is null, p.name, c.name) as name
       from work_session_elapsed_time_by_date as wsetbd
-      join work_sessions as ws
+      left join work_sessions as ws
         on ws.id = wsetbd.work_session_id
+      left join categories c
+        on ws.categoryId = c.id
+      left join projects p
+        on ws.projectId = p.id
       /* ----- End Getting ref (id, type) --------- */
     )
     group by date, id, type
@@ -126,10 +134,12 @@ interface BuildWorkSessionDatabase_Argument {
   db: SqliteDatabase;
   makeGetMaxId: MakeGetMaxId;
   notifyDatabaseCorruption: (arg: any) => void;
-  normalizeRecordToDocument(record: WorkSessionJSONRecord): WorkSessionFields;
+  normalizeRecordToDocument(
+    record: WorkSessionOutputJSONRecord
+  ): WorkSessionFields;
   normalizeDocumentToRecord(
     document: WorkSessionFields | DeepFreezeTypeMapper<WorkSessionFields>
-  ): WorkSessionJSONRecord;
+  ): WorkSessionInputJSONRecord;
 }
 
 export default function buildWorkSessionDatabase(
@@ -270,13 +280,13 @@ export default function buildWorkSessionDatabase(
 
     return workSessionJSONRecords.map((record) => {
       const workSession = normalizeRecordToDocument(
-        record as WorkSessionJSONRecord
+        record as WorkSessionOutputJSONRecord
       );
 
       validate(workSession);
 
       return workSession;
-    }) as WorkSessionFields[];
+    }) as WorkSessionFields<TimerRefWithName>[];
   }
 
   async function getStats() {

@@ -5,4 +5,4 @@ export interface TimerControllerInterface {
   post: Controller;
 }
 
-export type TimerRefWithName = TimerRef & { name?: string | undefined };
+export type TimerRefWithName = TimerRef & { name: string };

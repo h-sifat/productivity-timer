@@ -484,6 +484,15 @@ describe("WorkSession.validator.validate", () => {
     }).toThrowError();
   });
 
+  it(`doesn't throw error if ref also contains the name`, () => {
+    expect(() => {
+      validate({
+        ...SAMPLE_WORK_SESSION,
+        ref: { id: 1, type: "category", name: "Timer" },
+      });
+    }).toThrowError();
+  });
+
   it(`throws error if events is not valid `, () => {
     expect(() => {
       validate({ ...SAMPLE_WORK_SESSION, events: [] });

@@ -32,9 +32,9 @@ export type ElapsedTime = {
   byDate: { [date: string]: number };
 };
 
-export type WorkSessionFields = {
+export type WorkSessionFields<Ref = TimerRef> = {
   id: string;
-  ref: TimerRef;
+  ref: Ref;
   startedAt: string;
   events: EventLog[];
   targetDuration: number;

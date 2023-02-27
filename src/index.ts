@@ -4,7 +4,6 @@ import { getConfig } from "./config";
 import { Log } from "./start-up/interface";
 import { notify } from "common/util/notify";
 import { AllDatabases } from "./data-access";
-import { makeServices, makeServices_Argument } from "./make-services";
 import WorkSession from "entities/work-session";
 import { log, TAB_CHAR } from "./start-up/util";
 import { makeAllDatabase } from "./data-access";
@@ -22,8 +21,9 @@ import { makeTimerController } from "./controllers/timer";
 import { BackupManager } from "data-access/backup-manager";
 import type { TimerInstance } from "./countdown-timer/type";
 import { setUpTimerEventListeners } from "./start-up/timer";
-import type { TimerRef } from "entities/work-session/work-session";
+import { TimerRefWithName } from "./controllers/timer/interface";
 import { makeServiceSideEffects } from "./start-up/make-side-effects";
+import { makeServices, makeServices_Argument } from "./make-services";
 import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
 
@@ -146,7 +146,7 @@ async function initApplication(arg: initApplication_Argument) {
     },
     MIN_ALLOWED_TICK_DIFF_MS: 995, // a little less than TICK_INTERVAL_MS
     MAX_ALLOWED_TICK_DIFF_MS: 2000, // a little greater than TICK_INTERVAL_MS
-  }) as TimerInstance<TimerRef>;
+  }) as TimerInstance<TimerRefWithName>;
 
   const services = makeServices({
     databases,

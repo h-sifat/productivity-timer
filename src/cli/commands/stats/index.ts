@@ -21,7 +21,7 @@ import { WorkSessionFields } from "entities/work-session/work-session";
 import type { TimerRefWithName } from "src/controllers/timer/interface";
 
 type ModifiedWorkSession = Omit<WorkSessionFields, "ref"> & {
-  ref: Required<TimerRefWithName>;
+  ref: TimerRefWithName;
 };
 
 export function addStatCommand(program: Command) {
@@ -102,7 +102,7 @@ async function showStats(options: showStats_Options) {
   });
 }
 
-type PieItem = { label: string; value: number };
+export type PieItem = { label: string; value: number };
 
 function printDailyStats(workSessions: ModifiedWorkSession[]) {
   const pieItems: { [k: string]: PieItem } = {};
