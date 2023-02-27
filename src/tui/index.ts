@@ -9,20 +9,26 @@ import EventEmitter from "events";
 import { Page } from "./components/page";
 import type { Client } from "express-ipc";
 import { withClient } from "cli/util/client";
+import TimerManager from "./util/timer-manager";
+import { createClockPage } from "./pages/clock";
+import { createStatsPage } from "./pages/stats";
 import { createTimerPage } from "./pages/timer";
 import { NavigationBar } from "./components/navbar";
+import { createProjectPage } from "./pages/project";
 import ProjectService from "client/services/project";
 import { TimerService } from "client/services/timer";
 import { PromptComponent } from "./components/prompt";
 import { createCategoryPage } from "./pages/category";
-import { createProjectPage } from "./pages/project";
 import CategoryService from "client/services/category";
+import MetaInfoService from "client/services/meta-info";
 import { createAlertElement } from "./components/alert";
+import WorkSessionService from "client/services/work-session";
 import { loadProjects, selectProjects } from "./store/projectSlice";
+import { loadMetaInfo, selectMetaInfo } from "./store/metaInfoSlice";
+import { loadShortStats, selectShortStats } from "./store/statsSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
-import { createClockPage } from "./pages/clock";
 
 const screen = blessed.screen({
   debug: true,
@@ -52,6 +58,8 @@ withClient(
 async function main(arg: { client: Client; closeClient(): void }) {
   const { client } = arg;
 
+  // --------------------- Creating Services ----------------
+  // @TODO create them programmatically
   const categoryService = new CategoryService({
     client,
     url: config.API_CATEGORY_PATH,
@@ -62,13 +70,22 @@ async function main(arg: { client: Client; closeClient(): void }) {
     url: config.API_PROJECT_PATH,
   });
 
-  const suggestionsProvider = new SuggestionsProvider();
+  const workSessionService = new WorkSessionService({
+    client,
+    url: config.API_WORK_SESSION_PATH,
+  });
 
-  await client.subscribe(Object.values(BROADCAST_CHANNELS));
-  const timerEventsEmitter = new EventEmitter();
+  const metaInfoService = new MetaInfoService({
+    client,
+    url: config.API_META_INFO_PATH,
+  });
+
   const timerService = new TimerService({ url: config.API_TIMER_PATH, client });
 
   // --------------------- Handling server sent events -------------------
+
+  await client.subscribe(Object.values(BROADCAST_CHANNELS));
+  const timerEventsEmitter = new EventEmitter();
   client.on("broadcast", (arg) => {
     switch (arg.channel) {
       case BROADCAST_CHANNELS.TIMER_BROADCAST_CHANNEL:
@@ -82,24 +99,20 @@ async function main(arg: { client: Client; closeClient(): void }) {
       case BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL:
         store.dispatch(loadProjects(projectService));
         break;
+
+      case BROADCAST_CHANNELS.META_INFO_BROADCAST_CHANNEL:
+        store.dispatch(loadMetaInfo(metaInfoService));
+        break;
     }
+
+    store.dispatch(loadShortStats(workSessionService));
   });
 
-  // ---------------- Managing State changes -------------------------
-  function reloadProjectAndCategoryData() {
-    const categories = selectCategories(store);
-    const projects = selectProjects(store);
-
-    suggestionsProvider.update({ project: projects, category: categories });
-    Categories.loadCategories(categories);
-    Projects.loadProjects(projects);
-  }
-
-  store.subscribe(() => {
-    reloadProjectAndCategoryData();
-  });
+  // ----------------- Timer Manager ----------------
+  const timerManager = new TimerManager({ key: "1" });
 
   // ------------------- Creating Components And Pages ---------------
+  const suggestionsProvider = new SuggestionsProvider();
   const { timerPage } = createTimerPage({
     debug,
     renderScreen,
@@ -124,6 +137,8 @@ async function main(arg: { client: Client; closeClient(): void }) {
     prompt: (message) => prompt.ask(message),
   });
 
+  const Statistics = createStatsPage({ debug, renderScreen, timerManager });
+
   const Clock = createClockPage({ debug, renderScreen });
 
   const pages: { [k: string]: Page } = Object.freeze({
@@ -131,6 +146,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
     Clock: Clock.page,
     Projects: Projects.page,
     Categories: Categories.page,
+    Statistics: Statistics.page,
   });
 
   const navbar = new NavigationBar({
@@ -139,7 +155,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
     selected: "Timer",
     style: { selected: { bg: "green", fg: "white" } },
-    tabs: ["Clock", "Timer", "Categories", "Projects"],
+    tabs: ["Clock", "Timer", "Categories", "Projects", "Statistics"],
   });
 
   // ------------- Appending Elements to the screen ---------------------
@@ -148,6 +164,31 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
   screen.append(prompt.element);
   screen.append(alertElement);
+
+  // ---------------- Managing State changes -------------------------
+  // @TODO don't update everything. Use redux-watch to update states
+  // selectively
+  function reloadProjectAndCategoryData() {
+    const categories = selectCategories(store);
+    const projects = selectProjects(store);
+    const shortStats = selectShortStats(store);
+    const metaInfo = selectMetaInfo(store);
+
+    suggestionsProvider.update({ project: projects, category: categories });
+    Categories.loadCategories(categories);
+    Projects.loadProjects(projects);
+
+    if (metaInfo) {
+      Statistics.setFirstDayOfWeek(metaInfo.firstDayOfWeek);
+    }
+
+    Statistics.updateShortStats(shortStats);
+  }
+
+  // @TODO don't use subscribe directly
+  store.subscribe(() => {
+    reloadProjectAndCategoryData();
+  });
 
   // ------ Setting up global Keypress and Navigation Handling -------------
   const state = Object.seal({
@@ -188,6 +229,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
     arg.closeClient(); // this will disconnect the client from the server
     screen.destroy();
     Clock.stopUpdating();
+    timerManager.clear("1");
     process.exitCode = 0;
   });
 
@@ -203,4 +245,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
   // loading initial states
   store.dispatch(loadCategories(categoryService));
   store.dispatch(loadProjects(projectService));
+  store.dispatch(loadMetaInfo(metaInfoService));
+  store.dispatch(loadShortStats(workSessionService));
 }
