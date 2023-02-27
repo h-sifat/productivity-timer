@@ -1,5 +1,6 @@
 // @ts-expect-error no type definition
 import Pie from "cli-pie";
+
 import { sub } from "date-fns";
 import { assert } from "handy-types";
 import { formatString } from "cli/util";
@@ -31,11 +32,13 @@ export function addStatCommand(program: Command) {
       "-d, --date <mm-dd-yyyy-or-number>",
       "show the stats of a specific date or <number> days before the today."
     )
+    .option("--json", "print raw JSON.")
     .action(showStats);
 }
 
 interface showStats_Options {
   date?: string;
+  json?: boolean;
 }
 
 async function showStats(options: showStats_Options) {
@@ -94,7 +97,8 @@ async function showStats(options: showStats_Options) {
       return workSession as ModifiedWorkSession;
     });
 
-    printDailyStats(todaysWorkSessions);
+    if (options.json) console.log(JSON.stringify(todaysWorkSessions));
+    else printDailyStats(todaysWorkSessions);
   });
 }
 
