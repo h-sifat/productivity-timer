@@ -2,27 +2,19 @@
 import Pie from "cli-pie";
 
 import { sub } from "date-fns";
+import { Writable } from "type-fest";
 import { assert } from "handy-types";
 import { formatString } from "cli/util";
 import type { Command } from "commander";
-import type { Writable } from "type-fest";
 import { printTables } from "cli/util/table";
 import { withClient } from "cli/util/client";
 import { formatDuration } from "cli/util/timer";
 import { getPieRadius } from "cli/util/console";
-import ProjectService from "client/services/project";
-import CategoryService from "client/services/category";
 import { toLocaleDateString } from "common/util/date-time";
 import WorkSessionService from "client/services/work-session";
-import type { ProjectFields } from "entities/project/project";
-import type { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { TimerRefWithName } from "src/controllers/timer/interface";
 import { WorkSessionFields } from "entities/work-session/work-session";
-import type { TimerRefWithName } from "src/controllers/timer/interface";
-
-type ModifiedWorkSession = Omit<WorkSessionFields, "ref"> & {
-  ref: TimerRefWithName;
-};
 
 export function addStatCommand(program: Command) {
   program
@@ -56,45 +48,10 @@ async function showStats(options: showStats_Options) {
       client,
       url: config.API_WORK_SESSION_PATH,
     });
-    const categoryService = new CategoryService({
-      client,
-      url: config.API_CATEGORY_PATH,
-    });
-    const projectService = new ProjectService({
-      client,
-      url: config.API_PROJECT_PATH,
-    });
 
-    const categories = await categoryService.findAll();
-    const projects = await projectService.findAll();
-
-    const categoryIndex: { [id: string]: Writable<CategoryFields> } =
-      categories.reduce((categoryIndex: any, category) => {
-        categoryIndex[category.id] = category;
-        return categoryIndex;
-      }, {});
-
-    const projectIndex: { [id: string]: Writable<ProjectFields> } =
-      projects.reduce((projectIndex: any, project) => {
-        projectIndex[project.id] = project;
-        return projectIndex;
-      }, {});
-
-    const indexes = {
-      project: projectIndex,
-      category: categoryIndex,
-    } as const;
-
-    const todaysWorkSessions: ModifiedWorkSession[] = (
-      await workSessionService.getWorkSessions({
-        to: toLocaleDateString(statsDate),
-        from: toLocaleDateString(statsDate),
-      })
-    ).map((workSession) => {
-      const { id, type } = workSession.ref;
-      // @ts-ignore
-      workSession.ref.name = indexes[type][id].name;
-      return workSession as ModifiedWorkSession;
+    const todaysWorkSessions = await workSessionService.getWorkSessions({
+      to: toLocaleDateString(statsDate),
+      from: toLocaleDateString(statsDate),
     });
 
     if (options.json) console.log(JSON.stringify(todaysWorkSessions));
@@ -104,7 +61,9 @@ async function showStats(options: showStats_Options) {
 
 export type PieItem = { label: string; value: number };
 
-function printDailyStats(workSessions: ModifiedWorkSession[]) {
+function printDailyStats(
+  workSessions: Writable<WorkSessionFields<TimerRefWithName>>[]
+) {
   const pieItems: { [k: string]: PieItem } = {};
   let totalWorkTimeMs = 0;
 
