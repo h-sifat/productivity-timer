@@ -34,7 +34,7 @@ export class PieChart {
 
     this.#element = blessed.box({
       mouse: true,
-      focusable: false,
+      focusable: true,
       scrollable: true,
       border: arg.border ? "line" : undefined,
       ...pickPositionalProps(arg.position),

@@ -78,6 +78,7 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     debug,
     top: 1,
     children: [calendar.element, statsComponent.element],
+    focusArray: [calendar.element, ...statsComponent.children],
   });
 
   return { page, setFirstDayOfWeek, updateShortStats };

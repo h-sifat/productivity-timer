@@ -1,16 +1,20 @@
 import type { Widgets } from "blessed";
 import type { ReadonlyDeep } from "type-fest";
-import type { PieItem } from "cli/commands/stats";
 import type { DailyStat } from "use-cases/interfaces/work-session-db";
 import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 import type { Debug, ElementDimension, ElementPosition } from "tui/interface";
 
 import blessed from "blessed";
-import { PieChart } from "tui/components/pie-chart";
-import { toLocaleDateString } from "common/util/date-time";
-import { pickDimensionalProps, pickPositionalProps } from "tui/util/other";
 import { isSameDay } from "date-fns";
+import { PieChart } from "tui/components/pie-chart";
+import {
+  formatDurationMsAsHMS,
+  toLocaleDateString,
+} from "common/util/date-time";
+import { pickDimensionalProps, pickPositionalProps } from "tui/util/other";
+import { Table } from "tui/components/table";
+import { formatDuration } from "cli/util/timer";
 
 export interface Stats_Argument {
   debug: Debug;
@@ -20,6 +24,11 @@ export interface Stats_Argument {
   fetchWorkSessions: FetchWorkSessions;
   // fetchStatsSummary: FetchStatsSummary;
 }
+
+type AggregatedEntry = Pick<TimerRefWithName, "type" | "name"> & {
+  label: string;
+  duration: number;
+};
 
 export type StatsWorkSession = WorkSessionFields<TimerRefWithName>;
 
@@ -37,7 +46,7 @@ export enum StatsViewType {
 Object.freeze(StatsViewType);
 
 export class StatsComponent {
-  static readonly PIE_CHART_HEIGHT = 20;
+  static readonly PIE_CHART_HEIGHT = 19;
 
   readonly #debug: Debug;
   readonly #renderScreen: () => void;
@@ -46,6 +55,7 @@ export class StatsComponent {
 
   readonly #wrapper: Widgets.BoxElement;
   readonly #pieChart: PieChart;
+  readonly #table: Table<Pick<AggregatedEntry, "name" | "type" | "duration">>;
 
   #date: Date | null = null;
   #viewType: StatsViewType = StatsViewType.DAILY;
@@ -60,6 +70,7 @@ export class StatsComponent {
     this.#wrapper = blessed.box({
       border: "line",
       scrollable: true,
+      mouse: true,
       ...pickPositionalProps(arg.position),
       ...pickDimensionalProps(arg.dimension),
       style: { focus: { border: { fg: "green" } } },
@@ -70,10 +81,23 @@ export class StatsComponent {
       debug,
       renderScreen,
       border: false,
-      dimension: { height: StatsComponent.PIE_CHART_HEIGHT },
+      dimension: { height: StatsComponent.PIE_CHART_HEIGHT, width: "100%-3" },
+    });
+
+    this.#table = new Table({
+      debug,
+      renderScreen,
+      columns: ["name", "type", "duration"],
+      dimension: { height: 15, width: "100%-3" },
+      position: { left: 0, top: StatsComponent.PIE_CHART_HEIGHT },
+      formatObject: (rowObject) => ({
+        ...rowObject,
+        duration: formatDuration(rowObject.duration),
+      }),
     });
 
     this.#wrapper.append(this.#pieChart.element);
+    this.#wrapper.append(this.#table.element);
   }
 
   setDate(date: Date) {
@@ -104,27 +128,53 @@ export class StatsComponent {
 
     if (!workSessions) return;
 
-    this.#pieChart.setItems(aggregateWorkSessions(workSessions));
+    const aggregated = aggregateWorkSessions(workSessions).sort(
+      ({ duration: a }, { duration: b }) => a - b
+    );
+
+    this.#pieChart.setItems(
+      aggregated.map(({ label, duration }) => ({ label, value: duration }))
+    );
+
+    this.#table.updateRows({
+      rowObjects: aggregated.map(({ name, duration, type }) => ({
+        name,
+        type,
+        duration,
+      })),
+    });
   }
 
   get element() {
     return this.#wrapper;
   }
+
+  get children() {
+    return [this.#pieChart.element, this.#table.element];
+  }
 }
 
 function aggregateWorkSessions(
   workSessions: ReadonlyDeep<StatsWorkSession[]>
-): PieItem[] {
-  const aggregated: { [refLabel: string]: number } = {};
+): AggregatedEntry[] {
+  const aggregated: {
+    [refLabel: string]: AggregatedEntry;
+  } = {};
 
-  workSessions.forEach((workSession) => {
-    const label = getRefLabel(workSession.ref);
+  workSessions.forEach(({ ref, elapsedTime }) => {
+    const label = getRefLabel(ref);
 
-    if (!aggregated[label]) aggregated[label] = 0;
-    aggregated[label] += workSession.elapsedTime.total;
+    if (!aggregated[label])
+      aggregated[label] = {
+        label,
+        duration: 0,
+        name: ref.name,
+        type: ref.type,
+      };
+    aggregated[label].duration += elapsedTime.total;
   });
 
-  return Object.entries(aggregated).map(([label, value]) => ({ label, value }));
+  return Object.values(aggregated);
 }
 
 function getRefLabel(ref: TimerRefWithName) {
