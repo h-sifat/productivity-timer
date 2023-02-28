@@ -1,17 +1,25 @@
-import { Debug } from "tui/interface";
+import { StatsComponent } from "./stats";
 import { Page } from "tui/components/page";
-import { ShortStats } from "tui/store/interface";
-import TimerManager from "tui/util/timer-manager";
 import { Calendar } from "tui/components/calendar";
 import { toLocaleDateString } from "common/util/date-time";
+
+import type { Debug } from "tui/interface";
+import type { ReadonlyDeep } from "type-fest";
+import type { ShortStats } from "tui/store/interface";
+import type TimerManager from "tui/util/timer-manager";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
+import type { WorkSessionFields } from "entities/work-session/work-session";
 
 export interface createStatsPage_Argument {
   debug: Debug;
   renderScreen(): void;
   timerManager: TimerManager;
+  getWorkSessions: (arg: {
+    date: string;
+  }) => Promise<ReadonlyDeep<WorkSessionFields<TimerRefWithName>[]>>;
 }
 export function createStatsPage(arg: createStatsPage_Argument) {
-  const { debug, renderScreen, timerManager } = arg;
+  const { debug, renderScreen, timerManager, getWorkSessions } = arg;
 
   const calendar = new Calendar({
     debug,
@@ -19,12 +27,6 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     timerManager,
     dimension: { height: "100%" },
     position: { top: 0, left: 0 },
-  });
-
-  const page = new Page({
-    debug,
-    top: 1,
-    children: [calendar.element],
   });
 
   calendar.setCurrentYear({ year: new Date().getFullYear() });
@@ -52,6 +54,31 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     // will also appear on the calender
     calendar.clearCache();
   }
+
+  // ----------------------------- Stats Component ----------------------
+  const statsComponent = new StatsComponent({
+    debug,
+    renderScreen,
+    position: { left: Calendar.ELEMENT_WIDTH, top: 0 },
+    async fetchWorkSessions({ date }) {
+      try {
+        return await getWorkSessions({ date });
+      } catch (ex) {
+        return null;
+      }
+    },
+  });
+
+  calendar.onSelect = ({ date }) => {
+    if (!date) return;
+    statsComponent.setDate(date);
+  };
+
+  const page = new Page({
+    debug,
+    top: 1,
+    children: [calendar.element, statsComponent.element],
+  });
 
   return { page, setFirstDayOfWeek, updateShortStats };
 }

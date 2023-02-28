@@ -10,13 +10,14 @@ import type { Debug, ElementDimension, ElementPosition } from "tui/interface";
 
 export interface PieChart_Argument {
   debug: Debug;
+  border?: boolean;
   renderScreen(): void;
   position?: ElementPosition;
   dimension?: ElementDimension;
 }
 export type PieChartItem = { label: string; value: number; color?: number[] };
 
-const MAX_LABEL_LENGTH = 15;
+const MAX_LABEL_LENGTH = 18;
 
 export class PieChart {
   #debug: Debug;
@@ -33,9 +34,9 @@ export class PieChart {
 
     this.#element = blessed.box({
       mouse: true,
-      border: "line",
       focusable: false,
       scrollable: true,
+      border: arg.border ? "line" : undefined,
       ...pickPositionalProps(arg.position),
       ...pickDimensionalProps(arg.dimension),
       scrollbar: { ch: " ", style: { fg: "white", bg: "grey" } },
@@ -58,7 +59,7 @@ export class PieChart {
     this.#items = items.map((item) => {
       item.color = FlatColors().slice(0, 3);
       if (item.label.length > MAX_LABEL_LENGTH)
-        item.label = item.label.slice(0, MAX_LABEL_LENGTH) + "...";
+        item.label = item.label.slice(0, MAX_LABEL_LENGTH);
 
       return item;
     });

@@ -89,31 +89,29 @@ export const loadShortStats =
 export const selectShortStats = (store: StoreInterface) =>
   store.getState().stats.shortStatOfAllDays;
 
-export const selectWorkSessions =
-  (arg: {
-    date: string;
-    store: StoreInterface;
-    workSessionService: WorkSessionService;
-  }) =>
-  async (dispatch: AppDispatch) => {
-    const { date, store } = arg;
-    const { workSessionsPerDate } = store.getState().stats;
+export const selectWorkSessions = async (arg: {
+  date: string;
+  store: StoreInterface;
+  workSessionService: WorkSessionService;
+}) => {
+  const { date, store } = arg;
+  const { workSessionsPerDate } = store.getState().stats;
 
-    {
-      const isWorkSessionCached =
-        workSessionsPerDate[date] &&
-        Date.now() - workSessionsPerDate[date].fetchTimestamp <
-          WORK_SESSION_CACHE_TIME;
+  {
+    const isWorkSessionCached =
+      workSessionsPerDate[date] &&
+      Date.now() - workSessionsPerDate[date].fetchTimestamp <
+        WORK_SESSION_CACHE_TIME;
 
-      if (isWorkSessionCached) return workSessionsPerDate[date];
-    }
+    if (isWorkSessionCached) return workSessionsPerDate[date].workSessions;
+  }
 
-    const workSessions = await arg.workSessionService.getWorkSessions({
-      to: date,
-      from: date,
-    });
+  const workSessions = await arg.workSessionService.getWorkSessions({
+    to: date,
+    from: date,
+  });
 
-    dispatch(actions.workSessionsFetched({ date, workSessions }));
+  store.dispatch(actions.workSessionsFetched({ date, workSessions }));
 
-    return workSessions;
-  };
+  return workSessions;
+};

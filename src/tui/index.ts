@@ -25,7 +25,11 @@ import { createAlertElement } from "./components/alert";
 import WorkSessionService from "client/services/work-session";
 import { loadProjects, selectProjects } from "./store/projectSlice";
 import { loadMetaInfo, selectMetaInfo } from "./store/metaInfoSlice";
-import { loadShortStats, selectShortStats } from "./store/statsSlice";
+import {
+  loadShortStats,
+  selectShortStats,
+  selectWorkSessions,
+} from "./store/statsSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
@@ -137,7 +141,13 @@ async function main(arg: { client: Client; closeClient(): void }) {
     prompt: (message) => prompt.ask(message),
   });
 
-  const Statistics = createStatsPage({ debug, renderScreen, timerManager });
+  const Statistics = createStatsPage({
+    debug,
+    renderScreen,
+    timerManager,
+    getWorkSessions: ({ date }: { date: string }) =>
+      selectWorkSessions({ date, store, workSessionService }),
+  });
 
   const Clock = createClockPage({ debug, renderScreen });
 
