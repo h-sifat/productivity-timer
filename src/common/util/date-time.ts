@@ -116,6 +116,9 @@ export const MS_IN_ONE_DAY = 24 * MS_IN_ONE_HOUR;
 export function formatDurationMsAsHMS(arg: {
   duration: number;
   separator?: string;
+  showUnit?: boolean;
+  padWithZero?: boolean;
+  filterZeroValues?: boolean;
 }) {
   let { duration } = arg;
   assert<number>("non_negative_integer", duration, {
@@ -124,26 +127,47 @@ export function formatDurationMsAsHMS(arg: {
   });
 
   const formatted = {
-    h: "00",
-    m: "00",
-    s: "00",
+    h: 0,
+    m: 0,
+    s: 0,
   };
 
-  for (const unit of ["h", "m", "s"] as const) {
-    const msInUnit = msPerUnit[unit];
-    {
-      const result = Math.floor(duration / msInUnit);
-      formatted[unit] = result < 10 ? `0${result}` : result.toString();
-    }
+  {
+    for (const unit of ["h", "m", "s"] as const) {
+      const msInUnit = msPerUnit[unit];
+      {
+        const result = Math.floor(duration / msInUnit);
+        formatted[unit] = result;
+      }
 
-    duration = duration % msInUnit;
+      duration = duration % msInUnit;
+    }
   }
 
-  if (arg.separator)
-    return [formatted.h, formatted.m, formatted.s].join(arg.separator);
+  const {
+    showUnit = false,
+    padWithZero = true,
+    filterZeroValues = false,
+  } = arg;
 
-  // e.g 11h 20m 21s
-  return `${formatted.h}h ${formatted.m}m ${formatted.s}s`;
+  let durationUnitPair = Object.entries(formatted).map(([unit, duration]) => ({
+    unit,
+    duration,
+  }));
+
+  if (filterZeroValues)
+    durationUnitPair = durationUnitPair.filter(({ duration }) =>
+      Boolean(duration)
+    );
+
+  return durationUnitPair
+    .map(({ unit, duration }) => {
+      let formatted =
+        padWithZero && duration < 10 ? `0${duration}` : duration.toString();
+      if (showUnit) formatted += unit;
+      return formatted;
+    })
+    .join(arg.separator || " ");
 }
 
 type shortDurationUnits = "h" | "m" | "s";

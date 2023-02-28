@@ -102,12 +102,8 @@ export function connectTimerEventsEmitterToTimerComponent(arg: {
       eventName: "duration_change",
     });
 
-    const currentDuration = formatDurationMsAsHMS({
-      duration: eventArg.duration,
-    });
-    const previousDuration = formatDurationMsAsHMS({
-      duration: eventArg.previousDuration,
-    });
+    const currentDuration = formatClockDuration(eventArg.duration);
+    const previousDuration = formatClockDuration(eventArg.previousDuration);
 
     const message: Message = {
       type: "success",
@@ -115,5 +111,15 @@ export function connectTimerEventsEmitterToTimerComponent(arg: {
     };
 
     timerComponent.update({ ...updateArg, message });
+  });
+}
+
+export function formatClockDuration(durationMs: number) {
+  return formatDurationMsAsHMS({
+    separator: ":",
+    showUnit: false,
+    padWithZero: true,
+    duration: durationMs,
+    filterZeroValues: false,
   });
 }

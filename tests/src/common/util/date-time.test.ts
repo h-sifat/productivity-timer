@@ -83,20 +83,63 @@ describe("unixMsTimestampToUsLocaleDateString", () => {
 });
 
 describe("formatDurationMsAsHMS", () => {
+  const clockFormatArg = Object.freeze({
+    separator: ":",
+    showUnit: false,
+    padWithZero: true,
+    filterZeroValues: false,
+  });
+
   it.each([
-    { arg: { duration: 12 }, expected: "00h 00m 00s" },
-    { arg: { duration: 12, separator: ":" }, expected: "00:00:00" },
-    { arg: { duration: 1000 }, expected: "00h 00m 01s" },
-    { arg: { duration: 1000, separator: ":" }, expected: "00:00:01" },
+    {
+      arg: {
+        duration: 1000,
+        separator: " ",
+        showUnit: true,
+        padWithZero: true,
+        filterZeroValues: false,
+      },
+      expected: "00h 00m 01s",
+    },
+    {
+      arg: {
+        duration: 1000,
+        separator: " ",
+        showUnit: true,
+        padWithZero: true,
+        filterZeroValues: true,
+      },
+      expected: "01s",
+    },
+    {
+      arg: {
+        duration: 1000,
+        separator: " ",
+        showUnit: true,
+        padWithZero: false,
+        filterZeroValues: false,
+      },
+      expected: "0h 0m 1s",
+    },
+    {
+      arg: {
+        duration: 1000,
+        separator: ":",
+        showUnit: false,
+        padWithZero: false,
+        filterZeroValues: false,
+      },
+      expected: "0:0:1",
+    },
     {
       expected: "00:01:01",
-      arg: { duration: MS_IN_ONE_MINUTE + 1000, separator: ":" },
+      arg: { duration: MS_IN_ONE_MINUTE + 1000, ...clockFormatArg },
     },
     {
       expected: "10:01:01",
       arg: {
         duration: 10 * MS_IN_ONE_HOUR + MS_IN_ONE_MINUTE + 1000,
-        separator: ":",
+        ...clockFormatArg,
       },
     },
   ])(`format($arg) => "$expected"`, ({ arg, expected }) => {

@@ -1,12 +1,12 @@
 import blessed from "blessed";
 import contrib from "blessed-contrib";
 import { formatMessageForBlessedElement } from "tui/util";
-import { formatDurationMsAsHMS } from "common/util/date-time";
 
 import type { Widgets as BlessedWidgets } from "blessed";
 import type { TimerEventLog } from "src/countdown-timer/timer";
 import type { Debug, ElementPosition, Message } from "tui/interface";
 import type { widget as BlessedContribWidget } from "blessed-contrib";
+import { formatClockDuration } from "./util";
 
 export interface TimerComponent_Argument {
   debug: Debug;
@@ -225,9 +225,7 @@ export class TimerComponent {
 
       const percent = String(elapsedMs / targetMs);
       const donutLabel =
-        formatDurationMsAsHMS({ duration: elapsedMs, separator: ":" }) +
-        "/" +
-        formatDurationMsAsHMS({ duration: targetMs, separator: ":" });
+        formatClockDuration(elapsedMs) + "/" + formatClockDuration(targetMs);
 
       return { percent, label: donutLabel };
     })();

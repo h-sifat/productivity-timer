@@ -54,6 +54,11 @@ export function printTimerMethodCallResult(arg: printTimer_Arg) {
 export function formatDuration(durationMs: number): string {
   if (!durationMs) return "0s";
 
-  const formatted = formatDurationMsAsHMS({ duration: durationMs });
-  return formatted.replace(/00[hms] ?/g, "");
+  return formatDurationMsAsHMS({
+    separator: " ",
+    showUnit: true,
+    padWithZero: false,
+    duration: durationMs,
+    filterZeroValues: true,
+  });
 }
