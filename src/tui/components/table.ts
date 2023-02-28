@@ -18,12 +18,14 @@ import type {
 import type { Widgets } from "blessed";
 import type { ReadonlyDeep, Writable } from "type-fest";
 
+export type TableColumn = { name: string; label: string };
+
 export interface Table_Argument<T extends object> {
   label?: string;
-  columns: string[];
   position?: ElementPosition;
-  tableStyle?: BlessedElementStyle;
   dimension?: ElementDimension;
+  tableStyle?: BlessedElementStyle;
+  columns: (string | TableColumn)[];
   formatObject?: (o: Writable<T>) => any;
 
   additionalInstructions?: object;
@@ -55,7 +57,7 @@ export class Table<T extends object> {
   readonly #formatObject: (o: Writable<T>) => any;
 
   #cursorIndex = 0;
-  readonly #columns: readonly string[];
+  readonly #columns: readonly Readonly<TableColumn>[];
   #rowObjects: readonly ReadonlyDeep<T>[] = [];
 
   readonly #debug: Debug;
@@ -67,7 +69,15 @@ export class Table<T extends object> {
   constructor(arg: Table_Argument<T>) {
     this.#debug = arg.debug;
     this.#renderScreen = arg.renderScreen;
-    this.#columns = Object.freeze([...arg.columns]);
+    this.#columns = Object.freeze(
+      arg.columns
+        .map((column) =>
+          typeof column === "string"
+            ? { name: column, label: column }
+            : { ...column }
+        )
+        .map((o) => Object.freeze(o))
+    );
     this.#formatObject = arg.formatObject || ((o) => o);
 
     const { position = {}, dimension = {}, tableStyle = {} } = arg;
@@ -81,7 +91,7 @@ export class Table<T extends object> {
       keys: true,
       mouse: false,
       border: "line",
-      scrollable: false,
+      scrollable: true,
     });
 
     this.#listtable = blessed.listtable({
@@ -174,7 +184,7 @@ export class Table<T extends object> {
 
   #getTableRows(): string[][] {
     return [
-      [...this.#columns],
+      this.#columns.map(({ label }) => label),
       ...convertObjectsToTableRows({
         columns: this.#columns,
         objects: this.#rowObjects,
@@ -207,7 +217,7 @@ export class Table<T extends object> {
 export interface convertObjectsToRows_Argument {
   formatObject?: (o: any) => any;
   objects: any[] | readonly any[];
-  columns: string[] | readonly string[];
+  columns: readonly Readonly<TableColumn>[];
 }
 export function convertObjectsToTableRows(arg: convertObjectsToRows_Argument) {
   const { columns, formatObject = (o) => o, objects } = arg;
@@ -215,7 +225,7 @@ export function convertObjectsToTableRows(arg: convertObjectsToRows_Argument) {
   return objects
     .map((o) => formatObject(cloneDeep(o)))
     .map((object) =>
-      columns.map((columnName) =>
+      columns.map(({ name: columnName }) =>
         handyTypes.non_nullish(object[columnName])
           ? String(object[columnName])
           : "-"
