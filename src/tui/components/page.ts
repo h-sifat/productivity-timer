@@ -6,18 +6,25 @@ import { getCircularArrayIndex } from "common/util/other";
 export type Page_Argument = {
   debug: Debug;
   children: Widgets.Node[];
+  focusArray?: Widgets.Node[];
 } & ElementPosition;
 
 export class Page {
   #focusedIndex = 0;
   readonly #debug: Debug;
+  readonly #focusArray: Widgets.Node[];
   readonly #wrapperBox: Widgets.BoxElement;
 
   constructor(arg: Page_Argument) {
-    const { debug, ...rest } = arg;
+    const { debug, children, focusArray = [], ...rest } = arg;
+
+    this.#focusArray =
+      Array.isArray(focusArray) && focusArray.length ? focusArray : children;
+
     this.#debug = debug;
     this.#wrapperBox = blessed.box({
       ...rest,
+      children,
       mouse: true,
       scrollable: true,
     });
@@ -29,9 +36,9 @@ export class Page {
   }
 
   #focusSelectedChild() {
-    if (this.#wrapperBox.children.length)
+    if (this.#focusArray.length)
       // @ts-ignore
-      this.#wrapperBox.children[this.#focusedIndex].focus();
+      this.#focusArray[this.#focusedIndex].focus();
   }
 
   get element() {
@@ -42,7 +49,7 @@ export class Page {
     this.#focusedIndex = getCircularArrayIndex({
       offset: 1,
       index: this.#focusedIndex,
-      length: this.#wrapperBox.children.length,
+      length: this.#focusArray.length,
     });
 
     this.#focusSelectedChild();
@@ -52,7 +59,7 @@ export class Page {
     this.#focusedIndex = getCircularArrayIndex({
       offset: -1,
       index: this.#focusedIndex,
-      length: this.#wrapperBox.children.length,
+      length: this.#focusArray.length,
     });
 
     this.#focusSelectedChild();
