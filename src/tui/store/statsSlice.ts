@@ -7,6 +7,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import type { AppDispatch, StoreInterface } from "tui/store";
 import type WorkSessionService from "client/services/work-session";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { ErrorMessageAndCode, StatsState } from "tui/store/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 import type { StatisticsInterface } from "src/use-cases/interfaces/work-session-db";
@@ -54,7 +55,10 @@ const statsSlice = createSlice({
 
     workSessionsFetched(
       state: StatsState,
-      action: PayloadAction<{ date: string; workSessions: WorkSessionFields[] }>
+      action: PayloadAction<{
+        date: string;
+        workSessions: WorkSessionFields<TimerRefWithName>[];
+      }>
     ) {
       const { date, workSessions } = action.payload;
 

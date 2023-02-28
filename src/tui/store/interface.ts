@@ -1,9 +1,10 @@
 import type { ReadonlyDeep, Writable } from "type-fest";
+import type { PublicMetaInfoInterface } from "entities/meta";
 import type { ProjectFields } from "entities/project/project";
 import type { CategoryFields } from "entities/category/category";
 import type { DailyStat } from "use-cases/interfaces/work-session-db";
+import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
-import { PublicMetaInfoInterface } from "entities/meta";
 
 export interface IdToIndexMap {
   [id: string]: number;
@@ -46,7 +47,7 @@ export interface StatsState {
   workSessionsPerDate: {
     [date: string]: {
       fetchTimestamp: number;
-      workSessions: ReadonlyDeep<WorkSessionFields[]>;
+      workSessions: ReadonlyDeep<WorkSessionFields<TimerRefWithName>[]>;
     };
   };
 }
