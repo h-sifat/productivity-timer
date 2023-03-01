@@ -1,18 +1,21 @@
 import blessed from "blessed";
-import type { Widgets } from "blessed";
-import { Debug, ElementPosition } from "../interface";
 import { getCircularArrayIndex } from "common/util/other";
+
+import type { Widgets } from "blessed";
+import type { Debug, ElementPosition } from "../interface";
 
 export type Page_Argument = {
   debug: Debug;
-  children: Widgets.Node[];
-  focusArray?: Widgets.Node[];
+  children: Widgets.BlessedElement[];
+  focusArray?: Widgets.BlessedElement[];
+  renderScreen(): void;
 } & ElementPosition;
 
 export class Page {
   #focusedIndex = 0;
   readonly #debug: Debug;
-  readonly #focusArray: Widgets.Node[];
+  readonly #renderScreen: () => void;
+  readonly #focusArray: Widgets.BlessedElement[];
   readonly #wrapperBox: Widgets.BoxElement;
 
   constructor(arg: Page_Argument) {
@@ -22,6 +25,8 @@ export class Page {
       Array.isArray(focusArray) && focusArray.length ? focusArray : children;
 
     this.#debug = debug;
+    this.#renderScreen = arg.renderScreen;
+
     this.#wrapperBox = blessed.box({
       ...rest,
       children,
@@ -36,9 +41,22 @@ export class Page {
   }
 
   #focusSelectedChild() {
-    if (this.#focusArray.length)
+    if (!this.#focusArray.length) return;
+
+    const element = this.#focusArray[this.#focusedIndex];
+    if (!element) return;
+
+    element.focus();
+
+    // blessed doesn't always automatically bring the focused element to the
+    // visible area. That's why I'm manually doing the scrolling.
+    try {
+      const scrollPos = <number>element.atop + <number>element.height;
       // @ts-ignore
-      this.#focusArray[this.#focusedIndex].focus();
+      element.parent.scrollTo(scrollPos);
+    } catch {}
+
+    this.#renderScreen();
   }
 
   get element() {

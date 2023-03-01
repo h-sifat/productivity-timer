@@ -176,6 +176,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
 
   const timerPage = new Page({
     top: 1,
+    renderScreen,
     debug: arg.debug,
     children: [wrapper],
   });

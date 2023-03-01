@@ -61,6 +61,7 @@ export function createCategoryPage(arg: createCategoryPage_Argument) {
   const categoryPage = new Page({
     top: 1,
     debug,
+    renderScreen,
     children: [categoryTreeComponent.element, categoryForm.element],
   });
 

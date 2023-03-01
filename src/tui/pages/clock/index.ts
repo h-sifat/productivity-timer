@@ -57,6 +57,7 @@ export function createClockPage(arg: createClockPage_Argument) {
   const page = new Page({
     debug,
     top: 1,
+    renderScreen,
     children: [wrapper],
   });
 

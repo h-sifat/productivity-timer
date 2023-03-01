@@ -77,6 +77,7 @@ export function createStatsPage(arg: createStatsPage_Argument) {
   const page = new Page({
     debug,
     top: 1,
+    renderScreen,
     children: [calendar.element, statsComponent.element],
     focusArray: [calendar.element, ...statsComponent.children],
   });

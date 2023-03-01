@@ -59,6 +59,7 @@ export function createProjectPage(arg: createProjectPage_Argument) {
   const projectsPage = new Page({
     top: 1,
     debug,
+    renderScreen,
     children: [projectsTable.element, projectForm.element],
   });
 
