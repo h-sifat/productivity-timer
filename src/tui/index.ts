@@ -1,3 +1,5 @@
+import "tui/util/patch-blessed.js";
+
 import {
   BROADCAST_CHANNELS,
   API_AND_SERVER_CONFIG as config,
