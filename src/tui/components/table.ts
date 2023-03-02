@@ -21,7 +21,6 @@ import type { ReadonlyDeep, Writable } from "type-fest";
 export type TableColumn = { name: string; label: string };
 
 export interface Table_Argument<T extends object> {
-  label?: string;
   position?: ElementPosition;
   dimension?: ElementDimension;
   tableStyle?: BlessedElementStyle;
@@ -105,7 +104,7 @@ export class Table<T extends object> {
 
       keys: false,
       mouse: false,
-      scrollable: false,
+      scrollable: true,
       style: merge(getDefaultStyles(), tableStyle),
 
       scrollbar: { ch: " ", style: { bg: "white" }, track: { bg: "black" } },
@@ -127,6 +126,12 @@ export class Table<T extends object> {
         },
       });
     }
+
+    this.#listtable.once("render", () => {
+      this.#listtable.parent.on("resize", () => {
+        this.#listtable.width = "100%-2";
+      });
+    });
 
     // -------------------- Event Handling ------------------
     this.#wrapper.key(["j", "down"], () => {
