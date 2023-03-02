@@ -2,10 +2,10 @@ import blessed from "blessed";
 // @ts-ignore
 import Context from "drawille-canvas";
 
-import { Page } from "tui/components/page";
-import type { Debug } from "tui/interface";
-import { CanvasContext } from "./interface";
 import { drawClock } from "./util";
+import type { Debug } from "tui/interface";
+import { Page } from "tui/components/page";
+import { CanvasContext } from "./interface";
 
 export interface createClockPage_Argument {
   debug: Debug;
@@ -21,11 +21,12 @@ export function createClockPage(arg: createClockPage_Argument) {
 
   // ---------------- Components -----------------------------
 
+  const message = "Today is a gift from the Almighty.";
   const wrapper = blessed.box({
-    width: clockBoxDimension.width - 1,
-    height: clockBoxDimension.height + 3,
     top: "center",
     left: "center",
+    width: clockBoxDimension.width - 1,
+    height: clockBoxDimension.height + 3,
   });
 
   const clockBox = blessed.box({
@@ -35,23 +36,12 @@ export function createClockPage(arg: createClockPage_Argument) {
   });
 
   const dateTimeBox = blessed.box({
+    right: 2,
+    height: 2,
     fg: "green",
     align: "center",
     parent: wrapper,
-
-    left: -2,
     top: clockBoxDimension.height - 2,
-  });
-
-  blessed.box({
-    fg: "green",
-    align: "center",
-    parent: wrapper,
-
-    content: "Today is a gift from the Almighty.",
-
-    left: -2,
-    top: clockBoxDimension.height - 1,
   });
 
   const page = new Page({
@@ -83,9 +73,11 @@ export function createClockPage(arg: createClockPage_Argument) {
     });
     clockBox.setContent(stringifiedClockCanvas);
 
-    dateTimeBox.setContent(
+    dateTimeBox.setLine(
+      0,
       `${date.toLocaleTimeString()} | ${date.toDateString()}`
     );
+    dateTimeBox.setLine(1, message);
 
     renderScreen();
   }
