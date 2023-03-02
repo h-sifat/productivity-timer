@@ -5,16 +5,18 @@ import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
 import type { Debug, ElementDimension, ElementPosition } from "tui/interface";
 
-import blessed from "blessed";
-import { isSameDay } from "date-fns";
-import { PieChart } from "tui/components/pie-chart";
 import {
-  formatDurationMsAsHMS,
   toLocaleDateString,
+  timestampToLocaleTimeString,
 } from "common/util/date-time";
-import { pickDimensionalProps, pickPositionalProps } from "tui/util/other";
+import blessed from "blessed";
+import { last } from "lodash";
+import { isSameDay } from "date-fns";
+import { pick } from "common/util/other";
 import { Table } from "tui/components/table";
 import { formatDuration } from "cli/util/timer";
+import { PieChart } from "tui/components/pie-chart";
+import { pickDimensionalProps, pickPositionalProps } from "tui/util/other";
 
 export interface Stats_Argument {
   debug: Debug;
@@ -47,6 +49,8 @@ Object.freeze(StatsViewType);
 
 export class StatsComponent {
   static readonly PIE_CHART_HEIGHT = 19;
+  static readonly DAILY_SESSIONS_TABLE_HEIGHT = 12;
+  static readonly TOTAL_DURATION_TABLE_HEIGHT = 12;
 
   readonly #debug: Debug;
   readonly #renderScreen: () => void;
@@ -55,7 +59,13 @@ export class StatsComponent {
 
   readonly #wrapper: Widgets.BoxElement;
   readonly #pieChart: PieChart;
-  readonly #table: Table<Pick<AggregatedEntry, "name" | "type" | "duration">>;
+  readonly #dailyTable: Table<
+    Pick<AggregatedEntry, "name" | "type" | "duration"> &
+      Record<"from" | "to", string>
+  >;
+  readonly #totalDurationTable: Table<
+    Pick<AggregatedEntry, "name" | "type" | "duration">
+  >;
 
   #date: Date | null = null;
   #viewType: StatsViewType = StatsViewType.DAILY;
@@ -73,7 +83,7 @@ export class StatsComponent {
       mouse: true,
       ...pickPositionalProps(arg.position),
       ...pickDimensionalProps(arg.dimension),
-      style: { focus: { border: { fg: "green" } } },
+      style: { focus: { border: { fg: "green" } }, label: { fg: "green" } },
       scrollbar: { ch: " ", style: { fg: "white", bg: "grey" } },
     });
 
@@ -84,12 +94,45 @@ export class StatsComponent {
       dimension: { height: StatsComponent.PIE_CHART_HEIGHT, width: "100%-3" },
     });
 
-    this.#table = new Table({
+    const commonTableArg = ({
+      top,
+      height,
+    }: {
+      height: string | number;
+      top: number | string;
+    }) => ({
       debug,
       renderScreen,
-      columns: ["name", "type", "duration"],
-      dimension: { height: 15, width: "100%-3" },
-      position: { left: 0, top: StatsComponent.PIE_CHART_HEIGHT },
+      position: { left: 0, top },
+      dimension: { height, width: "100%-3" },
+      formatObject: (rowObject: { duration: number }) => ({
+        ...rowObject,
+        duration: formatDuration(rowObject.duration),
+      }),
+    });
+
+    this.#totalDurationTable = new Table({
+      ...(commonTableArg({
+        top: StatsComponent.PIE_CHART_HEIGHT,
+        height: StatsComponent.TOTAL_DURATION_TABLE_HEIGHT,
+      }) as any),
+      columns: ["name", "type", { label: "total duration", name: "duration" }],
+    });
+
+    this.#dailyTable = new Table({
+      debug,
+      renderScreen,
+      dimension: {
+        height: StatsComponent.DAILY_SESSIONS_TABLE_HEIGHT,
+        width: "100%-3",
+      },
+      columns: ["name", "type", "duration", "from", "to"],
+      position: {
+        left: 0,
+        top:
+          StatsComponent.PIE_CHART_HEIGHT +
+          StatsComponent.TOTAL_DURATION_TABLE_HEIGHT,
+      },
       formatObject: (rowObject) => ({
         ...rowObject,
         duration: formatDuration(rowObject.duration),
@@ -97,7 +140,10 @@ export class StatsComponent {
     });
 
     this.#wrapper.append(this.#pieChart.element);
-    this.#wrapper.append(this.#table.element);
+    this.#wrapper.append(this.#dailyTable.element);
+    this.#wrapper.append(this.#totalDurationTable.element);
+    // this.#pieChart.element.hide();
+    // this.#dailyTable.element.hide();
   }
 
   setDate(date: Date) {
@@ -136,13 +182,46 @@ export class StatsComponent {
       aggregated.map(({ label, duration }) => ({ label, value: duration }))
     );
 
-    this.#table.updateRows({
-      rowObjects: aggregated.map(({ name, duration, type }) => ({
-        name,
-        type,
-        duration,
-      })),
+    this.#totalDurationTable.updateRows({
+      rowObjects: aggregated
+        .map((entry) => pick(entry, ["name", "type", "duration"]))
+        .sort(({ duration: a }, { duration: b }) => b - a),
     });
+
+    // this.#pieChart.element.show();
+
+    this.#dailyTable.updateRows({
+      rowObjects: [...workSessions]
+        .sort(
+          ({ events: eA }, { events: eB }) => eA[0].timestamp - eB[0].timestamp
+        )
+        .map(({ elapsedTime, ref, events }) => ({
+          name: ref.name,
+          type: ref.type,
+          duration: elapsedTime.total,
+          from: timestampToLocaleTimeString(events[0].timestamp),
+          to: timestampToLocaleTimeString(last(events)!.timestamp),
+        })),
+    });
+
+    // this.#dailyTable.element.show();
+
+    this.#setLabel(
+      aggregated.reduce((total, { duration }) => total + duration, 0)
+    );
+
+    this.#wrapper.scrollTo(0);
+  }
+
+  #setLabel(totalWorkMs?: number) {
+    if (!this.#date) return;
+
+    let label = `${this.#date.toLocaleDateString()} | stats: ${this.#viewType}`;
+    if (typeof totalWorkMs === "number")
+      label += ` | total: ${formatDuration(totalWorkMs)}`;
+
+    this.#wrapper.setLabel({ text: `[${label}]`, side: "right" });
+    this.#renderScreen();
   }
 
   get element() {
@@ -150,7 +229,11 @@ export class StatsComponent {
   }
 
   get children() {
-    return [this.#pieChart.element, this.#table.element];
+    return [
+      this.#pieChart.element,
+      this.#totalDurationTable.element,
+      this.#dailyTable.element,
+    ];
   }
 }
 
@@ -180,8 +263,3 @@ function aggregateWorkSessions(
 function getRefLabel(ref: TimerRefWithName) {
   return `${ref.type[0]}(${ref.id})/${ref.name}`;
 }
-
-/*
- * Stats.setDate(...)
- * Stats.viewType(monthly | daily | weekly)
- * */

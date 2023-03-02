@@ -106,6 +106,12 @@ export function toLocaleDateString(date: Date) {
   return date.toLocaleDateString("en-US");
 }
 
+export function timestampToLocaleTimeString(timestamp: number) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) throw new Error(`Invalid timestamp.`);
+  return date.toLocaleTimeString();
+}
+
 export const MS_IN_ONE_MINUTE = 60_000;
 export const MS_IN_ONE_HOUR = 60 * MS_IN_ONE_MINUTE;
 export const MS_IN_ONE_DAY = 24 * MS_IN_ONE_HOUR;
