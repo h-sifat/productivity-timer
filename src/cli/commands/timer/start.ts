@@ -143,34 +143,32 @@ async function makeStartCommand(
       type: "category",
       name: category.name,
     };
+  } else if ("project" in options) {
+    const projectService = new ProjectService({
+      client,
+      url: config.API_PROJECT_PATH,
+    });
 
-    return startCommand;
-  }
-
-  const projectService = new ProjectService({
-    client,
-    url: config.API_PROJECT_PATH,
-  });
-
-  const project =
-    "id" in options
-      ? await projectService.findById({ id: options.id })
-      : await projectService.findByName({ name: (<any>options).name });
-
-  if (!project) {
-    let message = "No project found with the";
-    message +=
+    const project =
       "id" in options
-        ? ` id: "${options.id}".`
-        : ` name: "${(<any>options).name}"`;
-    throw new EPP({ code: "NOT_FOUND", message });
-  }
+        ? await projectService.findById({ id: options.id })
+        : await projectService.findByName({ name: (<any>options).name });
 
-  startCommand.arg!.ref = {
-    id: project.id,
-    type: "project",
-    name: project.name,
-  };
+    if (!project) {
+      let message = "No project found with the";
+      message +=
+        "id" in options
+          ? ` id: "${options.id}".`
+          : ` name: "${(<any>options).name}"`;
+      throw new EPP({ code: "NOT_FOUND", message });
+    }
+
+    startCommand.arg!.ref = {
+      id: project.id,
+      type: "project",
+      name: project.name,
+    };
+  }
 
   return startCommand;
 }
