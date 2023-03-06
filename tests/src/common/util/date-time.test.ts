@@ -1,11 +1,11 @@
 import {
-  assertValidUSLocaleDateString,
   currentTimeMs,
-  formatDurationMsAsHMS,
-  isValidUnixMsTimestamp,
+  parseDuration,
   MS_IN_ONE_HOUR,
   MS_IN_ONE_MINUTE,
-  parseDuration,
+  formatDurationMsAsHMS,
+  isValidUnixMsTimestamp,
+  assertValidUSLocaleDateString,
   unixMsTimestampToUsLocaleDateString,
 } from "common/util/date-time";
 
@@ -149,14 +149,21 @@ describe("formatDurationMsAsHMS", () => {
 
 describe("parseDuration", () => {
   describe("Validation", () => {
-    it.each(["20x", "1m20h", "1s2m", "1s2h", "234.234m", "-23m2s"])(
-      `invalid duration string: %p`,
-      (durationString) => {
-        expect(() => {
-          parseDuration(durationString);
-        }).toThrow(Error);
-      }
-    );
+    it.each([
+      "20x",
+      "1m20h",
+      "1s2m",
+      "1s2h",
+      "234.234m",
+      "-23m2s",
+      "60m",
+      "60s",
+      "1h80s",
+    ])(`invalid duration string: %p`, (durationString) => {
+      expect(() => {
+        parseDuration(durationString);
+      }).toThrow(Error);
+    });
   });
 
   describe("Functionality", () => {

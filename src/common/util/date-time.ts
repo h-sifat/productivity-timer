@@ -205,6 +205,20 @@ export function parseDuration(durationString: string): number {
     }
   }
 
+  {
+    const MAX_MINUTE_AND_SECOND = 59;
+
+    for (const field of ["minutes", "seconds"]) {
+      const unit = field[0];
+
+      if ((parsed as any)[unit] > MAX_MINUTE_AND_SECOND)
+        throw new EPP({
+          code: `invalid_${field}`.toUpperCase(),
+          message: `The "${field}" field cannot be greater than ${MAX_MINUTE_AND_SECOND}.`,
+        });
+    }
+  }
+
   return Object.entries(parsed)
     .map(([fromUnit, duration]) =>
       convertDuration({
