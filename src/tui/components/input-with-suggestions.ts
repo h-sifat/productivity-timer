@@ -9,6 +9,7 @@ import blessed from "blessed";
 import { SuggestionsElement } from "./suggestions";
 import { createInstructionsBox } from "./instructions";
 import { formatMessageForBlessedElement } from "../util";
+import { setLabelStyleOnFocusAndBlur } from "tui/util/label-style-setter";
 
 type SetMessage_Argument = { timeoutMs?: number | undefined } & Message;
 
@@ -30,7 +31,6 @@ export interface InputWithSuggestions_Argument {
     instructions?: { [k: string]: string | number };
   } & ElementPosition;
   debug: Debug;
-  zIndex?: number;
   renderScreen(): void;
   suggestionFormatter(value: unknown): string;
 }
@@ -78,12 +78,21 @@ export class InputWithSuggestions {
       this.#inputElement.on("focus", () => {
         // set the artificial cursor on focus
         this.setValue({ value: this.value, cursor: true });
+        this.#inputElement.setFront();
       });
 
       this.#inputElement.on("blur", () => {
         // remove the artificial cursor on blur
         this.setValue({ value: this.value, cursor: false });
+        this.#inputElement.setBack();
         this.#suggestionsElement.hide();
+      });
+
+      setLabelStyleOnFocusAndBlur({
+        blurStyle: { fg: "white" },
+        element: this.#inputElement,
+        focusStyle: { fg: "green" },
+        renderScreen: this.#renderScreen,
       });
     }
     {
@@ -91,7 +100,6 @@ export class InputWithSuggestions {
         left: -1,
         height: 6,
         right: -1,
-        zIndex: 100,
         top: "100%-2",
         parent: this.#inputElement,
         renderScreen: this.#renderScreen,
@@ -257,5 +265,9 @@ export class InputWithSuggestions {
 
   focus() {
     this.#inputElement.focus();
+  }
+
+  get element() {
+    return this.#inputElement;
   }
 }
