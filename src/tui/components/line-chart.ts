@@ -45,6 +45,8 @@ export class LineChart {
           line: "green",
           text: "green",
           baseline: "black",
+          // @ts-ignore
+          border: { fg: "white" },
           // @ts-ignore Come on, stop complaining
           focus: { border: { fg: "green" } },
         },

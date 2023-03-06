@@ -21,6 +21,7 @@ export interface SuggestionElement_Arg {
 }
 
 const defaultListStyle = deepFreeze({
+  fg: "white",
   scrollbar: { bg: "white" },
   selected: { bg: "green", fg: "white" },
 });

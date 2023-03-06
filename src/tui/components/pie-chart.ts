@@ -33,12 +33,13 @@ export class PieChart {
     this.#renderScreen = arg.renderScreen;
 
     this.#element = blessed.box({
+      fg: "white",
       mouse: true,
       focusable: true,
       scrollable: true,
-      border: arg.border ? "line" : undefined,
       ...pickPositionalProps(arg.position),
       ...pickDimensionalProps(arg.dimension),
+      border: arg.border ? "line" : undefined,
       scrollbar: { ch: " ", style: { fg: "white", bg: "grey" } },
     });
 

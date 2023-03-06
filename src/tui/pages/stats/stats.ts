@@ -116,7 +116,11 @@ export class StatsComponent {
       mouse: true,
       ...pickPositionalProps(arg.position),
       ...pickDimensionalProps(arg.dimension),
-      style: { focus: { border: { fg: "green" } }, label: { fg: "green" } },
+      style: {
+        label: { fg: "green" },
+        border: { fg: "white" },
+        focus: { border: { fg: "green" } },
+      },
       scrollbar: { ch: " ", style: { fg: "white", bg: "grey" } },
     });
 

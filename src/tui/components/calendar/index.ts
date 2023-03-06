@@ -106,7 +106,7 @@ const KeyBindings = Object.freeze({
   "h/left": "left",
   "j/down": "down",
   "l/right": "right",
-  "S-(h,l)": "change year",
+  "shift-[h,l]": "change year",
 });
 
 const NUM_OF_ROWS_IN_YEAR_DATE_MATRIX =

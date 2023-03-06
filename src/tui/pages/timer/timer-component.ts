@@ -78,6 +78,7 @@ export class TimerComponent {
         border: "line",
         width: TimerComponent.width,
         height: TimerComponent.height,
+        style: { border: { fg: "white" } },
       });
     }
 
@@ -133,8 +134,8 @@ export class TimerComponent {
       mouse: true,
       scrollable: true,
 
-      style: { fg: "green" },
       scrollbar: { ch: " ", style: { fg: "white", bg: "grey" } },
+      style: { fg: "green", border: { fg: "white" }, label: { fg: "white" } },
     });
 
     this.#messageBox = blessed.box({
@@ -152,7 +153,7 @@ export class TimerComponent {
 
   #formatInfoObject(info: TimerInfo) {
     return Object.entries(info)
-      .map(([k, v]) => `{green-fg}${k}:{/} ${v}`)
+      .map(([k, v]) => `{green-fg}${k}:{/} {white-fg}${v}{/}`)
       .join("\n");
   }
 

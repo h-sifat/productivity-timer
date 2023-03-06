@@ -29,8 +29,9 @@ export function makeCalendarElements(
     top: 0,
     height: 1,
     tags: true,
+    fg: "white",
+    content: "",
     align: "center",
-    content: "hello",
   });
 
   const calendar = blessed.box({
@@ -49,6 +50,7 @@ export function makeCalendarElements(
 
     content: "Loading...",
 
+    fg: "white",
     scrollable: true,
     scrollbar: {
       ch: " ",

@@ -17,10 +17,10 @@ export type createInstructionsBox_Argument = Partial<
 
 export function createInstructionsBox(arg: createInstructionsBox_Argument) {
   const {
-    style = {},
     instructions,
     border = false,
     keyColor = "green",
+    style = { fg: "white", border: { fg: "white" } },
     ...rest
   } = arg;
   const options: any = {
@@ -33,7 +33,9 @@ export function createInstructionsBox(arg: createInstructionsBox_Argument) {
     focusable: false,
     scrollable: true,
     content: Object.entries(instructions)
-      .map(([key, action]) => `{${keyColor}-fg}${key}{/}: ${action}`)
+      .map(
+        ([key, action]) => `{${keyColor}-fg}${key}{/}{white-fg}: ${action}{/}`
+      )
       .join(", "),
   };
 

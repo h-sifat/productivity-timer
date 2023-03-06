@@ -63,7 +63,11 @@ export class TimerForm {
       height: TimerForm.height,
       // @ts-ignore I don't know why the "center" option is not working
       label: { text: "[New Timer Info]", side: "right" },
-      style: { focus: { border: { fg: "green" } } },
+      style: {
+        label: { fg: "white" },
+        border: { fg: "white" },
+        focus: { border: { fg: "green" } },
+      },
     });
 
     this.#referenceInput = new InputWithSuggestions({
@@ -88,7 +92,12 @@ export class TimerForm {
       name: "duration",
       inputOnFocus: true,
       label: "[duration]",
-      style: { focus: { border: { fg: "green" } } },
+      style: {
+        fg: "white",
+        label: { fg: "white" },
+        border: { fg: "white" },
+        focus: { border: { fg: "green" } },
+      },
     });
 
     setLabelStyleOnFocusAndBlur({

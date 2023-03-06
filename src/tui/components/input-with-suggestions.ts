@@ -61,7 +61,12 @@ export class InputWithSuggestions {
         keys: false,
         border: "line",
         inputOnFocus: false,
-        style: { focus: { border: { fg: "green" } } },
+        style: {
+          fg: "white",
+          label: { fg: "white" },
+          border: { fg: "white" },
+          focus: { border: { fg: "green" } },
+        },
       });
 
       if (instructions)

@@ -45,7 +45,6 @@ function getDefaultStyles() {
       fg: "green",
       selected: { fg: "white", bg: "green" },
     },
-    focus: { border: { fg: "green" } },
   };
 }
 
@@ -85,7 +84,7 @@ export class Table<T extends object> {
       ...pick(dimension, ["width", "height"]),
       ...pick(position, ["top", "bottom", "left", "right"]),
 
-      style: { focus: { border: { fg: "green" } } },
+      style: { border: { fg: "white" }, focus: { border: { fg: "green" } } },
 
       keys: true,
       mouse: false,
@@ -156,6 +155,11 @@ export class Table<T extends object> {
 
     this.#wrapper.key("enter", () => {
       this.#onSubmit({ object: this.selected, index: this.#cursorIndex });
+    });
+
+    // for some unknown reason the border color is not working
+    this.#wrapper.on("blur", () => {
+      this.#wrapper.style = { border: { fg: "white" } };
     });
   }
 

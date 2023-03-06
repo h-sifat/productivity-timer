@@ -11,6 +11,7 @@ import { deepFreeze } from "common/util/other";
 import { createInstructionsBox } from "./instructions";
 import { hashObject } from "common/util/hash-object";
 import { formatMessageForBlessedElement } from "../util";
+import { setLabelStyleOnFocusAndBlur } from "tui/util/label-style-setter";
 
 export interface Form_Argument<T extends object> {
   formLabel?: string;
@@ -29,7 +30,11 @@ export interface Form_Argument<T extends object> {
   fieldInputStyle?: BlessedElementStyle;
 }
 
-const defaultFormStyle = deepFreeze({ focus: { border: { fg: "green" } } });
+const defaultFormStyle = deepFreeze({
+  border: { fg: "white" },
+  label: { fg: "white" },
+  focus: { border: { fg: "green" } },
+});
 
 export interface update_Arg<T> {
   message?: Message;
@@ -92,21 +97,22 @@ export class Form<T extends object> {
       this.#fields = arg.fields.reduce((_fieldElements, field, index) => {
         const topPosition = index;
 
+        const isDisabled = disabledFields.includes(field);
+
         const inputLabel = `${String(field)}: `;
 
         const labelElement = blessed.text({
           top: topPosition,
           content: inputLabel,
           parent: this.#formElement,
-          style: arg.fieldLabelStyle || {},
+          style: arg.fieldLabelStyle || { fg: isDisabled ? "grey" : "white" },
         });
-
-        const isDisabled = disabledFields.includes(field);
 
         const inputElement = isDisabled
           ? blessed.text({
               height: 1,
               content: "",
+              fg: "grey",
               top: topPosition,
               left: inputLabel.length,
               parent: this.#formElement,
@@ -114,6 +120,7 @@ export class Form<T extends object> {
           : blessed.textbox({
               height: 1,
               value: "",
+              fg: "white",
               top: topPosition,
               inputOnFocus: true,
               name: String(field),
@@ -171,6 +178,11 @@ export class Form<T extends object> {
 
     if (arg.initialMessage)
       this.#updateMessage({ message: arg.initialMessage, renderScreen: false });
+
+    setLabelStyleOnFocusAndBlur({
+      element: this.#formElement,
+      renderScreen: this.#renderScreen,
+    });
   }
 
   update(arg: update_Arg<T>) {

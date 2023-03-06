@@ -67,7 +67,7 @@ export class CategoryTreeComponent {
       const {
         position = {},
         dimension = {},
-        style = { focus: { border: { fg: "green" } } },
+        style = { focus: { border: { fg: "green" } }, border: { fg: "white" } },
       } = arg;
 
       const boxArg: any = {
