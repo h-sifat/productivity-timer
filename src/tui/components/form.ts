@@ -58,6 +58,8 @@ export class Form<T extends object> {
 
   #onSubmit: OnFormSubmit<T> = () => {};
 
+  #initialFormData: { [field: string]: string } = {};
+
   readonly #fields: {
     readonly [k: string]: Field;
   };
@@ -171,7 +173,13 @@ export class Form<T extends object> {
       const updatedObject = { ...(this.#currentObject || {}), ...updates };
 
       // don't call the submit method if no input has changed
-      if (hashObject(this.#currentObject) === hashObject(updatedObject)) return;
+      if (hashObject(this.#initialFormData) === hashObject(updatedObject)) {
+        this.updateMessage({
+          type: "error",
+          text: "Please update a field first.",
+        });
+        return;
+      }
 
       this.#onSubmit({ type, object: updatedObject });
     });
@@ -191,11 +199,13 @@ export class Form<T extends object> {
 
       for (const [field, value] of Object.entries(this.#fields)) {
         const { isDisabled, inputElement } = value;
-        const text = String(((updateObject as any) ?? {})[field] || "");
+        const textValue = String(((updateObject as any) ?? {})[field] || "");
 
-        if (isDisabled) inputElement.setContent(text);
+        this.#initialFormData[field] = textValue;
+
+        if (isDisabled) inputElement.setContent(textValue);
         // @ts-ignore if not disabled then it's a text box element
-        else inputElement.setValue(text);
+        else inputElement.setValue(textValue);
       }
 
       if (updateObject)
