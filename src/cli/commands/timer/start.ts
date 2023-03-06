@@ -41,14 +41,20 @@ export function addTimerStartCommand(program: Command) {
         "the id of the project or category"
       ).conflicts("name")
     )
+    .addOption(
+      new Option(
+        "-l, --last",
+        "start the timer with the previous reference if exists."
+      ).conflicts(["name", "id", "project", "category"])
+    )
     .addOption(DurationOption)
     .action(startTimer);
 }
 
 type startTimer_Options =
-  | { duration?: number }
-  | (({ name: string } | { id: string }) &
-      ({ category: true } | { project: true }))
+  | { duration?: number; last?: boolean }
+  | ((({ name: string } | { id: string }) &
+      ({ category: true } | { project: true })) & { duration?: number })
   | {};
 
 interface StartCommand {
@@ -60,6 +66,7 @@ interface StartCommand {
       name?: string | undefined;
       type: "project" | "category";
     };
+    usePreviousRef?: boolean;
   };
 }
 
@@ -97,6 +104,11 @@ async function makeStartCommand(
 
   const startCommand: StartCommand = { name: "start", arg: { ref: null } };
   if ("duration" in options) startCommand.arg!.duration = options.duration;
+
+  if ("last" in options) {
+    startCommand.arg!.usePreviousRef = true;
+    return startCommand;
+  }
 
   if ("category" in options) {
     const categoryService = new CategoryService({
