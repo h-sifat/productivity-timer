@@ -225,7 +225,7 @@ export class Calendar {
 
   #addKeyPressEventListeners() {
     const keyPressHandler: BlessedKeypressHandler = (_, key) => {
-      if (!("name" in key)) return true;
+      if (!("name" in key) || key.ctrl) return true;
 
       const rowIncrementOnShift = MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH;
 
