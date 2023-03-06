@@ -36,27 +36,57 @@ export class Page {
     this.hide();
 
     this.#wrapperBox.once("render", () => {
-      this.#focusSelectedChild();
+      this.#focusChild({ node: "current" });
     });
   }
 
-  #focusSelectedChild() {
+  #focusChild(arg: { node: "prev" | "next" | "current" }) {
     if (!this.#focusArray.length) return;
 
-    const element = this.#focusArray[this.#focusedIndex];
-    if (!element) return;
+    const { node } = arg;
 
-    element.focus();
+    if (node === "current")
+      return void this.#focusChildNodeAtIndex(this.#focusedIndex);
+    if (this.#focusArray.length === 1)
+      return void this.#focusChildNodeAtIndex(0);
 
-    // blessed doesn't always automatically bring the focused element to the
-    // visible area. That's why I'm manually doing the scrolling.
+    const startIndex = this.#focusedIndex;
+
+    let currentIndex = startIndex;
+    while (true) {
+      currentIndex = getCircularArrayIndex({
+        index: currentIndex,
+        length: this.#focusArray.length,
+        offset: node === "next" ? 1 : -1,
+      });
+
+      if (currentIndex === startIndex) return;
+
+      const isFocusSuccessful = this.#focusChildNodeAtIndex(currentIndex);
+
+      if (isFocusSuccessful) {
+        this.#focusedIndex = currentIndex;
+        return;
+      }
+    }
+  }
+
+  #focusChildNodeAtIndex(index: number) {
+    const element = this.#focusArray[index];
+    if (!element || element.hidden) return false;
+
     try {
+      element.focus();
+
+      // blessed doesn't always automatically bring the focused element to the
+      // visible area. That's why I'm manually doing the scrolling.
       const scrollPos = <number>element.atop + <number>element.height;
       // @ts-ignore
       element.parent.scrollTo(scrollPos);
     } catch {}
 
     this.#renderScreen();
+    return true;
   }
 
   get element() {
@@ -64,31 +94,19 @@ export class Page {
   }
 
   focusNext() {
-    this.#focusedIndex = getCircularArrayIndex({
-      offset: 1,
-      index: this.#focusedIndex,
-      length: this.#focusArray.length,
-    });
-
-    this.#focusSelectedChild();
+    this.#focusChild({ node: "next" });
   }
 
   focusPrev() {
-    this.#focusedIndex = getCircularArrayIndex({
-      offset: -1,
-      index: this.#focusedIndex,
-      length: this.#focusArray.length,
-    });
-
-    this.#focusSelectedChild();
+    this.#focusChild({ node: "prev" });
   }
 
   show() {
     if (!this.#wrapperBox.hidden) return;
 
     this.#wrapperBox.show();
-    this.#wrapperBox.focus();
-    this.#focusSelectedChild();
+    // this.#wrapperBox.focus();
+    this.#focusChild({ node: "current" });
   }
 
   hide() {
