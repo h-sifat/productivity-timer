@@ -143,6 +143,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
   const Statistics = createStatsPage({
     debug,
+    alert,
     renderScreen,
     timerManager,
     getWorkSessions: ({ date }: { date: string }) =>
