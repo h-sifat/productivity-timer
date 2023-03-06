@@ -10,6 +10,7 @@ import type {
 } from "tui/interface";
 import type { Widgets } from "blessed";
 import { getRefObjectFromRefInput } from "./util";
+import { setLabelStyleOnFocusAndBlur } from "tui/util/label-style-setter";
 
 export interface TimerRefFromForm {
   identifier: string;
@@ -74,7 +75,6 @@ export class TimerForm {
       input: {
         height: 4,
         name: "ref",
-        parent: this.#formElement,
         label: "[Reference: [cp][in]/*]",
         instructions: refInputInstructions,
       },
@@ -88,33 +88,37 @@ export class TimerForm {
       name: "duration",
       inputOnFocus: true,
       label: "[duration]",
-      parent: this.#formElement,
       style: { focus: { border: { fg: "green" } } },
     });
 
-    // setting zIndex to zero so that it doesn't overlap the suggestions;
-    this.#durationInput.setIndex(0);
+    setLabelStyleOnFocusAndBlur({
+      element: this.#durationInput,
+      renderScreen: this.#renderScreen,
+    });
 
-    {
-      const instructionBox = createInstructionsBox({
-        height: 1,
-        bottom: 0,
-        parent: this.#formElement,
-        instructions: {
-          enter: "submit",
-          "tab/down": "next",
-          "shift-tab/up": "prev",
-          escape: "normal mode/close",
-        },
-      });
+    this.#formElement.append(this.#durationInput);
+    this.#formElement.append(this.#referenceInput.element);
 
-      // setting zIndex to zero so that it doesn't overlap the suggestions;
-      instructionBox.setIndex(0);
-    }
+    createInstructionsBox({
+      height: 1,
+      bottom: 0,
+      parent: this.#formElement,
+      instructions: {
+        enter: "submit",
+        "tab/down": "next",
+        "shift-tab/up": "prev",
+        escape: "normal mode/close",
+      },
+    });
 
     this.#setUpFormKeyBindings();
     this.#setUpRefInputChangeAndSuggestionHandling({
       getRefInputSuggestions: arg.getRefInputSuggestions,
+    });
+
+    setLabelStyleOnFocusAndBlur({
+      element: this.#formElement,
+      renderScreen: this.#renderScreen,
     });
   }
 
@@ -198,7 +202,7 @@ export class TimerForm {
     if (!this.#formElement.hidden) return;
 
     this.#formElement.show();
-    this.#formElement.focus();
+    this.#referenceInput.focus();
 
     this.#renderScreen();
   }
