@@ -95,6 +95,8 @@ export default class CountDownTimer<RefType> extends EventEmitter {
   readonly #getDateFromTimeMs: Constructor_Argument<RefType>["getDateFromTimeMs"];
   readonly #MAX_ALLOWED_TICK_DIFF_MS: Constructor_Argument<RefType>["MAX_ALLOWED_TICK_DIFF_MS"];
 
+  #previousNonNullRef: RefType | null = null;
+
   constructor(arg: Constructor_Argument<RefType>) {
     super();
 
@@ -324,6 +326,8 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     if ("ref" in arg)
       try {
         this.#assertValidRef(arg.ref);
+
+        if (this.#data.ref) this.#previousNonNullRef = this.#data.ref;
         defaultTimerData.ref = arg.ref;
       } catch (ex) {
         return { success: false, message: ex.message };
@@ -419,6 +423,14 @@ export default class CountDownTimer<RefType> extends EventEmitter {
   get ref(): RefType | null {
     const ref = this.#data.ref;
     return ref ? { ...ref } : null;
+  }
+
+  get previousNonNullRef() {
+    return this.#previousNonNullRef;
+  }
+
+  deletePreviousNonNullRef() {
+    this.#previousNonNullRef = null;
   }
 
   get info() {

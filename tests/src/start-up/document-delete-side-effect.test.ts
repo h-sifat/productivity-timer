@@ -3,6 +3,8 @@ import { makeDocumentDeleteSideEffect } from "src/start-up/document-delete-side-
 const timer = Object.seal({
   ref: null as any,
   reset: jest.fn(),
+  previousNonNullRef: null as any,
+  deletePreviousNonNullRef: jest.fn(),
 });
 
 const fakeServer: any = Object.freeze({
@@ -26,8 +28,12 @@ const sampleCategory = Object.freeze({ name: "A", id: "1" });
 const sampleProject = Object.freeze({ name: "B", id: "2" });
 
 beforeEach(() => {
-  timer.reset.mockReset();
   timer.ref = null;
+  timer.previousNonNullRef = null;
+
+  Object.values(timer)
+    .filter((v) => typeof v === "function")
+    .forEach((method) => method.mockReset());
 });
 
 it.each([
@@ -80,4 +86,29 @@ it.each([
   timer.ref = ref;
   await documentDeleteSideEffect({ deleted });
   expect(timer.reset).toHaveBeenCalled();
+  expect(timer.deletePreviousNonNullRef).toHaveBeenCalled();
+});
+
+it.each([
+  {
+    deleted: [sampleProject, sampleProject],
+    documentDeleteSideEffect: projectDeleteSideEffect,
+    ref: Object.freeze({ type: "project", id: sampleProject.id }),
+    case: `projectDeleteSideEffect: deletes the previousNonNullRef if matches`,
+  },
+
+  {
+    deleted: [sampleCategory, sampleCategory],
+    documentDeleteSideEffect: categoryDeleteSideEffect,
+    ref: Object.freeze({ type: "category", id: sampleCategory.id }),
+    case: `categoryDeleteSideEffect: deletes the previousNonNullRef if matches`,
+  },
+])(`$case`, async ({ deleted, documentDeleteSideEffect, ref }) => {
+  timer.ref = null;
+  timer.previousNonNullRef = ref;
+
+  await documentDeleteSideEffect({ deleted });
+  expect(timer.reset).not.toHaveBeenCalled();
+
+  expect(timer.deletePreviousNonNullRef).toHaveBeenCalled();
 });

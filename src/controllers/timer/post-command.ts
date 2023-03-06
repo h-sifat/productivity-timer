@@ -34,6 +34,7 @@ export interface makePostCommand_Argument {
     | "timeInfo"
     | "duration"
     | "setDuration"
+    | "previousNonNullRef"
   >;
 }
 
@@ -94,6 +95,7 @@ export function makePostTimerCommand(
               .object({
                 ref: z.union([TimerRefSchema, z.literal(null)]),
                 duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
+                usePreviousRef: z.boolean().optional().default(false),
               })
               .strict(),
             z.literal(null),
@@ -179,7 +181,20 @@ export function makePostTimerCommand(
             }
 
             {
-              const resetResult = timer.reset(commandArg);
+              const { duration, usePreviousRef } = commandArg;
+              let ref = commandArg.ref;
+
+              if (!ref && usePreviousRef) {
+                if (!timer.previousNonNullRef)
+                  throw {
+                    code: "NO_PREV_REF",
+                    message: "No previous timer reference exists.",
+                  };
+
+                ref = timer.previousNonNullRef;
+              }
+
+              const resetResult = timer.reset({ ref, duration });
               if (!resetResult.success)
                 throw { code: "COMMAND_FAILED", message: resetResult.message };
             }

@@ -40,6 +40,7 @@ export interface TimerInstance<RefType> {
   start(): TimerMethodCallResult;
   setDuration(durationMs: number): TimerMethodCallResult;
   reset(arg?: { duration?: number; ref?: RefType }): TimerMethodCallResult;
+  deletePreviousNonNullRef(): void;
 
   on(
     event: "reset",
@@ -78,4 +79,5 @@ export interface TimerInstance<RefType> {
   get state(): TimerStateNames;
   get timeInfo(): TimeInfo<RefType>;
   get elapsedTime(): TimerElapsedTime;
+  get previousNonNullRef(): RefType | null;
 }

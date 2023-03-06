@@ -20,6 +20,7 @@ const timer = Object.seal({
   ref: null,
   duration: 5000,
   info: FAKE_TIMER_INFO,
+  previousNonNullRef: null as any,
   timeInfo: FAKE_TIMER_TIME_INFO,
   state: TimerStates[TimerStates.NOT_STARTED],
 
@@ -66,6 +67,7 @@ beforeEach(() => {
   timer.ref = null;
   timer.duration = 5000;
   timer.info = FAKE_TIMER_INFO;
+  timer.previousNonNullRef = null;
   timer.timeInfo = FAKE_TIMER_TIME_INFO;
   timer.state = TimerStates[TimerStates.NOT_STARTED];
 });
@@ -317,6 +319,54 @@ describe("start", () => {
     expect(timer.reset).toHaveBeenCalledTimes(1);
     expect(timer.reset).toHaveBeenCalledWith(START_COMMAND_WITH_ARG.arg);
 
+    expect(timer.start).toHaveBeenCalledTimes(1);
+  });
+
+  it(`returns error if usePreviousRef is true and timer.previousNonNullRef is null`, async () => {
+    timer.previousNonNullRef = null;
+
+    const request = deepFreeze({
+      ...validRequestObject,
+      body: {
+        name: "start",
+        arg: { ref: null, usePreviousRef: true },
+      },
+    });
+
+    const response = await postTimerCommand(request);
+
+    expect(response).toEqual({
+      body: {
+        success: false,
+        error: { message: expect.any(String), code: "NO_PREV_REF" },
+      },
+    });
+  });
+
+  it(`starts a new timer with the previousRef if usePreviousRef is true and timer.previousNonNullRef is non-null`, async () => {
+    const previousRef = Object.freeze({ id: "1", name: "A", type: "project" });
+    const timerCommandArg = Object.freeze({
+      ref: null,
+      usePreviousRef: true,
+      duration: DEFAULT_TIMER_DURATION,
+    });
+    const request = {
+      ...validRequestObject,
+      body: { name: "start", arg: timerCommandArg },
+    };
+
+    timer.previousNonNullRef = { ...previousRef };
+    timer.reset.mockReturnValue({ success: true, message: "" });
+    timer.start.mockReturnValue({ success: true, message: "" });
+
+    const response = await postTimerCommand(request);
+
+    expect(response.body.success).toBeTruthy();
+    expect(timer.reset).toHaveBeenCalledTimes(1);
+    expect(timer.reset).toHaveBeenCalledWith({
+      ref: previousRef,
+      duration: timerCommandArg.duration,
+    });
     expect(timer.start).toHaveBeenCalledTimes(1);
   });
 });
