@@ -1,5 +1,3 @@
-import "tui/util/patch-blessed.js";
-
 import {
   BROADCAST_CHANNELS,
   API_AND_SERVER_CONFIG as config,
@@ -149,6 +147,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
     timerManager,
     getWorkSessions: ({ date }: { date: string }) =>
       selectWorkSessions({ date, store, workSessionService }),
+    getSummaryStats: async () => selectShortStats(store),
   });
 
   const Clock = createClockPage({ debug, renderScreen });
