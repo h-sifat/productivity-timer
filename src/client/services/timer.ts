@@ -19,6 +19,7 @@ export interface TimerCommand_Arguments {
       name?: string | undefined;
       type: "project" | "category";
     };
+    usePreviousRef?: boolean;
   };
   reset: { hardReset?: boolean; duration?: number };
   setDuration: { duration: number };

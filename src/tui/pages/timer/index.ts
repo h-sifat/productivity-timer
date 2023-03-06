@@ -27,10 +27,10 @@ const KeyBindings: {
   };
 } = Object.entries({
   e: "end",
-  c: "reset",
   p: "pause",
   s: "start",
-  r: "restart",
+  "S-c": { keyLabel: "shift-c", command: "reset", description: "reset" },
+  "S-r": { keyLabel: "shift-r", command: "restart", description: "restart" },
   b: {
     keyLabel: "b",
     command: "startBreak",
@@ -45,6 +45,12 @@ const KeyBindings: {
   },
   "S-s": { command: "start", keyLabel: "shift-s", description: "start new" },
   m: { command: "getInfo", keyLabel: "m", description: "stop beeping" },
+  l: {
+    keyLabel: "l",
+    command: "start",
+    arg: { usePreviousRef: true },
+    description: "start last non-break timer",
+  },
 
   // too lazy to implement another form
   // d: { command: "setDuration", keyLabel: "d", description: "change duration" },
@@ -90,7 +96,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
     left: "center",
     top: TimerComponent.height - 1,
 
-    height: 5,
+    height: 6,
     width: TimerComponent.width,
 
     border: true,
@@ -162,6 +168,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
             keyBinding.arg
           );
         } catch (ex) {
+          debug(ex);
           timerComponent.setMessage({ text: ex.message, type: "error" });
         }
     }

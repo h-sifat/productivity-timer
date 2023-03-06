@@ -93,9 +93,9 @@ export function makePostTimerCommand(
           .union([
             z
               .object({
-                ref: z.union([TimerRefSchema, z.literal(null)]),
-                duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
                 usePreviousRef: z.boolean().optional().default(false),
+                duration: DurationSchema.default(DEFAULT_TIMER_DURATION),
+                ref: z.union([TimerRefSchema, z.literal(null)]).default(null),
               })
               .strict(),
             z.literal(null),

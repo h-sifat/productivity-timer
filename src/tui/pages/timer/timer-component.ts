@@ -108,7 +108,7 @@ export class TimerComponent {
     this.#infoBox = blessed.box({
       parent: this.#wrapper,
       top: 1,
-      height: 6,
+      height: 7,
       tags: true,
       left: "50%-3",
       scrollable: false,
