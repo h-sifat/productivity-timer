@@ -1,6 +1,7 @@
 import { BlessedKeypressHandler } from "tui/interface";
 
 export interface makeAppKeyPressHandler_Arg {
+  onHelp(): void;
   nextTab(): void;
   prevTab(): void;
   focusNext(): void;
@@ -36,6 +37,10 @@ export function makeGlobalKeypressHandler(
       case "C-l":
       case "C-right":
         arg.nextTab();
+        break;
+
+      case "f1":
+        arg.onHelp();
         break;
 
       default:

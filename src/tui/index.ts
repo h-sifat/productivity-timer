@@ -33,6 +33,7 @@ import {
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
+import { createHelpPage } from "./pages/help";
 
 const screen = blessed.screen({
   debug: true,
@@ -151,9 +152,12 @@ async function main(arg: { client: Client; closeClient(): void }) {
     getSummaryStats: async () => selectShortStats(store),
   });
 
+  const Help = createHelpPage({ debug, renderScreen });
+
   const Clock = createClockPage({ debug, renderScreen });
 
   const pages: { [k: string]: Page } = Object.freeze({
+    Help: Help.page,
     Timer: timerPage,
     Clock: Clock.page,
     Projects: Projects.page,
@@ -167,7 +171,14 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
     selected: "Timer",
     style: { selected: { bg: "green", fg: "white" } },
-    tabs: ["Clock", "Timer", "Categories", "Projects", "Statistics"],
+    tabs: [
+      "Clock",
+      "Timer",
+      "Categories",
+      "Projects",
+      "Statistics",
+      { label: "Help (Press F1)", name: "Help" },
+    ],
   });
 
   // ------------- Appending Elements to the screen ---------------------
@@ -212,6 +223,10 @@ async function main(arg: { client: Client; closeClient(): void }) {
       isAnInputElementFocused,
       focusNext() {
         state.currentPage.focusNext();
+      },
+      onHelp: () => {
+        navbar.move({ name: "Help" });
+        state.currentPage = pages[navbar.selected.name];
       },
       focusPrev() {
         state.currentPage.focusPrev();
