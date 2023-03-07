@@ -9,7 +9,18 @@ import {
 import path from "path";
 import { z } from "zod";
 import { formatError } from "common/validator/zod";
-import { MS_IN_ONE_MINUTE } from "common/util/date-time";
+import { MS_IN_ONE_MINUTE, parseDuration } from "common/util/date-time";
+
+const makeDurationSchema = (arg: { minValue: number }) =>
+  z.preprocess((duration) => {
+    if (typeof duration === "string")
+      try {
+        return parseDuration(duration);
+      } catch {
+        return duration;
+      }
+    else return duration;
+  }, z.number().int().positive().gte(arg.minValue));
 
 const ConfigFileSchema = z
   .object({
@@ -25,31 +36,21 @@ const ConfigFileSchema = z
       .transform((dir) => path.resolve(dir)),
 
     MPLAYER_PATH: z.string().min(1).default(DEFAULT_MPLAYER_PATH),
-    BEEP_DURATION_MS: z
-      .number()
-      .int()
-      .positive()
-      .gte(5000)
-      .default(DEFAULT_BEEP_DURATION_MS),
+    SHOW_TIMER_NOTIFICATIONS: z.boolean().default(true),
 
-    DEFAULT_TIMER_DURATION_MS: z
-      .number()
-      .int()
-      .positive()
-      .gte(5000)
+    BEEP_DURATION_MS: makeDurationSchema({ minValue: 5000 }).default(
+      DEFAULT_BEEP_DURATION_MS
+    ),
+
+    DEFAULT_TIMER_DURATION_MS: makeDurationSchema({ minValue: 5000 })
       .refine((value) => value % 1000 === 0, {
         message: `"DEFAULT_TIMER_DURATION_MS" must be a multiple of 1000 (1 second)`,
       })
       .default(DEFAULT_TIMER_DURATION_MS),
 
-    SHOW_TIMER_NOTIFICATIONS: z.boolean().default(true),
-
-    DB_BACKUP_INTERVAL_MS: z
-      .number()
-      .int()
-      .positive()
-      .gte(MS_IN_ONE_MINUTE * 5)
-      .default(DEFAULT_DB_BACKUP_INTERVAL_MS),
+    DB_BACKUP_INTERVAL_MS: makeDurationSchema({
+      minValue: MS_IN_ONE_MINUTE * 5,
+    }).default(DEFAULT_DB_BACKUP_INTERVAL_MS),
   })
   .strict();
 
