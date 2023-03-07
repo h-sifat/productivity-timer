@@ -85,7 +85,11 @@ export const TABLE_SCHEMAS = Object.freeze({
       json text not null check(typeof(json) == 'text'),
       hash text not null check(typeof(hash) == 'text')
     )`,
-});
+} as const);
+
+export const DB_INDICES = Object.freeze({
+  work_session_start_date: `create index if not exists ws_started_at_idx on work_sessions(startedAt);`,
+} as const);
 
 /**
  * Defines the table creation order. This order is necessary because some tables

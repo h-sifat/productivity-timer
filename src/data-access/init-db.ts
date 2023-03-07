@@ -3,7 +3,7 @@ import type SqliteDatabase from "./db/mainprocess-db";
 import EPP from "common/util/epp";
 import { dbPragmas } from "src/config";
 import { getAllTableNames } from "./util";
-import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER } from "./schemas";
+import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER, DB_INDICES } from "./schemas";
 
 export const QUERY_NAME_GET_ALL_TBL_NAMES = "init/getAllTableNames";
 
@@ -55,4 +55,8 @@ export async function initializeDatabase(
           message: `Database is corrupted. Unknown table ("${table}").`,
         });
   }
+
+  Object.values(DB_INDICES).forEach(async (indexSql) => {
+    db.execute({ sql: indexSql });
+  });
 }
