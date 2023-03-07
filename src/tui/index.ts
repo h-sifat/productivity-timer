@@ -63,6 +63,26 @@ withClient(
 async function main(arg: { client: Client; closeClient(): void }) {
   const { client } = arg;
 
+  // ----------------- Timer Manager ----------------
+  let timerManager: TimerManager;
+
+  // ---------------- Close Application -------------------
+  {
+    const timerManagerKey = Math.random().toString() + Date.now().toString();
+    timerManager = new TimerManager({ key: timerManagerKey });
+
+    const quitApplication = () => {
+      arg.closeClient(); // this will disconnect the client from the server
+      timerManager.clear(timerManagerKey);
+
+      screen.destroy();
+      process.exitCode = 0;
+    };
+
+    // quit App key binding: Control-C.
+    screen.key(["C-c"], quitApplication);
+  }
+
   // --------------------- Creating Services ----------------
   // @TODO create them programmatically
   const categoryService = new CategoryService({
@@ -113,9 +133,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
     store.dispatch(loadShortStats(workSessionService));
   });
 
-  // ----------------- Timer Manager ----------------
-  const timerManager = new TimerManager({ key: "1" });
-
   // ------------------- Creating Components And Pages ---------------
   const suggestionsProvider = new SuggestionsProvider();
   const { timerPage } = createTimerPage({
@@ -154,7 +171,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
   const Help = createHelpPage({ debug, renderScreen });
 
-  const Clock = createClockPage({ debug, renderScreen });
+  const Clock = createClockPage({ debug, renderScreen, timerManager });
 
   const pages: { [k: string]: Page } = Object.freeze({
     Help: Help.page,
@@ -250,15 +267,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
     renderScreen();
   };
-
-  // App quit key binding: Control-C.
-  screen.key(["C-c"], async function () {
-    arg.closeClient(); // this will disconnect the client from the server
-    screen.destroy();
-    Clock.stopUpdating();
-    timerManager.clear("1");
-    process.exitCode = 0;
-  });
 
   // --------- Rendering the screen and showing the first page --------------
   state.currentPage.show();

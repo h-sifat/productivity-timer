@@ -102,7 +102,7 @@ backed up database file.
 Otherwise, file a Github issue with the `logs.txt` file in your `DATA_DIR`
 directory.
 
-**3.** I accidentally deleted my projects/categories!
+**3.** I've accidentally deleted my projects/categories!
 
 **Ans:** Quickly close the server with `pt quit` and see if you have any
 backup available. Follow the number **2** troubleshooting guide above.

@@ -3,13 +3,14 @@ import blessed from "blessed";
 import Context from "drawille-canvas";
 
 import { drawClock } from "./util";
-import type { Debug } from "tui/interface";
 import { Page } from "tui/components/page";
-import { CanvasContext } from "./interface";
+import type { CanvasContext } from "./interface";
+import type { Debug, TimerManagerInterface } from "tui/interface";
 
 export interface createClockPage_Argument {
   debug: Debug;
   renderScreen(): void;
+  timerManager: TimerManagerInterface;
 }
 export function createClockPage(arg: createClockPage_Argument) {
   const { debug, renderScreen } = arg;
@@ -84,25 +85,23 @@ export function createClockPage(arg: createClockPage_Argument) {
 
   // ------------ Updating The Clock ---------------
 
-  let timerUpdateInterval: any = undefined;
-  let isTimerClosed = false;
+  let clockUpdateIntervalId: any = undefined;
 
-  page.element.on("show", () => {
-    if (isTimerClosed || timerUpdateInterval !== undefined) return;
+  {
+    const { timerManager } = arg;
 
-    update();
-    timerUpdateInterval = setInterval(update, 1000);
-  });
+    page.element.on("show", () => {
+      if (clockUpdateIntervalId !== undefined) return;
 
-  page.element.on("hide", () => {
-    clearInterval(timerUpdateInterval);
-    timerUpdateInterval = undefined;
-  });
+      update();
+      clockUpdateIntervalId = timerManager.setInterval(update, 1000);
+    });
 
-  function stopUpdating() {
-    isTimerClosed = true;
-    clearInterval(timerUpdateInterval);
+    page.element.on("hide", () => {
+      timerManager.clearInterval(clockUpdateIntervalId);
+      clockUpdateIntervalId = undefined;
+    });
   }
 
-  return { page, stopUpdating };
+  return { page };
 }
