@@ -1,7 +1,9 @@
-import contrib, { Widgets } from "blessed-contrib";
+import blessed, { Widgets as BlessedWidgets } from "blessed";
+import contrib, { Widgets as ContribWidgets } from "blessed-contrib";
 import { pickDimensionalProps, pickPositionalProps } from "tui/util/other";
 
 import type { Debug, ElementDimension, ElementPosition } from "tui/interface";
+import { createInstructionsBox } from "./instructions";
 
 export interface Markdown_Argument {
   debug: Debug;
@@ -17,7 +19,8 @@ export class Markdown {
   #debug: Debug;
   #renderScreen: () => void;
 
-  #element: Widgets.MarkdownElement;
+  #mdElement: ContribWidgets.MarkdownElement;
+  #wrapper: BlessedWidgets.BoxElement;
 
   constructor(arg: Markdown_Argument) {
     this.#debug = arg.debug;
@@ -26,17 +29,30 @@ export class Markdown {
     {
       const { label, position = {}, dimension = {}, padding = 1 } = arg;
 
-      this.#element = contrib.markdown({
+      this.#wrapper = blessed.box({
+        label: <any>label,
         ...pickPositionalProps(position),
         ...pickDimensionalProps(dimension),
 
+        border: arg.border ? "line" : undefined,
+
+        style: {
+          fg: "white",
+          border: { fg: "white" },
+          focus: { border: { fg: "green" } },
+        },
+      });
+
+      this.#mdElement = contrib.markdown({
+        parent: this.#wrapper,
+
+        top: 0,
+        bottom: 1,
         padding,
-        label: <any>label,
 
         mouse: true,
         keyable: true,
-
-        border: arg.border ? "line" : undefined,
+        focusable: false,
 
         scrollable: true,
         scrollbar: { ch: " ", style: { bg: "grey" } },
@@ -49,23 +65,36 @@ export class Markdown {
       });
     }
 
-    this.#element.key(["j", "down"], () => {
-      this.#element.scroll(3);
+    createInstructionsBox({
+      bottom: 0,
+      height: 1,
+      border: false,
+      align: "center",
+      parent: this.#wrapper,
+      instructions: {
+        "j/down": "scroll down",
+        "k/up": "scroll up",
+        "mouse wheel": "also works",
+      },
+    });
+
+    this.#wrapper.key(["j", "down"], () => {
+      this.#mdElement.scroll(3);
       this.#renderScreen();
     });
 
-    this.#element.key(["k", "up"], () => {
-      this.#element.scroll(-3);
+    this.#wrapper.key(["k", "up"], () => {
+      this.#mdElement.scroll(-3);
       this.#renderScreen();
     });
   }
 
   setMarkdown(md: string) {
-    this.#element.setMarkdown(md);
+    this.#mdElement.setMarkdown(md);
     this.#renderScreen();
   }
 
   get element() {
-    return this.#element;
+    return this.#wrapper;
   }
 }
