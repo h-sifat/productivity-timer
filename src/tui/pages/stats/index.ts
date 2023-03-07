@@ -110,7 +110,10 @@ export function createStatsPage(arg: createStatsPage_Argument) {
   });
 
   function setFirstDayOfWeek(dayName: string) {
+    dayName = dayName.toLowerCase();
+
     calendar.setFirstDayOfWeek(dayName);
+
     statsComponent.firstDayOfWeek = DAY_NAMES_LOWERCASE.findIndex((names) =>
       names.includes(dayName)
     );
