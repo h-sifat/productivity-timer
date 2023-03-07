@@ -25,6 +25,11 @@ module.exports = {
         use: "ts-loader",
         exclude: /node_modules/,
       },
+      {
+        test: /.md$/,
+        use: ["./webpack/raw-loader.js"],
+        type: "asset/source", // we set type to 'asset/source' as the loader will return a string
+      },
     ],
   },
   resolve: {
