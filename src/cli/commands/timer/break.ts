@@ -17,7 +17,7 @@ const LONG_BREAK_DURATION = MS_IN_ONE_MINUTE * 15;
 export function addStartBreakTimerCommand(program: Command) {
   program
     .command("break")
-    .description("Stats a timer with anonymous reference.")
+    .description("Starts a timer with anonymous reference.")
     .addOption(
       new Option(
         "-s, --short",

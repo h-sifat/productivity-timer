@@ -22,7 +22,7 @@ export function addStatCommand(program: Command) {
     .description("Shows statistics and work history.")
     .option(
       "-d, --date <mm-dd-yyyy-or-number>",
-      "show the stats of a specific date or <number> days before the today."
+      "show the stats of a specific date or <number> days before today."
     )
     .option("--json", "print raw JSON.")
     .action(showStats);
