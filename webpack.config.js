@@ -44,6 +44,9 @@ module.exports = {
       test: new RegExp(outputModuleNames.CLI),
     }),
     new webpack.DefinePlugin({
+      __BUILD_MODE__: JSON.stringify(
+        process.env.BUILD_MODE === "production" ? "production" : "development"
+      ),
       __APP_VERSION__: JSON.stringify(packageDotJSON.version),
       __M_PLAYER_AUDIO_FILE_NAME__: JSON.stringify("alarm.mp3"),
       __DB_SUBPROCESS_FILE_NAME__: JSON.stringify(

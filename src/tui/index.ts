@@ -1,14 +1,19 @@
 import {
+  loadShortStats,
+  selectShortStats,
+  selectWorkSessions,
+} from "./store/statsSlice";
+import {
   BROADCAST_CHANNELS,
   API_AND_SERVER_CONFIG as config,
 } from "src/config/other";
-
 import blessed from "blessed";
 import { store } from "./store";
 import EventEmitter from "events";
 import { Page } from "./components/page";
 import type { Client } from "express-ipc";
 import { withClient } from "cli/util/client";
+import { createHelpPage } from "./pages/help";
 import TimerManager from "./util/timer-manager";
 import { createClockPage } from "./pages/clock";
 import { createStatsPage } from "./pages/stats";
@@ -25,25 +30,20 @@ import { createAlertElement } from "./components/alert";
 import WorkSessionService from "client/services/work-session";
 import { loadProjects, selectProjects } from "./store/projectSlice";
 import { loadMetaInfo, selectMetaInfo } from "./store/metaInfoSlice";
-import {
-  loadShortStats,
-  selectShortStats,
-  selectWorkSessions,
-} from "./store/statsSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
-import { createHelpPage } from "./pages/help";
 
 const screen = blessed.screen({
-  debug: true,
   smartCSR: true,
   dockBorders: true,
   title: "Productivity Timer",
+  debug: __BUILD_MODE__ === "development",
 });
 
 // --------------- Global Variables and Constants ------------------
-const debug: (...args: any[]) => void = screen.debug.bind(screen);
+const debug: (...args: any[]) => void =
+  typeof screen.debug === "function" ? screen.debug.bind(screen) : () => {};
 const renderScreen = () => screen.render();
 
 const prompt = new PromptComponent({ debug, renderScreen, zIndex: 1000 });
