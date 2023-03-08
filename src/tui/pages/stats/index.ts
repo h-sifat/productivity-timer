@@ -26,6 +26,7 @@ export interface createStatsPage_Argument {
 export function createStatsPage(arg: createStatsPage_Argument) {
   const {
     debug,
+    alert,
     renderScreen,
     timerManager,
     getWorkSessions,
@@ -65,6 +66,7 @@ export function createStatsPage(arg: createStatsPage_Argument) {
       try {
         return await getWorkSessions({ date });
       } catch (ex) {
+        alert({ text: ex.message, type: "error" });
         return null;
       }
     },
@@ -72,6 +74,7 @@ export function createStatsPage(arg: createStatsPage_Argument) {
       try {
         return await getSummaryStats();
       } catch (ex) {
+        alert({ text: ex.message, type: "error" });
         return null;
       }
     },
