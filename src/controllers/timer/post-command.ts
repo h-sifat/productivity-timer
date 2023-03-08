@@ -82,7 +82,19 @@ export function makePostTimerCommand(
     z
       .object({
         name: z.literal("setDuration"),
-        arg: z.object({ duration: DurationSchema }).strict(),
+        arg: z
+          .object({
+            duration: DurationSchema,
+            changeType: z
+              .union([
+                z.literal("absolute"),
+                z.literal("increment"),
+                z.literal("decrement"),
+              ])
+              .optional()
+              .default("absolute"),
+          })
+          .strict(),
       })
       .strict(),
 
@@ -234,16 +246,18 @@ export function makePostTimerCommand(
           break;
 
         case "setDuration":
-          result = {
-            isMethodCallResult: true,
-            data: {
-              // @WARNING put the callResult always at the top
-              callResult: timer.setDuration(command.arg.duration),
-              ref: timer.ref,
-              state: timer.state,
-              timeInfo: timer.timeInfo,
-            },
-          };
+          {
+            result = {
+              isMethodCallResult: true,
+              data: {
+                // @WARNING put the callResult always at the top
+                callResult: timer.setDuration(command.arg),
+                ref: timer.ref,
+                state: timer.state,
+                timeInfo: timer.timeInfo,
+              },
+            };
+          }
           break;
 
         default: {

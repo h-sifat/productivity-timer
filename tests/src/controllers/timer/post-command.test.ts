@@ -450,40 +450,47 @@ describe("reset", () => {
 });
 
 describe("setDuration", () => {
-  it(`sets the new duration`, async () => {
-    const changedDuration = DEFAULT_TIMER_DURATION + 1000;
-    const request = deepFreeze({
-      ...validRequestObject,
-      body: {
-        name: "setDuration",
-        arg: { duration: changedDuration },
-      },
-    });
+  it.each(["absolute", "increment", "decrement"] as const)(
+    `sets the new duration if change type is %p`,
+    async (changeType) => {
+      const changedDuration = DEFAULT_TIMER_DURATION + 1000;
 
-    const fakeResult = Object.freeze({
-      success: true,
-      message: "Changed duration",
-    });
-
-    timer.setDuration.mockReturnValue(fakeResult);
-
-    const response = await postTimerCommand(request);
-
-    expect(response).toEqual({
-      body: {
-        success: fakeResult.success,
-        data: {
-          message: fakeResult.message,
-          ref: timer.ref,
-          timeInfo: expect.any(Object),
-          state: expect.any(String),
+      const request = deepFreeze({
+        ...validRequestObject,
+        body: {
+          name: "setDuration",
+          arg: { duration: changedDuration, changeType },
         },
-      },
-    });
+      });
 
-    expect(timer.setDuration).toHaveBeenCalledTimes(1);
-    expect(timer.setDuration).toHaveBeenCalledWith(changedDuration);
-  });
+      const fakeResult = Object.freeze({
+        success: true,
+        message: "Changed duration",
+      });
+
+      timer.setDuration.mockReturnValue(fakeResult);
+
+      const response = await postTimerCommand(request);
+
+      expect(response).toEqual({
+        body: {
+          success: fakeResult.success,
+          data: {
+            message: fakeResult.message,
+            ref: timer.ref,
+            timeInfo: expect.any(Object),
+            state: expect.any(String),
+          },
+        },
+      });
+
+      expect(timer.setDuration).toHaveBeenCalledTimes(1);
+      expect(timer.setDuration).toHaveBeenCalledWith({
+        duration: changedDuration,
+        changeType,
+      });
+    }
+  );
 });
 
 describe("Other", () => {

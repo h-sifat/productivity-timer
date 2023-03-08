@@ -281,7 +281,7 @@ describe("Events", () => {
   it(`emits a "time_up" event  on time up`, (done) => {
     configureFakeCurrentTimeMsForChangingTimestamps();
 
-    timer.setDuration(TICK_INTERVAL_MS);
+    timer.setDuration({ duration: TICK_INTERVAL_MS });
 
     timer.on("time_up", (arg) => {
       try {
@@ -319,6 +319,12 @@ describe("Events", () => {
 });
 
 describe("setDuration()", () => {
+  const allChangeTypes = Object.freeze([
+    "absolute",
+    "increment",
+    "decrement",
+  ] as const);
+
   it.each([
     { duration: 2423.23423, case: "not a positive integer" },
     {
@@ -326,34 +332,58 @@ describe("setDuration()", () => {
       case: `not a multiple of TICK_INTERVAL_MS: ${TICK_INTERVAL_MS}`,
     },
   ])(`doesn't set the duration ($duration) if $case`, ({ duration }) => {
-    expect(timer.setDuration(duration)).toEqual({
-      success: false,
-      message: expect.any(String),
-    });
+    for (const changeType of allChangeTypes)
+      expect(timer.setDuration({ duration, changeType })).toEqual({
+        success: false,
+        message: expect.any(String),
+      });
   });
 
-  it(`sets the duration if timer hasn't started yet`, () => {
-    expect(timer.state).toBe(TimerStates[TimerStates.NOT_STARTED]);
+  it.each([
+    {
+      changeType: "absolute",
+      duration: TICK_INTERVAL_MS,
+      result: TICK_INTERVAL_MS,
+    },
+    {
+      changeType: "increment",
+      duration: TICK_INTERVAL_MS,
+      result: timer.duration + TICK_INTERVAL_MS,
+    },
+    {
+      changeType: "decrement",
+      duration: TICK_INTERVAL_MS,
+      result: timer.duration - TICK_INTERVAL_MS,
+    },
+  ] as const)(
+    `sets the duration if timer hasn't started yet and changeType = "$changeType"`,
+    ({ changeType, duration, result }) => {
+      expect(timer.state).toBe(TimerStates[TimerStates.NOT_STARTED]);
 
-    const duration = TICK_INTERVAL_MS;
-    expect(timer.setDuration(duration)).toEqual({
-      success: true,
-      message: expect.any(String),
-    });
+      expect(timer.setDuration({ duration, changeType })).toEqual({
+        success: true,
+        message: expect.any(String),
+      });
 
-    expect(timer.duration).toBe(duration);
-  });
+      expect(timer.duration).toBe(result);
+    }
+  );
 
   it(`doesn't set the duration if the timer is running`, () => {
     timer.start();
     expect(timer.state).toBe(TimerStates[TimerStates.RUNNING]);
 
-    const result = timer.setDuration(TICK_INTERVAL_MS * 1000);
+    for (const changeType of allChangeTypes) {
+      const result = timer.setDuration({
+        duration: TICK_INTERVAL_MS * 1000,
+        changeType,
+      });
 
-    expect(result).toEqual({
-      success: false,
-      message: expect.any(String),
-    });
+      expect(result).toEqual({
+        success: false,
+        message: expect.any(String),
+      });
+    }
   });
 
   it(`doesn't set the duration if the timer has been ended manually`, () => {
@@ -362,16 +392,21 @@ describe("setDuration()", () => {
     timer.end();
     expect(timer.state).toBe(TimerStates[TimerStates.ENDED]);
 
-    const result = timer.setDuration(TICK_INTERVAL_MS * 1000);
+    for (const changeType of allChangeTypes) {
+      const result = timer.setDuration({
+        duration: TICK_INTERVAL_MS * 1000,
+        changeType,
+      });
 
-    expect(result).toEqual({
-      success: false,
-      message: expect.any(String),
-    });
+      expect(result).toEqual({
+        success: false,
+        message: expect.any(String),
+      });
+    }
   });
 
   it(`doesn't set the duration of a timer that has timed up`, () => {
-    timer.setDuration(TICK_INTERVAL_MS);
+    timer.setDuration({ duration: TICK_INTERVAL_MS });
     expect(timer.duration).toBe(TICK_INTERVAL_MS);
 
     configureFakeCurrentTimeMsForChangingTimestamps();
@@ -381,8 +416,11 @@ describe("setDuration()", () => {
 
     expect(timer.state).toBe(TimerStates[TimerStates.TIMED_UP]);
 
-    {
-      const result = timer.setDuration(TICK_INTERVAL_MS * 1000);
+    for (const changeType of allChangeTypes) {
+      const result = timer.setDuration({
+        duration: TICK_INTERVAL_MS * 1000,
+        changeType,
+      });
       expect(result).toEqual({ success: false, message: expect.any(String) });
     }
   });
@@ -399,23 +437,24 @@ describe("setDuration()", () => {
 
     {
       // new duration < totalElapsedTime
-      const result = timer.setDuration(
-        timer.elapsedTime.total - TICK_INTERVAL_MS
-      );
+      const result = timer.setDuration({
+        duration: timer.elapsedTime.total - TICK_INTERVAL_MS,
+        changeType: "absolute",
+      });
       expect(result).toEqual({ success: false, message: expect.any(String) });
     }
 
     {
       // new duration = totalElapsedTime
-      const result = timer.setDuration(timer.elapsedTime.total);
+      const result = timer.setDuration({ duration: timer.elapsedTime.total });
       expect(result).toEqual({ success: false, message: expect.any(String) });
     }
 
     {
       // new duration > totalElapsedTime
-      const result = timer.setDuration(
-        timer.elapsedTime.total + TICK_INTERVAL_MS
-      );
+      const result = timer.setDuration({
+        duration: timer.elapsedTime.total + TICK_INTERVAL_MS,
+      });
       expect(result).toEqual({ success: true, message: expect.any(String) });
     }
 
@@ -450,7 +489,7 @@ describe("setDuration()", () => {
 
     {
       // new duration = totalElapsedTime
-      const result = timer.setDuration(newDuration);
+      const result = timer.setDuration({ duration: newDuration });
       expect(result).toEqual({ success: true, message: expect.any(String) });
     }
   });
@@ -567,7 +606,7 @@ describe("Timer.end()", () => {
   it(`doesn't end a timer that has been timed up`, () => {
     configureFakeCurrentTimeMsForChangingTimestamps();
 
-    timer.setDuration(TICK_INTERVAL_MS);
+    timer.setDuration({ duration: TICK_INTERVAL_MS });
     timer.start();
 
     fakeManualTick(getCurrentFakeTimerId()); // tick

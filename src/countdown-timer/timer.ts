@@ -367,10 +367,37 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     if (message) throw new EPP({ message, code: "INVALID_DURATION_OR_STATE" });
   }
 
-  setDuration(durationMs: number) {
+  setDuration(arg: {
+    duration: number;
+    changeType?: "absolute" | "increment" | "decrement";
+  }) {
+    let newDuration: number;
+
+    {
+      const { duration, changeType = "absolute" } = arg;
+
+      switch (changeType) {
+        case "absolute":
+          newDuration = duration;
+          break;
+        case "increment":
+          newDuration = this.#data.duration + duration;
+          break;
+        case "decrement":
+          newDuration = this.#data.duration - duration;
+          break;
+
+        default:
+          throw new EPP(
+            `Invalid change type "${changeType}"`,
+            "INVALID_CHANGE_TYPE"
+          );
+      }
+    }
+
     try {
       this.#assertDurationIsValidAndCanBeSet({
-        duration: durationMs,
+        duration: newDuration,
         state: this.#data.state,
         totalElapsedTime: this.elapsedTime.total,
       });
@@ -379,7 +406,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
     }
 
     const previousDuration = this.duration;
-    this.#data.duration = durationMs;
+    this.#data.duration = newDuration;
 
     {
       const eventArgument = { ...this.#getEventArgument(), previousDuration };
@@ -388,7 +415,7 @@ export default class CountDownTimer<RefType> extends EventEmitter {
 
     return {
       success: true,
-      message: `Changed duration from ${previousDuration}ms to ${durationMs}ms.`,
+      message: `Changed duration from ${previousDuration}ms to ${newDuration}ms.`,
     };
   }
 

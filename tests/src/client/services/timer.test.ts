@@ -30,8 +30,8 @@ const methodCallSchemas = deepFreeze(
     },
     setDuration: {
       command: "setDuration",
-      methodArg: { duration },
-      commandArg: { duration },
+      methodArg: { duration, changeType: "increment" },
+      commandArg: { duration, changeType: "increment" },
     },
     reset: {
       command: "reset",

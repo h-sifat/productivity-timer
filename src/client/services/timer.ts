@@ -22,7 +22,10 @@ export interface TimerCommand_Arguments {
     usePreviousRef?: boolean;
   };
   reset: { hardReset?: boolean; duration?: number };
-  setDuration: { duration: number };
+  setDuration: {
+    duration: number;
+    changeType?: "absolute" | "increment" | "decrement";
+  };
   startBreak: { duration: number };
 }
 
@@ -65,7 +68,11 @@ export class TimerService {
   }
 
   async setDuration(arg: TimerCommand_Arguments["setDuration"]) {
-    return this.#sendCommand({ command: "setDuration", arg });
+    const { duration, changeType } = arg;
+    return this.#sendCommand({
+      command: "setDuration",
+      arg: { duration, changeType },
+    });
   }
 
   async #sendCommand(arg: {

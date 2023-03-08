@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "pt": "./dist/cli.js"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:watch": "webpack --watch",

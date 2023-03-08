@@ -38,7 +38,10 @@ export interface TimerInstance<RefType> {
   end(): TimerMethodCallResult;
   pause(): TimerMethodCallResult;
   start(): TimerMethodCallResult;
-  setDuration(durationMs: number): TimerMethodCallResult;
+  setDuration(arg: {
+    duration: number;
+    changeType?: "absolute" | "increment" | "decrement";
+  }): TimerMethodCallResult;
   reset(arg?: { duration?: number; ref?: RefType }): TimerMethodCallResult;
   deletePreviousNonNullRef(): void;
 
