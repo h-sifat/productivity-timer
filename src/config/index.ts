@@ -5,7 +5,7 @@ import type { ConfigInterface } from "./interface";
 import { MS_IN_ONE_MINUTE, MS_IN_ONE_HOUR } from "common/util/date-time";
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
-export const DEFAULT_BEEP_DURATION_MS = MS_IN_ONE_MINUTE; // 60s
+export const DEFAULT_BEEP_DURATION_MS = 20_000; // 20s
 export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
 export const DEFAULT_DB_BACKUP_INTERVAL_MS = MS_IN_ONE_HOUR; // 1 hour
 export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
