@@ -6,6 +6,9 @@
   "bin": {
     "pt": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:watch": "webpack --watch",
@@ -14,12 +17,19 @@
     "postbuild:dev": "cp ./src/speaker/alarm.mp3 ./dist",
     "postbuild:prod": "cp ./src/speaker/alarm.mp3 ./dist",
     "build:dev": "BUILD_MODE=\"development\" webpack",
+    "prebuild:prod": "npm test",
     "build:prod": "BUILD_MODE=\"production\" webpack",
     "test:coverage": "jest --passWithNoTests --coverage",
     "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\"",
+    "prepublishOnly": "npm run build:prod",
     "prepare": "husky install"
   },
-  "keywords": [],
+  "keywords": [
+    "pomodoro-timer",
+    "conuntdown-timer",
+    "CLI",
+    "TUI"
+  ],
   "author": "Sifat Hossain",
   "license": "MIT",
   "devDependencies": {
