@@ -51,7 +51,7 @@
     "commander": "^9.4.1",
     "date-fns": "^2.29.3",
     "drawille-canvas": "^1.2.1",
-    "express-ipc": "^1.0.1",
+    "express-ipc": "^1.0.2",
     "flat-colors": "^3.3.12",
     "flexible-tree-printer": "^1.0.1",
     "fuse.js": "^6.6.2",
