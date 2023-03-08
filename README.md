@@ -3,6 +3,8 @@
 A CLI/TUI Pomodoro timer and todo (coming soon) app for the keyboard addicts and
 terminal fans.
 
+![productivity_timer demo](https://user-images.githubusercontent.com/80267830/223765835-e02cc6d0-bb17-492f-9cd6-f25776bf1653.gif)
+
 ## Features
 
 This application is **21k+** lines of code (including tests) terminal madness
