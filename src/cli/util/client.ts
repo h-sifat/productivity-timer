@@ -13,14 +13,6 @@ export async function withClient(callback: (client: Client) => Promise<void>) {
       },
     });
 
-    client.on("error", (error) => {
-      const message = error.message || "An unexpected error ocurred.";
-      console.log(colors.red(message));
-
-      client.close();
-      process.exit(1);
-    });
-
     await client.post(config.API_APP_PATH, {
       query: {},
       headers: {},

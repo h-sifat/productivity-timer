@@ -168,7 +168,6 @@ export function createTimerPage(arg: createTimerPage_Argument) {
             keyBinding.arg
           );
         } catch (ex) {
-          debug(ex);
           timerComponent.setMessage({ text: ex.message, type: "error" });
         }
     }

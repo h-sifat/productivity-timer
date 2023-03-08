@@ -72,6 +72,7 @@ async function main(arg: { client: Client; closeClient(): void }) {
     timerManager = new TimerManager({ key: timerManagerKey });
 
     const quitApplication = () => {
+      client.removeAllListeners("socket_error");
       arg.closeClient(); // this will disconnect the client from the server
       timerManager.clear(timerManagerKey);
 
@@ -81,6 +82,10 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
     // quit App key binding: Control-C.
     screen.key(["C-c"], quitApplication);
+
+    client.on("socket_error", () => {
+      alert({ text: "Got disconnected from the server.", type: "error" });
+    });
   }
 
   // --------------------- Creating Services ----------------
