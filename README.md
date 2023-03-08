@@ -178,6 +178,12 @@ manually assign a background color to every element. Even if I assign a value of
 "#000" it doesn't become as black as my terminal background. So yeah, it's a
 feature.
 
+**2.** The line-char in the stats page is responsive.
+
+**Ans:** It's probably intended by **blessed-contrib** as drawing that line is
+probably expensive. Not sure if I should create a new line-chart element after
+every resize.
+
 ## Tech stack
 
 This project has been made possible with help of following open source libraries
