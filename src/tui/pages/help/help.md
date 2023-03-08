@@ -68,7 +68,7 @@ Descriptions:
 
 1. `MPLAYER_PATH`: this app uses the `mplayer` audio player to play the beep
    sound. If the `mplayer` command path is not available in your system's
-   `$PATH` then you can manually specifiy the `mplayer` binary path in this
+   `$PATH` then you can manually specify the `mplayer` binary path in this
    field. **Note:** it must be an absolute path.
 
 1. `DATA_DIR`: the directory where the sqlite database and error logs should be
