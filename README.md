@@ -39,6 +39,11 @@ binary path in the config.
 
 ### Installing `mplayer`
 
+**On Arch - based systems**
+```bash
+sudo pacman -S mplayer
+```
+
 **On Debian systems:**
 
 ```bash
@@ -201,6 +206,9 @@ feature.
 **Ans:** It's probably intended by **blessed-contrib** as drawing that line is
 probably expensive. Not sure if I should create a new line-chart element after
 every resize.
+
+**3.** Build fails on machines running Node 19+ because `better-sqlite3` is not compatible yet.
+see [related PR](https://github.com/WiseLibs/better-sqlite3/pull/964)
 
 ## Tech stack
 
