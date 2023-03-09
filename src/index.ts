@@ -50,6 +50,7 @@ async function initApplication(arg: initApplication_Argument) {
 
   let databases: AllDatabases;
   const speaker = new Speaker({
+    volume: config.SPEAKER_VOLUME,
     mPlayerPath: config.MPLAYER_PATH,
     audioPath: config.MPLAYER_AUDIO_PATH,
   });

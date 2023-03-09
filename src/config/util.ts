@@ -36,6 +36,9 @@ const ConfigFileSchema = z
       .transform((dir) => path.resolve(dir)),
 
     MPLAYER_PATH: z.string().min(1).default(DEFAULT_MPLAYER_PATH),
+    MPLAYER_AUDIO_PATH: z.string().min(1).optional(),
+    SPEAKER_VOLUME: z.number().int().gte(0).lte(100).default(80),
+
     SHOW_TIMER_NOTIFICATIONS: z.boolean().default(true),
 
     BEEP_DURATION_MS: makeDurationSchema({ minValue: 5000 }).default(

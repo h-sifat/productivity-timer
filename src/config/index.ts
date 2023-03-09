@@ -72,6 +72,7 @@ const config: ConfigInterface = Object.seal({
   // other
   MPLAYER_PATH: "mplayer",
   MPLAYER_AUDIO_PATH: "",
+  SPEAKER_VOLUME: 80,
 
   NOTIFICATION_TITLE: "Productivity Timer",
 

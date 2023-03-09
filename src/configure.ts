@@ -66,10 +66,10 @@ export async function configureApplication(arg: configureApplication_Argument) {
     );
 
     const DB_PATH = path.join(fileConfig.DATA_DIR, initialConfig.DB_FILE_NAME);
-    const MPLAYER_AUDIO_PATH = path.join(
-      __dirname,
-      __M_PLAYER_AUDIO_FILE_NAME__
-    );
+    const MPLAYER_AUDIO_PATH =
+      fileConfig.MPLAYER_AUDIO_PATH ||
+      path.join(__dirname, __M_PLAYER_AUDIO_FILE_NAME__);
+
     modifyConfig({
       changes: {
         ...fileConfig,

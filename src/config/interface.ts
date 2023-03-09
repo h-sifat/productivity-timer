@@ -31,6 +31,7 @@ export interface ConfigInterface {
 
   // speaker
   MPLAYER_PATH: string;
+  SPEAKER_VOLUME: number;
   BEEP_DURATION_MS: number;
   MPLAYER_AUDIO_PATH: string;
 
