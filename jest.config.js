@@ -17,6 +17,7 @@ const config = {
   modulePaths: [baseUrl],
   moduleNameMapper: pathsToModuleNameMapper(paths),
   setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
+  maxWorkers: "40%",
 };
 
 module.exports = config;
