@@ -11,6 +11,15 @@ export const store = configureStore({
     category: categoryReducer,
     metaInfo: metaInfoReducer,
   },
+  middleware(getDefaultMiddleware) {
+    const isDevBuild = __BUILD_MODE__ !== "production";
+
+    return getDefaultMiddleware({
+      thunk: true,
+      immutableCheck: isDevBuild,
+      serializableCheck: isDevBuild,
+    });
+  },
 });
 
 export type StoreInterface = typeof store;
