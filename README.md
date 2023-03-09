@@ -120,13 +120,18 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
 
 ```json
 {
+  // timer
   "BEEP_DURATION_MS": "10s",
-  "DB_BACKUP_INTERVAL_MS": 3600000,
   "DEFAULT_TIMER_DURATION_MS": "10m",
-
   "SHOW_TIMER_NOTIFICATIONS": true,
-  "MPLAYER_PATH": "mplayer",
 
+  // speaker
+  "SPEAKER_VOLUME": 40,
+  "MPLAYER_PATH": "mplayer",
+  "MPLAYER_AUDIO_PATH": "/home/muhammad/alarm.mp3",
+
+  // database
+  "DB_BACKUP_INTERVAL_MS": 3600000,
   "DATA_DIR": "/home/muhammad/.p-timer",
   "DB_BACKUP_DIR": "/home/muhammad/.p-timer-bak"
 }
@@ -134,27 +139,40 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
 
 **Descriptions:**
 
-- `BEEP_DURATION_MS`: for how long the beep should be played when a timer times
-  up.
+#### Timer
 
-- `DEFAULT_TIMER_DURATION_MS`: this value will be used to start a timer when no
-  duration is provided.
+1. `BEEP_DURATION_MS`: for how long the beep should be played when a timer times
+   up.
 
-- `DB_BACKUP_INTERVAL_MS`: database backup interval timer. I recommend setting
-  this to `1h` to be on the safe side.
+1. `DEFAULT_TIMER_DURATION_MS`: this value will be used to start a timer when no
+   duration is provided.
 
-- `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
-  timer ends.
+1. `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
+   timer ends.
 
-- `MPLAYER_PATH`: this app uses the `mplayer` audio player to play the beep
-  sound. If the `mplayer` command path is not available in your system's
-  `$PATH` then you can manually specify the `mplayer` binary path in this
-  field. **Note:** it must be an absolute path.
+#### Speaker
 
-- `DATA_DIR`: the directory where the sqlite database and error logs should be
-  stored.
+1. `MPLAYER_PATH`: this app uses the `mplayer` audio player to play the alarm.
+   If the `mplayer` command is not available in your shell then you can manually
+   specify the `mplayer` binary path in this field.
 
-- `DB_BACKUP_DIR`: the database backup directory.
+1. `MPLAYER_AUDIO_PATH`: path to a custom audio file.
+
+1. `SPEAKER_VOLUME`: An integer value for the speaker volume. **0** for mute and
+   **100** for maximum.
+
+**Note:** All path must be absolute, i.e. should start from your root directory.
+Example: `/home/muhammad/alarm.mp3`
+
+#### Database
+
+1. `DATA_DIR`: the directory where the sqlite database and error logs should be
+   stored.
+
+1. `DB_BACKUP_DIR`: the database backup directory.
+
+1. `DB_BACKUP_INTERVAL_MS`: database backup interval timer. I recommend setting
+   this to `1h` to be on the safe side.
 
 **Tip:** All the duration fields ending with `_MS` can either take a
 milliseconds number value or descriptive duration string value (e.g., `"20m"`,
