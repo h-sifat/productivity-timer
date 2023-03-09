@@ -6,6 +6,7 @@ import { notify } from "common/util/notify";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 
 export interface spawnMPlayer_Argument {
+  volume?: number;
   audioPath: string;
   mPlayerPath: string;
 }
@@ -21,13 +22,24 @@ function spawnMPlayer(arg: spawnMPlayer_Argument) {
   } catch (ex) {
     throw new EPP({
       code: "MPLAYER_AUDIO_NOT_ACCESSIBLE",
-      message: `The mplayer audio file is either deleted or inaccessible.`,
+      message: `The mplayer audio file ("${audioPath}") is either deleted or inaccessible.`,
     });
   }
 
+  const { volume = 80 } = arg;
   return spawn(
     mPlayerPath,
-    ["-nogui", "-slave", "-really-quiet", "-loop", "0", audioPath],
+    [
+      "-nogui",
+      "-slave",
+      "-really-quiet",
+      "-softvol",
+      "-volume",
+      String(volume),
+      "-loop",
+      "0",
+      audioPath,
+    ],
     { cwd: __dirname }
   );
 }
@@ -35,7 +47,7 @@ function spawnMPlayer(arg: spawnMPlayer_Argument) {
 const { NOTIFICATION_TITLE } = getConfig();
 const M_PLAYER_TOGGLE_KEY_SEQUENCE = "p\n";
 
-export type SpeakerConstructor_Argument = spawnMPlayer_Argument;
+export type SpeakerConstructor_Argument = Required<spawnMPlayer_Argument>;
 export class Speaker {
   #isPlaying: boolean;
   #player: ChildProcessWithoutNullStreams;
@@ -44,8 +56,12 @@ export class Speaker {
 
   constructor(arg: SpeakerConstructor_Argument) {
     {
-      const { mPlayerPath, audioPath } = arg;
-      this.#spawnPlayerArgument = Object.freeze({ mPlayerPath, audioPath });
+      const { mPlayerPath, audioPath, volume } = arg;
+      this.#spawnPlayerArgument = Object.freeze({
+        volume,
+        audioPath,
+        mPlayerPath,
+      });
     }
 
     this.#player = this.#createAndInitPlayer(this.#spawnPlayerArgument);
