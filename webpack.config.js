@@ -72,11 +72,11 @@ module.exports = {
   target: "node",
 
   output: {
-    clean: true,
     globalObject: "this",
     filename: "[name].js",
     library: { type: "commonjs" },
     path: path.resolve(__dirname, "dist"),
+    clean: process.env.BUILD_MODE === "production",
   },
 };
 

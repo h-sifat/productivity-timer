@@ -9,20 +9,24 @@
   "files": [
     "dist"
   ],
+  "config": {
+    "copy_audio": "cp ./src/speaker/alarm.mp3 ./dist"
+  },
   "scripts": {
+    "prepare": "husky install",
     "typecheck": "tsc --noEmit",
-    "build:watch": "webpack --watch",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --passWithNoTests --watch",
-    "postbuild:dev": "cp ./src/speaker/alarm.mp3 ./dist",
-    "postbuild:prod": "cp ./src/speaker/alarm.mp3 ./dist",
-    "build:dev": "BUILD_MODE=\"development\" webpack",
+    "test:coverage": "jest --passWithNoTests --coverage",
     "prebuild:prod": "npm test",
     "build:prod": "BUILD_MODE=\"production\" webpack",
-    "test:coverage": "jest --passWithNoTests --coverage",
-    "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\"",
+    "postbuild:prod": "$npm_package_config_copy_audio",
     "prepublishOnly": "npm run build:prod",
-    "prepare": "husky install"
+    "prebuild:dev:watch": "$npm_package_config_copy_audio",
+    "build:dev:watch": "BUILD_MODE=\"development\" webpack --watch",
+    "build:dev": "BUILD_MODE=\"development\" webpack",
+    "postbuild:dev": "$npm_package_config_copy_audio",
+    "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\""
   },
   "keywords": [
     "pomodoro-timer",

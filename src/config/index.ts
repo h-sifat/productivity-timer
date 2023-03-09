@@ -4,18 +4,35 @@ import { API_AND_SERVER_CONFIG } from "./other";
 import type { ConfigInterface } from "./interface";
 import { MS_IN_ONE_MINUTE, MS_IN_ONE_HOUR } from "common/util/date-time";
 
+export const { DEFAULT_DATA_DIR, CONFIG_FILE_PATH, DEFAULT_BACKUP_DIR } =
+  (() => {
+    const config: { [k: string]: string } =
+      __BUILD_MODE__ === "production"
+        ? {
+            DEFAULT_DATA_DIR: ".p-timer",
+            CONFIG_FILE_PATH: ".ptrc.json",
+            DEFAULT_BACKUP_DIR: ".p-timer-bak",
+          }
+        : {
+            DEFAULT_DATA_DIR: ".p-timer-dev",
+            CONFIG_FILE_PATH: ".ptrc-dev.json",
+            DEFAULT_BACKUP_DIR: ".p-timer-bak-dev",
+          };
+
+    for (const key in config) config[key] = path.join(homedir(), config[key]);
+
+    return config;
+  })();
+
 export const DEFAULT_MPLAYER_PATH = "mplayer";
 export const DEFAULT_BEEP_DURATION_MS = 20_000; // 20s
-export const DEFAULT_DATA_DIR = path.join(homedir(), ".p-timer");
 export const DEFAULT_DB_BACKUP_INTERVAL_MS = MS_IN_ONE_HOUR; // 1 hour
-export const DEFAULT_BACKUP_DIR = path.join(homedir(), ".p-timer-bak");
 export const DEFAULT_TIMER_DURATION_MS = 20 * MS_IN_ONE_MINUTE; // 20 minutes
 
 const DB_FILE_NAME = "p-timer.db";
 const LOG_FILE_NAME = "logs.txt";
 const DB_BACKUP_FILE_NAME = "p-timer.bak.db";
 const DB_BACKUP_TEMP_FILE_NAME = "p-timer.bak-temp.db";
-const CONFIG_FILE_PATH = path.join(homedir(), ".ptrc.json");
 
 const config: ConfigInterface = Object.seal({
   // category
