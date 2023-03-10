@@ -29,13 +29,13 @@ export async function withClient(callback: (client: Client) => Promise<void>) {
   } catch (ex) {
     client!.close();
 
-    console.log(colors.red("Could not connect to server."));
-    console.log("Is the server running?");
+    console.error(colors.red("Could not connect to server."));
+    console.error("Is the server running?");
 
     const startCommand = `${CLI_NAME} bootup`;
-    console.log(`Use '${colors.inverse(startCommand)}' to start the server.`);
+    console.error(`Use '${colors.inverse(startCommand)}' to start the server.`);
 
-    console.log("Error:", ex.message);
+    console.error("Error:", ex.message);
     process.exit(1);
   }
 }

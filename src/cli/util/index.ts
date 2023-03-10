@@ -49,7 +49,7 @@ export function dateStringParser(dateString: string) {
 
 export function printErrorAndSetExitCode(ex: any) {
   const message = `Error: ${ex.message}`;
-  console.log(formatString({ string: message, color: "red" }));
+  console.error(formatString({ string: message, color: "red" }));
   process.exitCode = 1;
 }
 
