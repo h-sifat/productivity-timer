@@ -1,5 +1,4 @@
 import colors from "ansi-colors";
-import { dynamicImport } from "./import";
 
 export interface printObjectAsBox_Argument {
   object: object;
@@ -40,7 +39,7 @@ export async function printObjectAsBox(arg: printObjectAsBox_Argument) {
     )}${formattedValue}`;
   });
 
-  const { default: boxen } = await dynamicImport("boxen");
+  const { default: boxen } = await import("boxen");
 
   let boxStyle: any = {
     padding: 1,
