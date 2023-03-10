@@ -7,6 +7,7 @@ import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 export function addTimerInfoCommand(program: Command) {
   program
     .command("info")
+    .alias("i")
     .description("Shows the countdown timer information.")
     .action(showTimerInfo);
 }

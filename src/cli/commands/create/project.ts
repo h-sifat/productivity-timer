@@ -7,6 +7,7 @@ import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export function addCreateProjectCommand(CreateCommand: Command) {
   CreateCommand.command("project")
+    .alias("p")
     .description("Create a new project.")
     .requiredOption("-n, --name <string>", "the name of the project")
     .option("-d, --description <string>", "the description of the project")

@@ -17,6 +17,7 @@ export function addTimerStartCommand(program: Command) {
     .description(
       "Starts a countdown timer. The timer can be for a specific project/category or anonymous."
     )
+    .alias("s")
     .addOption(
       new Option(
         "-c, --category",

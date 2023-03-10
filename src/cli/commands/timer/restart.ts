@@ -8,6 +8,7 @@ export function addRestartTimerCommand(program: Command) {
   program
     .command("restart")
     .description("Resets and starts the current timer.")
+    .alias("r")
     .action(restartTimer);
 }
 

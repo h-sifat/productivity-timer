@@ -8,6 +8,7 @@ export function addEndTimerCommand(program: Command) {
   program
     .command("end")
     .description("Ends the currently running timer.")
+    .alias("stop")
     .action(endTimer);
 }
 

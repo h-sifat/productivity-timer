@@ -9,6 +9,7 @@ import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export function addProjectListCommand(ListCommand: Command) {
   ListCommand.command("projects")
+    .alias("p")
     .description("Lists all the projects")
     .addOption(
       new Option("-i, --id <string>", "find project by id").conflicts("name")

@@ -10,6 +10,7 @@ import type { QuerySchemaInterface } from "src/controllers/category/get-categori
 
 export function addListCategoriesCommand(ListCommand: Command) {
   ListCommand.command("categories")
+    .alias("c")
     .description("Lists all the categories")
     .addOption(
       new Option("-i, --id <string>", "find category by id").conflicts("name")

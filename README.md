@@ -40,6 +40,7 @@ binary path in the config.
 ### Installing `mplayer`
 
 **On Arch - based systems**
+
 ```bash
 sudo pacman -S mplayer
 ```
@@ -78,28 +79,35 @@ counts!
 Kindly read the **help** page (with `pt --help`) to learn about all the
 features.
 
+**Note:** In the help page of the CLI you'll see commands like `pause|p`. Here
+`|p` means an alias named `p`.
+
 ```bash
 # boot up the server
 pt bootup
 
 # create a category or project
-pt create category --name Study
+pt create category --name Study # or use alias: pt c c -n Study
 
 # start a 25m timer for the "Study" category
 pt start --category --name study -d 25m # or: pt start -cn study -d 20m
 
 # see the current status
-pt info
+pt info # or: pt i
 
 # after above timer times up start a short break (5m)
-pt break -s
+pt break -s # or: pt b -s
 
 # shortcut to start the study timer again
-pt start --last
+pt start --last # or: pt s -l
 ```
 
-**Tip:** When the timer is beeping you can mute it by issuing any timer commands
-e.g., `pt info`.
+**Tip:**
+
+1. When the timer is beeping you can mute it by issuing any timer commands
+   e.g., `pt info`.
+1. And don't worry about writing long commands. Almost every command has a
+   single character alias.
 
 #### TUI
 

@@ -7,6 +7,7 @@ import { DurationOption, printTimerMethodCallResult } from "cli/util/timer";
 export function addResetTimerCommand(program: Command) {
   program
     .command("reset")
+    .alias("rst")
     .description("Resets the countdown timer.")
     .option("-h, --hard-reset", "resets the category/project reference", false)
     .addOption(DurationOption)

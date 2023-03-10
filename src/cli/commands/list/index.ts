@@ -5,7 +5,8 @@ import { addProjectListCommand } from "./projects";
 export function addListCommand(program: Command) {
   const ListCommand = program
     .command("list")
-    .description("Lists all projects/categories.");
+    .description("Lists all projects/categories.")
+    .alias("l");
 
   addProjectListCommand(ListCommand);
   addListCategoriesCommand(ListCommand);

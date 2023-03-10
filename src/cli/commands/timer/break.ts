@@ -18,6 +18,7 @@ export function addStartBreakTimerCommand(program: Command) {
   program
     .command("break")
     .description("Starts a timer with anonymous reference.")
+    .alias("b")
     .addOption(
       new Option(
         "-s, --short",

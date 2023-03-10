@@ -7,6 +7,7 @@ import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 
 export function addDeleteCategoryCommand(DeleteCommand: Command) {
   DeleteCommand.command("category")
+    .alias("c")
     .description("Deletes a category.")
     .requiredOption("-i, --id <id>", "the id of the category")
     .option("--json", "print raw JSON.")

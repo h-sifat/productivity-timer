@@ -9,6 +9,7 @@ import { printObjectAsBox, printErrorAndSetExitCode } from "cli/util";
 
 export function addEditCategoryCommand(EditCommand: Command) {
   EditCommand.command("category")
+    .alias("c")
     .requiredOption("-i, --id <string>", "the category id")
     .option("-n, --name <string>", "the name of the category")
     .option("-d, --description <string>", "the description of the category")

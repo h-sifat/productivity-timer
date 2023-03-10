@@ -8,6 +8,7 @@ export function addPauseTimerCommand(program: Command) {
   program
     .command("pause")
     .description("Pauses the currently running timer.")
+    .alias("p")
     .action(pauseTimer);
 }
 

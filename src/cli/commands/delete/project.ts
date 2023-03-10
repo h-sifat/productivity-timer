@@ -7,6 +7,7 @@ import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export function addDeleteProjectCommand(DeleteCommand: Command) {
   DeleteCommand.command("project")
+    .alias("p")
     .description("Deletes a project.")
     .requiredOption("-i, --id <id>", "the id of the project")
     .option("--json", "print raw JSON.")

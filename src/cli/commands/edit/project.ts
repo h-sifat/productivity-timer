@@ -14,6 +14,7 @@ import { API_AND_SERVER_CONFIG as config } from "src/config/other";
 
 export function addEditProjectCommand(EditCommand: Command) {
   EditCommand.command("project")
+    .alias("p")
     .description("Edits an existing project.")
     .requiredOption("-i, --id <string>", "the project id")
     .option("-n, --name <string>", "the name of the project")

@@ -8,6 +8,7 @@ import { MakeCategory_Argument } from "entities/category/category";
 
 export function addCreateCategoryCommand(CreateCommand: Command) {
   CreateCommand.command("category")
+    .alias("c")
     .description("Creates a new category.")
     .requiredOption("-n, --name <string>", "the name of the category")
     .option("-d, --description <string>", "the description of the category")

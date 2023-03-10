@@ -15,6 +15,7 @@ export function addSetTimerDurationCommand(program: Command) {
   program
     .command("set-duration")
     .description("Changes the timer duration while the timer is not running.")
+    .alias("sd")
     .addOption(
       new Option("-i, --increment", "increment duration").conflicts("decrement")
     )
