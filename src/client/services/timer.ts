@@ -67,6 +67,10 @@ export class TimerService {
     return this.#sendCommand({ command: "reset", arg });
   }
 
+  async mute() {
+    return this.#sendCommand({ command: "mute" });
+  }
+
   async setDuration(arg: TimerCommand_Arguments["setDuration"]) {
     const { duration, changeType } = arg;
     return this.#sendCommand({

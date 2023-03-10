@@ -104,9 +104,9 @@ pt start --last # or: pt s -l
 
 **Tip:**
 
-1. When the timer is beeping you can mute it by issuing any timer commands
-   e.g., `pt info`.
-1. And don't worry about writing long commands. Almost every command has a
+1. When the timer is beeping you can mute it by issuing the mute command. e.g.,
+   `pt mute`.
+1. Don't worry about writing long commands. Almost every command has a
    single character alias.
 
 #### TUI

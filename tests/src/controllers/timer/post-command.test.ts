@@ -493,12 +493,12 @@ describe("setDuration", () => {
   );
 });
 
-describe("Other", () => {
-  it("turns off the speaker if any command is issued while it is beeping", async () => {
+describe("mute", () => {
+  it("turns off the speaker if the mute command is issued while it is beeping", async () => {
     speaker.isPlaying = true;
 
     timer.start.mockReturnValue({ success: true, message: "hi!" });
-    await postTimerCommand({ ...validRequestObject, body: { name: "start" } });
+    await postTimerCommand({ ...validRequestObject, body: { name: "mute" } });
 
     expect(speaker.pause).toHaveBeenCalledTimes(1);
   });
@@ -507,7 +507,7 @@ describe("Other", () => {
     speaker.isPlaying = false;
 
     timer.start.mockReturnValue({ success: true, message: "hi!" });
-    await postTimerCommand({ ...validRequestObject, body: { name: "start" } });
+    await postTimerCommand({ ...validRequestObject, body: { name: "mute" } });
 
     expect(speaker.pause).not.toHaveBeenCalled();
   });

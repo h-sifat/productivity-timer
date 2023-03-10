@@ -40,6 +40,7 @@ export interface makePostCommand_Argument {
 
 export type TimerCommandNames =
   | "end"
+  | "mute"
   | "info"
   | "pause"
   | "reset"
@@ -63,6 +64,7 @@ export function makePostTimerCommand(
   const DurationSchema = z.number().nonnegative().int();
   const CommandSchema = z.discriminatedUnion("name", [
     z.object({ name: z.literal("end") }).strict(),
+    z.object({ name: z.literal("mute") }).strict(),
     z.object({ name: z.literal("pause") }).strict(),
     z.object({ name: z.literal("info") }).strict(),
     z.object({ name: z.literal("timeInfo") }).strict(),
@@ -133,10 +135,6 @@ export function makePostTimerCommand(
         command = result.data;
       }
 
-      // If any command is issued while the speaker is beeping, then turn
-      // off the beeping.
-      if (speaker.isPlaying) speaker.pause();
-
       let result:
         | {
             isMethodCallResult: true;
@@ -149,6 +147,11 @@ export function makePostTimerCommand(
           }
         | { isMethodCallResult: false; data: any };
       switch (command.name) {
+        case "mute":
+          if (speaker.isPlaying) speaker.pause();
+          result = { isMethodCallResult: false, data: { success: true } };
+          break;
+
         case "end":
         case "pause":
           result = {

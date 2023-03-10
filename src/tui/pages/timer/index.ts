@@ -44,7 +44,7 @@ const KeyBindings: {
     description: `break (${LONG_BREAK_DURATION / MS_IN_ONE_MINUTE}m)`,
   },
   "S-s": { command: "start", keyLabel: "shift-s", description: "start new" },
-  m: { command: "getInfo", keyLabel: "m", description: "stop beeping" },
+  m: { command: "mute", keyLabel: "m", description: "mute alarm" },
   l: {
     keyLabel: "l",
     command: "start",
