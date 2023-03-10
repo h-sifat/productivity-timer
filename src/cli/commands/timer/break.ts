@@ -31,13 +31,14 @@ export function addStartBreakTimerCommand(program: Command) {
         `starts a ${LONG_BREAK_DURATION / MS_IN_ONE_MINUTE} minutes timer`
       ).conflicts("short")
     )
+    .option("--json", "print raw JSON.")
     .argument("[duration]", durationOptionDescription, parseCliDurationArg)
     .action(startBreak);
 }
 
 export async function startBreak(
   durationArg: number | undefined,
-  options: { short: true } | { long: true }
+  options: ({ short: true } | { long: true }) & { json?: boolean }
 ) {
   await withClient(async (client) => {
     {
@@ -63,6 +64,8 @@ export async function startBreak(
     });
 
     const data = await timerService.startBreak({ duration: breakDurationMs });
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }

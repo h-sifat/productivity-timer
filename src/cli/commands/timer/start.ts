@@ -48,15 +48,17 @@ export function addTimerStartCommand(program: Command) {
         "start the timer with the previous reference if exists."
       ).conflicts(["name", "id", "project", "category"])
     )
+    .option("--json", "print raw JSON.")
     .addOption(DurationOption)
     .action(startTimer);
 }
 
 type startTimer_Options =
-  | { duration?: number; last?: boolean }
-  | ((({ name: string } | { id: string }) &
-      ({ category: true } | { project: true })) & { duration?: number })
-  | {};
+  | { duration?: number; last?: boolean; json?: boolean } & ((
+      | { name: string }
+      | { id: string }
+    ) &
+      ({ category: true } | { project: true }));
 
 interface StartCommand {
   name: "start";
@@ -86,6 +88,8 @@ async function startTimer(options: startTimer_Options) {
     });
 
     const data = await timerService.start(startCommand.arg);
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }

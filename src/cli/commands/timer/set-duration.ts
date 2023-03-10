@@ -23,10 +23,13 @@ export function addSetTimerDurationCommand(program: Command) {
       new Option("-d, --decrement", "increment duration").conflicts("increment")
     )
     .argument("<duration>", durationOptionDescription, parseCliDurationArg)
+    .option("--json", "print raw JSON.")
     .action(setDuration);
 }
 
-type SetDurationOptions = { increment?: true } | { decrement?: true };
+type SetDurationOptions = ({ increment?: true } | { decrement?: true }) & {
+  json?: boolean;
+};
 
 async function setDuration(duration: number, options: SetDurationOptions) {
   await withClient(async (client) => {
@@ -43,6 +46,8 @@ async function setDuration(duration: number, options: SetDurationOptions) {
       duration,
       changeType: <any>changeType,
     });
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }

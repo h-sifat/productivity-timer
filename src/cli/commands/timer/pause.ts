@@ -9,10 +9,15 @@ export function addPauseTimerCommand(program: Command) {
     .command("pause")
     .description("Pauses the currently running timer.")
     .alias("p")
+    .option("--json", "print raw JSON.")
     .action(pauseTimer);
 }
 
-async function pauseTimer() {
+interface pauseTimerInfoOptions {
+  json?: boolean;
+}
+
+async function pauseTimer(options: pauseTimerInfoOptions) {
   await withClient(async (client) => {
     const timerService = new TimerService({
       client,
@@ -20,6 +25,8 @@ async function pauseTimer() {
     });
 
     const data = await timerService.pause();
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }

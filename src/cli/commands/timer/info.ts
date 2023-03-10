@@ -9,10 +9,15 @@ export function addTimerInfoCommand(program: Command) {
     .command("info")
     .alias("i")
     .description("Shows the countdown timer information.")
+    .option("--json", "print raw JSON.")
     .action(showTimerInfo);
 }
 
-async function showTimerInfo() {
+interface showTimerInfoOptions {
+  json?: boolean;
+}
+
+async function showTimerInfo(options: showTimerInfoOptions) {
   await withClient(async (client) => {
     const timerService = new TimerService({
       client,
@@ -20,6 +25,7 @@ async function showTimerInfo() {
     });
 
     const data = await timerService.getInfo();
+    if (options.json) return console.log(JSON.stringify(data));
 
     const { state, duration, ref = null, elapsedTime, remainingTime } = data;
     printTimerMethodCallResult({

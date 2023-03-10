@@ -9,10 +9,15 @@ export function addEndTimerCommand(program: Command) {
     .command("end")
     .description("Ends the currently running timer.")
     .alias("stop")
+    .option("--json", "print raw JSON.")
     .action(endTimer);
 }
 
-async function endTimer() {
+type Options = {
+  json?: boolean;
+};
+
+async function endTimer(options: Options) {
   await withClient(async (client) => {
     const timerService = new TimerService({
       client,
@@ -20,6 +25,8 @@ async function endTimer() {
     });
 
     const data = await timerService.end();
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }

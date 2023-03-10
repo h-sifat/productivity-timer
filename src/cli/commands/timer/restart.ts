@@ -9,10 +9,15 @@ export function addRestartTimerCommand(program: Command) {
     .command("restart")
     .description("Resets and starts the current timer.")
     .alias("r")
+    .option("--json", "print raw JSON.")
     .action(restartTimer);
 }
 
-export async function restartTimer() {
+type Options = {
+  json?: boolean;
+};
+
+export async function restartTimer(options: Options) {
   await withClient(async (client) => {
     const timerService = new TimerService({
       client,
@@ -21,6 +26,8 @@ export async function restartTimer() {
 
     await timerService.reset();
     const data = await timerService.start();
+    if (options.json) return console.log(JSON.stringify(data));
+
     printTimerMethodCallResult(data);
   });
 }
