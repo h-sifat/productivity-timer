@@ -1,8 +1,9 @@
 import path from "path";
 import { homedir } from "os";
 import { API_AND_SERVER_CONFIG } from "./other";
-import type { ConfigInterface } from "./interface";
+import type { ConfigInterface, PublicConfigInterface } from "./interface";
 import { MS_IN_ONE_MINUTE, MS_IN_ONE_HOUR } from "common/util/date-time";
+import { pick } from "common/util/other";
 
 export const { DEFAULT_DATA_DIR, CONFIG_FILE_PATH, DEFAULT_BACKUP_DIR } =
   (() => {
@@ -98,6 +99,14 @@ export function modifyConfig(arg: modifyConfig_Argument) {
 
 export function getConfig(): ConfigInterface {
   return Object.freeze({ ...config });
+}
+
+export const PUBLIC_CONFIG_FIELDS: Readonly<
+  Array<keyof PublicConfigInterface>
+> = Object.freeze(["FIRST_DAY_OF_WEEK"] as const);
+
+export function getPublicConfig() {
+  return pick(config, [...PUBLIC_CONFIG_FIELDS]);
 }
 
 export const dbPragmas = Object.freeze({

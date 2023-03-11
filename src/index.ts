@@ -1,6 +1,6 @@
 import path from "path";
 import { Speaker } from "./speaker";
-import { getConfig } from "./config";
+import { getConfig, getPublicConfig } from "./config";
 import { Log } from "./start-up/interface";
 import { notify } from "common/util/notify";
 import { AllDatabases } from "./data-access";
@@ -203,7 +203,10 @@ async function initApplication(arg: initApplication_Argument) {
   // --------- Registering API Routes -------------------
 
   {
-    const controllers = makeControllers({ services });
+    const controllers = makeControllers({
+      services,
+      other: { config: getPublicConfig() },
+    });
     const timerControllers = makeTimerController({
       timer,
       speaker,
@@ -217,6 +220,7 @@ async function initApplication(arg: initApplication_Argument) {
     const controllerAndPathPairs = [
       [appControllers, config.API_APP_PATH],
       [timerControllers, config.API_TIMER_PATH],
+      [controllers.config, config.API_CONFIG_PATH],
       [controllers.project, config.API_PROJECT_PATH],
       [controllers.category, config.API_CATEGORY_PATH],
       [controllers.metaInfo, config.API_META_INFO_PATH],

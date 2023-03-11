@@ -42,6 +42,7 @@ export interface ConfigInterface {
   // server
   API_APP_PATH: string;
   API_TIMER_PATH: string;
+  API_CONFIG_PATH: string;
   API_PROJECT_PATH: string;
   API_CATEGORY_PATH: string;
   API_META_INFO_PATH: string;

@@ -10,6 +10,7 @@ export const BROADCAST_CHANNELS = {
 export const API_AND_SERVER_CONFIG = {
   API_APP_PATH: "/app",
   API_TIMER_PATH: "/timer",
+  API_CONFIG_PATH: "/config",
   API_PROJECT_PATH: "/project",
   API_CATEGORY_PATH: "/category",
   API_META_INFO_PATH: "/meta-info",

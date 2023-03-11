@@ -1,8 +1,10 @@
 import makeProjectController from "./controllers/project";
 import makeCategoryController from "./controllers/category";
+import { makeConfigController } from "./controllers/config";
 import { makeMetaInfoControllers } from "./controllers/meta";
 import makeGetWorkSessionController from "./controllers/work-session";
 
+import type { PublicConfigInterface } from "./config/interface";
 import type { MetaInfoServiceInterface } from "use-cases/interfaces/meta-service";
 import type { ProjectServiceInterface } from "use-cases/interfaces/project-service";
 import type { CategoryServiceInterface } from "use-cases/interfaces/category-service";
@@ -15,9 +17,12 @@ export interface makeControllers_Argument {
     metaInfo: MetaInfoServiceInterface;
     workSession: WorkSessionServiceInterface;
   };
+  other: {
+    config: PublicConfigInterface;
+  };
 }
 export function makeControllers(factoryArg: makeControllers_Argument) {
-  const { services } = factoryArg;
+  const { services, other: otherArg } = factoryArg;
 
   const project = makeProjectController({
     projectService: services.project,
@@ -30,5 +35,13 @@ export function makeControllers(factoryArg: makeControllers_Argument) {
   });
   const metaInfo = makeMetaInfoControllers({ service: services.metaInfo });
 
-  return Object.freeze({ project, category, workSession, metaInfo } as const);
+  const config = makeConfigController({ config: otherArg.config });
+
+  return Object.freeze({
+    config,
+    project,
+    category,
+    metaInfo,
+    workSession,
+  } as const);
 }
