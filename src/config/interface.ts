@@ -59,3 +59,5 @@ export interface ConfigInterface {
   DEFAULT_TIMER_DURATION_MS: number;
   SHOW_TIMER_NOTIFICATIONS: boolean;
 }
+
+export type PublicConfigInterface = Pick<ConfigInterface, "FIRST_DAY_OF_WEEK">;
