@@ -51,7 +51,7 @@ describe("Functionality", () => {
   it(`calls the sideEffect function after successful edit if the audience is "public"`, async () => {
     const updated = await updateMetaInfo({
       audience: "public",
-      changes: { firstDayOfWeek: "Mon" },
+      changes: {},
     });
 
     expect(sideEffect).toHaveBeenCalledTimes(1);

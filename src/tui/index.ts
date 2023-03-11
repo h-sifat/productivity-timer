@@ -22,6 +22,7 @@ import { NavigationBar } from "./components/navbar";
 import { createProjectPage } from "./pages/project";
 import ProjectService from "client/services/project";
 import { TimerService } from "client/services/timer";
+import { loadMetaInfo } from "./store/metaInfoSlice";
 import { PromptComponent } from "./components/prompt";
 import { createCategoryPage } from "./pages/category";
 import CategoryService from "client/services/category";
@@ -29,7 +30,6 @@ import MetaInfoService from "client/services/meta-info";
 import { createAlertElement } from "./components/alert";
 import WorkSessionService from "client/services/work-session";
 import { loadProjects, selectProjects } from "./store/projectSlice";
-import { loadMetaInfo, selectMetaInfo } from "./store/metaInfoSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
@@ -217,15 +217,10 @@ async function main(arg: { client: Client; closeClient(): void }) {
     const categories = selectCategories(store);
     const projects = selectProjects(store);
     const shortStats = selectShortStats(store);
-    const metaInfo = selectMetaInfo(store);
 
     suggestionsProvider.update({ project: projects, category: categories });
     Categories.loadCategories(categories);
     Projects.loadProjects(projects);
-
-    if (metaInfo) {
-      Statistics.setFirstDayOfWeek(metaInfo.firstDayOfWeek);
-    }
 
     Statistics.updateShortStats(shortStats);
   }

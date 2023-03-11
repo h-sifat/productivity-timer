@@ -1,20 +1,14 @@
 import { z } from "zod";
 import EPP from "common/util/epp";
-import { cloneDeep } from "common/util/other";
 import { formatError } from "common/validator/zod";
 import { hashObject } from "common/util/hash-object";
-import { convertDuration } from "common/util/date-time";
-import { DAY_NAMES_LOWERCASE } from "tui/components/calendar/util";
-
-const AllValidDayNamesInLowercase = cloneDeep(DAY_NAMES_LOWERCASE).flat();
 
 export interface PrivateMetaInfoInterface {
   lastBackupTime: number | null;
 }
 
 export interface PublicMetaInfoInterface {
-  firstDayOfWeek: string;
-  dailyWorkTargetMs: number | null;
+  version: string;
 }
 
 export type MetaInformationInterface = PrivateMetaInfoInterface &
@@ -35,62 +29,24 @@ export interface MetaInformationEntity {
 
 export const DEFAULT_META_INFO = Object.freeze({
   lastBackupTime: null,
-  dailyWorkTargetMs: null,
-  firstDayOfWeek: "Saturday",
-});
-
-const MAX_DAILY_WORK_TARGET_MS = convertDuration({
-  duration: 24,
-  toUnit: "ms",
-  fromUnit: "hour",
-});
-
-export const MIN_DAILY_WORK_TARGET_MS = convertDuration({
-  duration: 5,
-  toUnit: "ms",
-  fromUnit: "minute",
+  version: __APP_VERSION__,
 });
 
 export const PublicMetaFields: (keyof PublicMetaInfoInterface)[] =
-  Object.freeze(["dailyWorkTargetMs", "firstDayOfWeek"]) as any;
+  Object.freeze([]) as any;
 
-const PublicMetaInfoSchema = z
-  .object({
-    dailyWorkTargetMs: z
-      .union([
-        z
-          .number()
-          .positive()
-          .int()
-          .gte(MIN_DAILY_WORK_TARGET_MS, {
-            message: `Come on! You can work way more than this.`,
-          })
-          .lt(MAX_DAILY_WORK_TARGET_MS, {
-            message: `Please have some mercy on yourself! Your goal is too high.`,
-          }),
-        z.null(),
-      ])
-      .default(null),
-
-    firstDayOfWeek: z
-      .string()
-      .refine(
-        (name) => AllValidDayNamesInLowercase.includes(name.toLowerCase()),
-        { message: `Invalid first day of week name.` }
-      )
-      .default("Saturday"),
-  })
-  .strict();
+const PublicMetaInfoSchema = z.object({}).strict();
 
 const PrivateMetaInfoSchema = z
   .object({
     lastBackupTime: z
       .union([z.number().positive().int(), z.null()])
       .default(null),
+    version: z.literal(__APP_VERSION__),
   })
   .strict();
 
-const MetaInformationSchema = PublicMetaInfoSchema.merge(
+let MetaInformationSchema = PublicMetaInfoSchema.merge(
   PrivateMetaInfoSchema
 ).strict();
 

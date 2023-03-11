@@ -41,6 +41,7 @@ export function buildMetaInfoDatabase(
   const metaInfoDatabase: MetaInformationDatabaseInterface = { get, set };
   return Object.freeze(metaInfoDatabase);
 
+  // @ts-ignore
   async function get(): Promise<MetaInformationInterface> {
     await db.prepare({
       overrideIfExists: false,
@@ -55,20 +56,46 @@ export function buildMetaInfoDatabase(
       return DEFAULT_META_INFO;
     }
 
+    let metaInfo: any;
     try {
       const { json, hash } = result[0] as any;
-      const metaInfo = JSON.parse(json);
+      metaInfo = JSON.parse(json);
       MetaInformation.validate(metaInfo, hash);
       return metaInfo;
     } catch (ex) {
-      const error = new EPP({
-        code: "DB_CORRUPTED",
-        otherInfo: { originalError: ex },
-        message: `The meta_info table is corrupted.`,
-      });
-      notifyDatabaseCorruption(error);
+      const throwError = (): never => {
+        const error = new EPP({
+          code: "DB_CORRUPTED",
+          otherInfo: { originalError: ex },
+          message: `The meta_info table is corrupted.`,
+        });
+        notifyDatabaseCorruption(error);
+        throw error;
+      };
 
-      throw error;
+      if (!metaInfo) throwError();
+
+      let newMetaInfo: any = {};
+
+      // the v1.0.0 have no version field. that's means we're upgrading from
+      // v1.0.0
+      if (!metaInfo.version)
+        newMetaInfo = {
+          ...DEFAULT_META_INFO,
+          lastBackupTime: metaInfo.lastBackupTime,
+        };
+      // we're probably upgrading or downgrading from the current version
+      else if (metaInfo.version !== DEFAULT_META_INFO.version)
+        newMetaInfo = { ...metaInfo, version: DEFAULT_META_INFO.version };
+      else throwError();
+
+      try {
+        MetaInformation.validate(newMetaInfo);
+        await set(newMetaInfo);
+        return newMetaInfo;
+      } catch (ex) {
+        throwError();
+      }
     }
   }
 

@@ -1,13 +1,14 @@
 const { pathsToModuleNameMapper } = require("ts-jest");
 const { compilerOptions } = require("./tsconfig.json");
 const { baseUrl, paths } = compilerOptions;
+const packageJSON = require("./package.json");
 
 /** @type {import('jest').Config} */
 const config = {
   preset: "ts-jest",
   globals: {
     __BUILD_MODE__: "development",
-    __APP_VERSION__: "v1.0.0",
+    __APP_VERSION__: packageJSON.version,
   },
   roots: ["<rootDir>/tests/", "<rootDir>/src/"],
   testEnvironment: "node",

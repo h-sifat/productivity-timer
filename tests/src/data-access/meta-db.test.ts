@@ -1,12 +1,12 @@
-import { makeDbSubProcess } from "data-access/db";
-import { DEFAULT_META_INFO, MIN_DAILY_WORK_TARGET_MS } from "entities/meta";
-import { initializeDatabase } from "data-access/init-db";
-import SqliteDatabase from "data-access/db/mainprocess-db";
 import {
+  META_INFO_RECORD_ID,
   buildMetaInfoDatabase,
   TABLE_NAME as MetaInfoTableName,
-  META_INFO_RECORD_ID,
 } from "data-access/meta-db";
+import { makeDbSubProcess } from "data-access/db";
+import { DEFAULT_META_INFO } from "entities/meta";
+import { initializeDatabase } from "data-access/init-db";
+import SqliteDatabase from "data-access/db/mainprocess-db";
 import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
@@ -70,9 +70,8 @@ describe("get/set", () => {
 
   it(`sets the meta info`, async () => {
     const insertedMetaInfo = Object.freeze({
-      firstDayOfWeek: "Sat",
+      version: "1.0.0",
       lastBackupTime: Date.now(),
-      dailyWorkTargetMs: MIN_DAILY_WORK_TARGET_MS,
     });
     await metaInfoDb.set(insertedMetaInfo);
 
