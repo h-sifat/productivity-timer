@@ -1,15 +1,5 @@
 export const CLI_NAME = "pt";
 
-let appVersion = "1.0.0";
-
-try {
-  // as this __APP_VERSION__ is provided by webpack at bundle time, I'm having
-  // issues testing other codes that rely on this module.
-
-  // @ts-ignore
-  appVersion = __APP_VERSION__;
-} catch {}
-
 export const BROADCAST_CHANNELS = {
   TIMER_BROADCAST_CHANNEL: "timer",
   PROJECT_BROADCAST_CHANNEL: "project",
@@ -30,5 +20,5 @@ export const API_AND_SERVER_CONFIG = {
   // server
   SERVER_NAMESPACE:
     __BUILD_MODE__ === "production" ? "pt_by_sifat" : "pt_by_sifat_dev",
-  SERVER_ID: "v" + appVersion,
+  SERVER_ID: "v" + __APP_VERSION__,
 };

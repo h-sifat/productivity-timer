@@ -34,7 +34,16 @@ export const DAY_NAMES = deepFreeze([
   { name: { long: "Saturday", medium: "Sat", short: "Sa" }, index: 6 }, // Sat -> 6
 ] as const);
 
-export const DAY_NAMES_LOWERCASE = Object.freeze(
+/**
+ * Array of 7 day names:
+ * ```js
+ * [
+ *    ["saturday", "sat", "sa"],
+ *    // ...
+ * ]
+ * ```
+ * */
+export const DAY_NAMES_LOWERCASE_TRIPLET_ARRAY = Object.freeze(
   DAY_NAMES.map(({ name }) => Object.values(name)).map((arr) =>
     Object.freeze(arr.map((s) => s.toLowerCase()))
   )
@@ -47,7 +56,7 @@ export function getDayNamesBasedOnStartingDay(
   arg: getDayNames_Argument
 ): DayNameInterface[] {
   const startDay = arg.firstDay.toLowerCase();
-  const startDayIndex = DAY_NAMES_LOWERCASE.findIndex((names) =>
+  const startDayIndex = DAY_NAMES_LOWERCASE_TRIPLET_ARRAY.findIndex((names) =>
     names.includes(startDay)
   );
 

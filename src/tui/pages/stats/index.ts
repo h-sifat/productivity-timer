@@ -11,7 +11,7 @@ import type { ShortStats } from "tui/store/interface";
 import type TimerManager from "tui/util/timer-manager";
 import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type { WorkSessionFields } from "entities/work-session/work-session";
-import { DAY_NAMES_LOWERCASE } from "tui/components/calendar/util";
+import { DAY_NAMES_LOWERCASE_TRIPLET_ARRAY } from "tui/components/calendar/util";
 
 export interface createStatsPage_Argument {
   alert: Alert;
@@ -117,8 +117,8 @@ export function createStatsPage(arg: createStatsPage_Argument) {
 
     calendar.setFirstDayOfWeek(dayName);
 
-    statsComponent.firstDayOfWeek = DAY_NAMES_LOWERCASE.findIndex((names) =>
-      names.includes(dayName)
+    statsComponent.firstDayOfWeek = DAY_NAMES_LOWERCASE_TRIPLET_ARRAY.findIndex(
+      (names) => names.includes(dayName)
     );
   }
 

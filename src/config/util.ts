@@ -10,6 +10,11 @@ import path from "path";
 import { z } from "zod";
 import { formatError } from "common/validator/zod";
 import { MS_IN_ONE_MINUTE, parseDuration } from "common/util/date-time";
+import { DAY_NAMES_LOWERCASE_TRIPLET_ARRAY } from "tui/components/calendar/util";
+
+const ALL_DAY_NAMES_LOWERCASE = Object.freeze(
+  DAY_NAMES_LOWERCASE_TRIPLET_ARRAY.flat()
+);
 
 const makeDurationSchema = (arg: { minValue: number }) =>
   z.preprocess((duration) => {
@@ -54,6 +59,16 @@ const ConfigFileSchema = z
     DB_BACKUP_INTERVAL_MS: makeDurationSchema({
       minValue: MS_IN_ONE_MINUTE * 5,
     }).default(DEFAULT_DB_BACKUP_INTERVAL_MS),
+
+    FIRST_DAY_OF_WEEK: z
+      .string()
+      .trim()
+      .transform((name) => name.toLowerCase())
+      .refine(
+        (dayName) => ALL_DAY_NAMES_LOWERCASE.includes(dayName),
+        (dayName) => ({ message: `Invalid day name: "${dayName}"` })
+      )
+      .default("Sat"),
   })
   .strict();
 

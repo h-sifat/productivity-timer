@@ -37,6 +37,7 @@ export interface ConfigInterface {
 
   // other
   NOTIFICATION_TITLE: string;
+  FIRST_DAY_OF_WEEK: string;
 
   // server
   API_APP_PATH: string;
