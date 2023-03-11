@@ -33,6 +33,7 @@ import { loadProjects, selectProjects } from "./store/projectSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
+import ConfigService from "client/services/config";
 
 const screen = blessed.screen({
   smartCSR: true,
@@ -108,6 +109,11 @@ async function main(arg: { client: Client; closeClient(): void }) {
   const metaInfoService = new MetaInfoService({
     client,
     url: config.API_META_INFO_PATH,
+  });
+
+  const configService = new ConfigService({
+    client,
+    url: config.API_CONFIG_PATH,
   });
 
   const timerService = new TimerService({ url: config.API_TIMER_PATH, client });
@@ -282,4 +288,14 @@ async function main(arg: { client: Client; closeClient(): void }) {
   store.dispatch(loadProjects(projectService));
   store.dispatch(loadMetaInfo(metaInfoService));
   store.dispatch(loadShortStats(workSessionService));
+
+  try {
+    const { FIRST_DAY_OF_WEEK } = await configService.get();
+    Statistics.setFirstDayOfWeek(FIRST_DAY_OF_WEEK);
+  } catch (ex) {
+    alert({
+      type: "error",
+      text: `Couldn't fetch config. Error: ${ex.message}`,
+    });
+  }
 }

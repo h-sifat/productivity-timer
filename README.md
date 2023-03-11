@@ -146,7 +146,10 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
   // database
   "DB_BACKUP_INTERVAL_MS": 3600000,
   "DATA_DIR": "/home/muhammad/.p-timer",
-  "DB_BACKUP_DIR": "/home/muhammad/.p-timer-bak"
+  "DB_BACKUP_DIR": "/home/muhammad/.p-timer-bak",
+
+  // tui
+  "FIRST_DAY_OF_WEEK": "Mon"
 }
 ```
 
@@ -186,6 +189,11 @@ Example: `/home/muhammad/alarm.mp3`
 
 1. `DB_BACKUP_INTERVAL_MS`: database backup interval timer. I recommend setting
    this to `1h` to be on the safe side.
+
+#### TUI
+
+1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar(s).
+   Example day names: `"Saturday"`, `"Sat"` or `"Sa"`.
 
 **Tip:** All the duration fields ending with `_MS` can either take a
 milliseconds number value or descriptive duration string value (e.g., `"20m"`,
