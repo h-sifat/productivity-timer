@@ -11,17 +11,21 @@ import type {
   WorkSessionFields,
   WorkSessionValidator,
 } from "entities/work-session/work-session";
-import type SqliteDatabase from "data-access/db/mainprocess-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 import type { TimerRefWithName } from "src/controllers/timer/interface";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/work-session-db";
 
+import {
+  makeGetMaxId,
+  prepareQueries,
+  asyncifyDatabaseMethods,
+} from "data-access/util";
 import EPP from "common/util/epp";
-import WorkSession from "entities/work-session";
-import { MakeGetMaxId } from "data-access/interface";
-import { DeepFreezeTypeMapper } from "common/interfaces/other";
 import { validateDailyStat } from "./stats";
 import { deepFreeze } from "common/util/other";
+import WorkSession from "entities/work-session";
+import { DeepFreezeTypeMapper } from "common/interfaces/other";
 
 const assertValidWorkSession: WorkSessionValidator["validate"] =
   WorkSession.validator.validate;
@@ -65,19 +69,7 @@ const SELECT_WS_AS_JSON_QUERY_PREFIX = `select json_object(
     on ws.projectId = p.id\n`;
 // no semi-colon at the end so that other clauses can be appended to it
 
-const PREPARED_QUERY_NAMES = Object.freeze({
-  getMaxId: "ws/getMaxId",
-  getStats: "ws/getStats",
-  insert_work_session: "ws/insert_work_session",
-  insert_work_session_elapsed_time_by_date:
-    "ws/insert_work_session_elapsed_time_by_date",
-  insert_work_session_timer_event: "ws/insert_work_session_timer_event",
-  find_work_sessions_by_date_range: "ws/find_work_session_by_date_range",
-});
-
-const PREPARED_QUERY_STATEMENTS: {
-  [key in keyof typeof PREPARED_QUERY_NAMES]: string;
-} = Object.freeze({
+const queries = Object.freeze({
   getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
   insert_work_session: `insert into work_sessions
   (id, startedAt, targetDuration, totalElapsedTime, projectId, categoryId)
@@ -132,7 +124,6 @@ const PREPARED_QUERY_STATEMENTS: {
 
 interface BuildWorkSessionDatabase_Argument {
   db: SqliteDatabase;
-  makeGetMaxId: MakeGetMaxId;
   notifyDatabaseCorruption: (arg: any) => void;
   normalizeRecordToDocument(
     record: WorkSessionOutputJSONRecord
@@ -147,7 +138,6 @@ export default function buildWorkSessionDatabase(
 ): WorkSessionDatabaseInterface {
   const {
     db,
-    makeGetMaxId,
     notifyDatabaseCorruption,
     normalizeDocumentToRecord,
     normalizeRecordToDocument: __normalizeRecordToDocument__,
@@ -155,22 +145,39 @@ export default function buildWorkSessionDatabase(
 
   const getMaxId = makeGetMaxId({
     db,
-    maxIdColumnName: MAX_ID_COLUMN_NAME,
-    preparedQueryName: PREPARED_QUERY_NAMES.getMaxId,
-    preparedQueryStatement: PREPARED_QUERY_STATEMENTS.getMaxId,
+    idFieldName: "id",
+    tableName: TABLE_NAME,
   });
 
-  const workSessionDb: WorkSessionDatabaseInterface = Object.freeze({
-    insert,
-    getMaxId,
-    getStats,
-    findByDateRange,
-  });
+  const preparedQueryStatements = prepareQueries({ db, queries });
 
-  return workSessionDb;
+  const insertTransaction = db.transaction(
+    (arg: {
+      workSessionRecord: WorkSessionTableRecord;
+      workSessionTimerEventsRecords: WorkSessionTimerEventsRecord[];
+      workSessionElapsedTimeByDateRecords: WorkSessionElapsedTimeByDateRecord[];
+    }) => {
+      const {
+        workSessionRecord,
+        workSessionTimerEventsRecords,
+        workSessionElapsedTimeByDateRecords,
+      } = arg;
+
+      preparedQueryStatements.insert_work_session.run(workSessionRecord);
+
+      for (const elapsedTimeRecord of workSessionElapsedTimeByDateRecords)
+        preparedQueryStatements.insert_work_session_elapsed_time_by_date.run(
+          elapsedTimeRecord
+        );
+
+      for (const timerEventRecord of workSessionTimerEventsRecords)
+        preparedQueryStatements.insert_work_session_timer_event.run(
+          timerEventRecord
+        );
+    }
+  );
 
   // ------------ db methods ----------------------------------------------
-
   async function insert(workSession: QM_Arguments["insert"]) {
     const record = normalizeDocumentToRecord(workSession);
 
@@ -212,71 +219,24 @@ export default function buildWorkSessionDatabase(
         }));
       })();
 
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.insert_work_session,
-      statement: PREPARED_QUERY_STATEMENTS.insert_work_session,
+    insertTransaction.exclusive({
+      workSessionRecord,
+      workSessionTimerEventsRecords,
+      workSessionElapsedTimeByDateRecords,
     });
-
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.insert_work_session_timer_event,
-      statement: PREPARED_QUERY_STATEMENTS.insert_work_session_timer_event,
-    });
-
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.insert_work_session_elapsed_time_by_date,
-      statement:
-        PREPARED_QUERY_STATEMENTS.insert_work_session_elapsed_time_by_date,
-    });
-
-    const transaction = await db.startTransaction("exclusive");
-
-    try {
-      await transaction.runPrepared({
-        statementArgs: workSessionRecord,
-        name: PREPARED_QUERY_NAMES.insert_work_session,
-      });
-
-      for (const elapsedTimeRecord of workSessionElapsedTimeByDateRecords)
-        await transaction.runPrepared({
-          statementArgs: elapsedTimeRecord,
-          name: PREPARED_QUERY_NAMES.insert_work_session_elapsed_time_by_date,
-        });
-
-      for (const timerEventRecord of workSessionTimerEventsRecords)
-        await transaction.runPrepared({
-          statementArgs: timerEventRecord,
-          name: PREPARED_QUERY_NAMES.insert_work_session_timer_event,
-        });
-
-      await transaction.end("commit");
-    } catch (ex) {
-      try {
-        await transaction.end("rollback");
-      } catch {}
-
-      throw ex;
-    }
   }
 
-  async function findByDateRange(arg: QM_Arguments["findByDateRange"]) {
+  function findByDateRange(arg: QM_Arguments["findByDateRange"]) {
     const toDate = new Date(arg.to).valueOf();
     const fromDate = new Date(arg.from).valueOf();
 
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.find_work_sessions_by_date_range,
-      statement: PREPARED_QUERY_STATEMENTS.find_work_sessions_by_date_range,
-    });
-
-    const workSessionJSONRecords = (
-      await db.executePrepared({
-        statementArgs: { fromDate, toDate },
-        name: PREPARED_QUERY_NAMES.find_work_sessions_by_date_range,
-      })
-    ).map((record: any) => JSON.parse(record[WS_JSON_RESULT_COLUMN_NAME]));
+    const workSessionJSONRecords =
+      preparedQueryStatements.find_work_sessions_by_date_range
+        .all({
+          fromDate,
+          toDate,
+        })
+        .map((record: any) => JSON.parse(record[WS_JSON_RESULT_COLUMN_NAME]));
 
     return workSessionJSONRecords.map((record) => {
       const workSession = normalizeRecordToDocument(
@@ -289,16 +249,10 @@ export default function buildWorkSessionDatabase(
     }) as WorkSessionFields<TimerRefWithName>[];
   }
 
-  async function getStats() {
-    db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.getStats,
-      statement: PREPARED_QUERY_STATEMENTS.getStats,
-    });
-
-    const dailyStats = (await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.getStats,
-    })) as { data: string }[];
+  function getStats() {
+    const dailyStats = preparedQueryStatements.getStats.all() as {
+      data: string;
+    }[];
 
     const stats = dailyStats.map((dailyStat) => JSON.parse(dailyStat.data));
 
@@ -355,4 +309,14 @@ export default function buildWorkSessionDatabase(
       otherInfo: { record, originalError },
     });
   }
+
+  const workSessionDb: WorkSessionDatabaseInterface = Object.freeze(
+    asyncifyDatabaseMethods({
+      insert,
+      getMaxId,
+      getStats,
+      findByDateRange,
+    })
+  );
+  return workSessionDb;
 }

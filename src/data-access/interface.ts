@@ -1,11 +1,7 @@
-import type SqliteDatabase from "./db/mainprocess-db";
+import type { Statement } from "better-sqlite3";
 
-export interface MakeGetMaxId_Argument {
-  maxIdColumnName: string;
-  preparedQueryName: string;
-  preparedQueryStatement: string;
-  db: Pick<SqliteDatabase, "prepare" | "executePrepared">;
-}
+export type PreparedQueryStatements<
+  Queries extends { readonly [k: string]: string }
+> = Record<keyof Queries, Statement>;
 
 export type GetMaxId = () => Promise<number>;
-export type MakeGetMaxId = (arg: MakeGetMaxId_Argument) => GetMaxId;

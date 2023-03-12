@@ -3,62 +3,46 @@ import {
   buildMetaInfoDatabase,
   TABLE_NAME as MetaInfoTableName,
 } from "data-access/meta-db";
-import { makeDbSubProcess } from "data-access/db";
 import { DEFAULT_META_INFO } from "entities/meta";
 import { initializeDatabase } from "data-access/init-db";
-import SqliteDatabase from "data-access/db/mainprocess-db";
 import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
+import Database from "better-sqlite3";
+import type { Database as SqliteDatabase } from "better-sqlite3";
+import { PreparedQueryStatements } from "data-access/interface";
+import { prepareQueries } from "data-access/util";
+
 const IN_MEMORY_DB_PATH = ":memory:";
-const _internalDb_ = new SqliteDatabase({
-  makeDbSubProcess,
-  dbCloseTimeoutMsWhenKilling: 30,
-  sqliteDbPath: IN_MEMORY_DB_PATH,
-});
 
 let metaInfoDb: MetaInformationDatabaseInterface;
 const notifyDatabaseCorruption = jest.fn();
 
-const PREPARED_QUERY_NAMES = Object.freeze({
-  setJSONManually: "test/meta/set-json",
-  setHashManually: "test/meta/set-hash",
-});
-
-const PREPARED_QUERY_STATEMENTS = Object.freeze({
+const queries = Object.freeze({
   setJSONManually: `update ${MetaInfoTableName} set json = $json where id = ${META_INFO_RECORD_ID};`,
   setHashManually: `update ${MetaInfoTableName} set hash = $hash where id = ${META_INFO_RECORD_ID};`,
 });
 
+let preparedQueryStatements: PreparedQueryStatements<typeof queries>;
+let _internalDb_: SqliteDatabase;
+
 // -----    Test setup -----------------
 beforeEach(async () => {
-  await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
+  _internalDb_ = new Database(IN_MEMORY_DB_PATH);
   await initializeDatabase(_internalDb_);
+  preparedQueryStatements = prepareQueries({ db: _internalDb_, queries });
 
-  for (const queryName in PREPARED_QUERY_NAMES) {
-    const statement = (PREPARED_QUERY_STATEMENTS as any)[queryName];
-    await _internalDb_.prepare({
-      name: (<any>PREPARED_QUERY_NAMES)[queryName],
-      statement,
-      overrideIfExists: false,
-    });
-  }
-
-  if (!metaInfoDb)
-    metaInfoDb = buildMetaInfoDatabase({
-      db: _internalDb_,
-      notifyDatabaseCorruption,
-    });
+  metaInfoDb = buildMetaInfoDatabase({
+    db: _internalDb_,
+    notifyDatabaseCorruption,
+  });
 
   notifyDatabaseCorruption.mockReset();
 });
 
 afterEach(async () => {
-  await _internalDb_.close();
+  _internalDb_.close();
 });
 
-afterAll(async () => {
-  await _internalDb_.kill();
-});
 // -----    Test setup -----------------
 
 describe("get/set", () => {
@@ -100,10 +84,7 @@ describe("Corruption Handling", () => {
       await metaInfoDb.get();
 
       // manually setting the json value
-      await _internalDb_.runPrepared({
-        name: PREPARED_QUERY_NAMES.setJSONManually,
-        statementArgs: { json },
-      });
+      preparedQueryStatements.setJSONManually.run({ json });
 
       expect(notifyDatabaseCorruption).not.toHaveBeenCalled();
       try {

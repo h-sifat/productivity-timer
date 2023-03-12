@@ -1,6 +1,6 @@
 import { promises as fsp } from "fs";
 import { Notify } from "common/interfaces/other";
-import type SqliteDatabase from "./db/mainprocess-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 
 export interface backupDatabase_Argument {
   notifyError?: boolean;
@@ -37,7 +37,7 @@ export function makeBackupDatabase(
 
   return async function backupDatabase(arg: backupDatabase_Argument) {
     try {
-      await database.backup({ destination: DB_BACKUP_TEMP_FILE_PATH });
+      await database.backup(DB_BACKUP_TEMP_FILE_PATH);
       await fsp.rename(DB_BACKUP_TEMP_FILE_PATH, DB_BACKUP_FILE_PATH);
 
       await sideEffect();

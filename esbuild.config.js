@@ -30,19 +30,17 @@ const outputModuleNames = Object.freeze({
   CLI: "cli",
   TUI: "tui",
   SERVER: "server",
-  DB_SUBPROCESS: "db_subprocess",
 });
 
 const BUILD_MODE =
   process.env.BUILD_MODE === "production" ? "production" : "development";
 
 const globalConstants = {
+  __BUILD_MODE__: BUILD_MODE,
   __APP_VERSION__: packageDotJSON.version,
   __M_PLAYER_AUDIO_FILE_NAME__: "alarm.mp3",
   __CLI_FILE_NAME__: outputModuleNames.CLI + ".js",
   __SERVER_FILE_NAME__: outputModuleNames.SERVER + ".js",
-  __DB_SUBPROCESS_FILE_NAME__: outputModuleNames.DB_SUBPROCESS + ".js",
-  __BUILD_MODE__: BUILD_MODE,
 };
 
 for (const key in globalConstants)
@@ -53,10 +51,6 @@ const esbuildConfig = {
     { in: "src/index.ts", out: outputModuleNames.SERVER },
     { in: "src/tui/index.ts", out: outputModuleNames.TUI },
     { in: "src/cli/index.ts", out: outputModuleNames.CLI },
-    {
-      in: "src/data-access/db/subprocess-db.js",
-      out: outputModuleNames.DB_SUBPROCESS,
-    },
   ],
 
   define: globalConstants,

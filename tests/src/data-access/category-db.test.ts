@@ -1,11 +1,10 @@
 import Category from "entities/category";
-import SqliteDatabase from "data-access/db/mainprocess-db";
+import Database from "better-sqlite3";
 import buildCategoryDatabase from "data-access/category-db";
 import { CategoryFields } from "entities/category/category";
 import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import { initializeDatabase } from "data-access/init-db";
-import { makeGetMaxId } from "data-access/util";
-import { makeDbSubProcess } from "data-access/db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 
 const IN_MEMORY_DB_PATH = ":memory:";
 const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
@@ -19,41 +18,32 @@ const SAMPLE_HIERARCHICAL_CATEGORIES = (function () {
 const CATEGORY_SORT_PREDICATE = (a: CategoryFields, b: CategoryFields) =>
   +a.id - +b.id;
 
-const _internalDb_ = new SqliteDatabase({
-  makeDbSubProcess,
-  dbCloseTimeoutMsWhenKilling: 30,
-  sqliteDbPath: IN_MEMORY_DB_PATH,
-});
-
 let categoryDb: CategoryDatabaseInterface;
+let _internalDb_: SqliteDatabase;
 
 // -----    Test setup -----------------
 beforeEach(async () => {
-  await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
+  _internalDb_ = new Database(IN_MEMORY_DB_PATH);
+
   await initializeDatabase(_internalDb_);
 
-  if (!categoryDb)
-    categoryDb = buildCategoryDatabase({
-      makeGetMaxId,
-      db: _internalDb_,
-      notifyDatabaseCorruption: () => {},
-    });
+  categoryDb = buildCategoryDatabase({
+    db: _internalDb_,
+    notifyDatabaseCorruption: () => {},
+  });
 });
 
 afterEach(async () => {
-  await _internalDb_.close();
+  _internalDb_.close();
 });
 
-afterAll(async () => {
-  await _internalDb_.kill();
-});
 // -----    Test setup -----------------
 
 describe("getMaxId", () => {
-  it(`returns 1 if db is empty`, async () => {
+  it(`returns 0 if db is empty`, async () => {
     // currently our db is empty
     const maxId = await categoryDb.getMaxId();
-    expect(maxId).toBe(1);
+    expect(maxId).toBe(0);
   });
 
   it(`returns the maxId (i.e., lastInsertRowId)`, async () => {
@@ -282,8 +272,6 @@ async function insertMany(arg: {
   categories: CategoryFields[];
   db: SqliteDatabase;
 }) {
-  const { categories, db } = arg;
-  await db.execute({ sql: "begin immediate;" });
+  const { categories } = arg;
   for (const category of categories) await categoryDb.insert(category);
-  await db.execute({ sql: "commit;" });
 }

@@ -1,12 +1,16 @@
-import type SqliteDatabase from "./db/mainprocess-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 import type ProjectDatabaseInterface from "use-cases/interfaces/project-db";
 import type { ProjectFields, ProjectValidator } from "entities/project/project";
 import type { QueryMethodArguments as QM_Arguments } from "use-cases/interfaces/project-db";
 
+import {
+  makeGetMaxId,
+  prepareQueries,
+  asyncifyDatabaseMethods,
+  makeProcessSingleValueReturningQueryResult,
+} from "./util";
 import EPP from "common/util/epp";
 import Project from "entities/project";
-import { makeProcessSingleValueReturningQueryResult } from "./util";
-import { MakeGetMaxId } from "./interface";
 
 const assertValidProject: ProjectValidator["validate"] =
   Project.validator.validate;
@@ -14,23 +18,11 @@ const assertValidProject: ProjectValidator["validate"] =
 const TABLE_NAME = "projects";
 const MAX_ID_COLUMN_NAME = "max_id";
 
-const PREPARED_QUERY_NAMES = Object.freeze({
-  insert: "project/insert",
-  findAll: "project/findAll",
-  findById: "project/findById",
-  getMaxId: "project/getMaxId",
-  deleteById: "project/deleteById",
-  findByName: "project/findByName",
-  updateById: "project/updateById",
-});
-
-const PREPARED_QUERY_STATEMENTS: {
-  [k in keyof typeof PREPARED_QUERY_NAMES]: string;
-} = Object.freeze({
+const queries = Object.freeze({
   findAll: `select * from ${TABLE_NAME};`,
+  deleteById: `delete from ${TABLE_NAME} where id = $id;`,
   findById: `select * from ${TABLE_NAME} where id = $id;`,
   findByName: `select * from ${TABLE_NAME} where name = $name;`,
-  deleteById: `delete from ${TABLE_NAME} where id = $id;`,
   getMaxId: `select max(id) as ${MAX_ID_COLUMN_NAME} from ${TABLE_NAME};`,
 
   insert: `insert into projects
@@ -49,10 +41,10 @@ const PREPARED_QUERY_STATEMENTS: {
 
 export default function buildProjectDatabase(builderArg: {
   db: SqliteDatabase;
-  makeGetMaxId: MakeGetMaxId;
+
   notifyDatabaseCorruption: (arg: any) => void;
 }): ProjectDatabaseInterface {
-  const { db, notifyDatabaseCorruption, makeGetMaxId } = builderArg;
+  const { db, notifyDatabaseCorruption } = builderArg;
   const processSingleValueReturningQueryResult =
     makeProcessSingleValueReturningQueryResult<ProjectFields>({
       normalize,
@@ -63,33 +55,15 @@ export default function buildProjectDatabase(builderArg: {
 
   const getMaxId = makeGetMaxId({
     db,
-    maxIdColumnName: MAX_ID_COLUMN_NAME,
-    preparedQueryName: PREPARED_QUERY_NAMES.getMaxId,
-    preparedQueryStatement: PREPARED_QUERY_STATEMENTS.getMaxId,
+    idFieldName: "id",
+    tableName: TABLE_NAME,
   });
 
-  const projectDatabase: ProjectDatabaseInterface = Object.freeze({
-    insert,
-    findAll,
-    getMaxId,
-    findById,
-    findByName,
-    deleteById,
-    updateById,
-  });
-  return projectDatabase;
+  const preparedQueryStatements = prepareQueries({ db, queries });
 
   // ---------------- Query Functions ----------------
-  async function findAll() {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.findAll,
-      statement: PREPARED_QUERY_STATEMENTS.findAll,
-    });
-
-    const allCategories = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findAll,
-    });
+  function findAll() {
+    const allCategories = preparedQueryStatements.findAll.all();
 
     for (const category of allCategories) {
       normalize(category);
@@ -99,43 +73,16 @@ export default function buildProjectDatabase(builderArg: {
     return allCategories as ProjectFields[];
   }
 
-  async function deleteById(arg: QM_Arguments["deleteById"]) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.deleteById,
-      statement: PREPARED_QUERY_STATEMENTS.deleteById,
-    });
-
-    await db.runPrepared({
-      name: PREPARED_QUERY_NAMES.deleteById,
-      statementArgs: { id: Number(arg.id) },
-    });
+  function deleteById(arg: QM_Arguments["deleteById"]) {
+    preparedQueryStatements.deleteById.run({ id: Number(arg.id) });
   }
 
   async function updateById(arg: QM_Arguments["updateById"]) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.updateById,
-      statement: PREPARED_QUERY_STATEMENTS.updateById,
-    });
-
-    await db.runPrepared({
-      name: PREPARED_QUERY_NAMES.updateById,
-      statementArgs: { ...arg.edited, id: arg.id },
-    });
+    preparedQueryStatements.updateById.run({ ...arg.edited, id: arg.id });
   }
 
   async function findById(arg: QM_Arguments["findById"]) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.findById,
-      statement: PREPARED_QUERY_STATEMENTS.findById,
-    });
-
-    const result = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findById,
-      statementArgs: { id: Number(arg.id) },
-    });
+    const result = preparedQueryStatements.findById.all({ id: Number(arg.id) });
 
     return processSingleValueReturningQueryResult({
       result,
@@ -144,16 +91,7 @@ export default function buildProjectDatabase(builderArg: {
   }
 
   async function findByName(arg: QM_Arguments["findByName"]) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.findByName,
-      statement: PREPARED_QUERY_STATEMENTS.findByName,
-    });
-
-    const result = await db.executePrepared({
-      name: PREPARED_QUERY_NAMES.findByName,
-      statementArgs: { name: arg.name },
-    });
+    const result = preparedQueryStatements.findByName.all({ name: arg.name });
 
     return processSingleValueReturningQueryResult({
       result,
@@ -162,19 +100,10 @@ export default function buildProjectDatabase(builderArg: {
   }
 
   async function insert(project: QM_Arguments["insert"]) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.insert,
-      statement: PREPARED_QUERY_STATEMENTS.insert,
-    });
-
-    await db.runPrepared({
-      name: PREPARED_QUERY_NAMES.insert,
-      statementArgs: {
-        ...project,
-        id: Number(project.id),
-        parentId: Number(project.categoryId) || null,
-      },
+    preparedQueryStatements.insert.run({
+      ...project,
+      id: Number(project.id),
+      parentId: Number(project.categoryId) || null,
     });
   }
 
@@ -205,4 +134,17 @@ export default function buildProjectDatabase(builderArg: {
       });
     }
   }
+
+  const projectDatabase: ProjectDatabaseInterface = Object.freeze(
+    asyncifyDatabaseMethods({
+      insert,
+      findAll,
+      getMaxId,
+      findById,
+      findByName,
+      deleteById,
+      updateById,
+    })
+  );
+  return projectDatabase;
 }

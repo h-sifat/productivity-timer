@@ -1,17 +1,14 @@
-import type SqliteDatabase from "./db/mainprocess-db";
-
 import EPP from "common/util/epp";
 import { dbPragmas } from "src/config";
 import { getAllTableNames } from "./util";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 import { TABLE_SCHEMAS, TABLE_SCHEMA_ORDER, DB_INDICES } from "./schemas";
 
 export const QUERY_NAME_GET_ALL_TBL_NAMES = "init/getAllTableNames";
 
-export async function initializeDatabase(
-  db: Pick<SqliteDatabase, "pragma" | "prepare" | "execute" | "executePrepared">
-) {
+export async function initializeDatabase(db: SqliteDatabase) {
   {
-    const result = await db.pragma({ command: "integrity_check" });
+    const result = await db.pragma("integrity_check", { simple: true });
     if (String(result).toLowerCase() !== "ok")
       throw new EPP({
         code: "DB_CORRUPTED:INTEGRITY_VIOLATION",
@@ -19,12 +16,11 @@ export async function initializeDatabase(
       });
   }
 
-  for (const [pragma, value] of Object.entries(dbPragmas)) {
-    await db.pragma({ command: `${pragma}=${value}` });
-  }
+  for (const [pragma, value] of Object.entries(dbPragmas))
+    await db.pragma(`${pragma}=${value}`);
 
   {
-    const table = await db.pragma({ command: "foreign_key_check" });
+    const table = await db.pragma("foreign_key_check", { simple: true });
     if (table)
       throw new EPP({
         code: "DB_CORRUPTED:F_KEY_VIOLATION",
@@ -32,14 +28,10 @@ export async function initializeDatabase(
       });
   }
 
-  const existingTables = await getAllTableNames({
-    db,
-    preparedQueryName: QUERY_NAME_GET_ALL_TBL_NAMES,
-  });
+  const existingTables = getAllTableNames({ db });
 
   if (!existingTables.length) {
-    for (const table of TABLE_SCHEMA_ORDER)
-      await db.execute({ sql: TABLE_SCHEMAS[table] });
+    for (const table of TABLE_SCHEMA_ORDER) db.exec(TABLE_SCHEMAS[table]);
   } else {
     for (const table of TABLE_SCHEMA_ORDER)
       if (!existingTables.includes(table))
@@ -57,6 +49,6 @@ export async function initializeDatabase(
   }
 
   Object.values(DB_INDICES).forEach(async (indexSql) => {
-    db.execute({ sql: indexSql });
+    db.exec(indexSql);
   });
 }

@@ -261,12 +261,12 @@ technologies.
 
 This app is far from being complete. I still have to implement so many features.
 
-1. Remove the overengineered sub-process database layer.
-1. Add todo feature.
-1. Replace nasty validation logic with zod schemas.
-1. Write code documentation.
-1. Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
-   selectively update stats.
+- [x] Remove the overengineered sub-process database layer.
+- [ ] Add todo feature.
+- [ ] Replace nasty validation logic with zod schemas.
+- [ ] Write code documentation.
+- [ ] Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
+      selectively update stats.
 
 ## Development
 

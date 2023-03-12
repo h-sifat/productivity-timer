@@ -16,7 +16,6 @@ import { makeControllers } from "./make-controllers";
 import { makeAppControllers } from "./controllers/app";
 import { makeBackupDatabase } from "data-access/backup";
 import { makeExpressIPCMiddleware } from "./server/util";
-import { addDatabaseEventListeners } from "./start-up/db";
 import { makeTimerController } from "./controllers/timer";
 import { BackupManager } from "data-access/backup-manager";
 import type { TimerInstance } from "./countdown-timer/type";
@@ -56,7 +55,7 @@ async function initApplication(arg: initApplication_Argument) {
   });
 
   const closeApplication = async (exitCode = 1) => {
-    if (databases) await databases.internalDatabase.close();
+    if (databases) databases.internalDatabase.close();
     if (server.socketPath) server.close();
     speaker.close();
     process.exit(exitCode);
@@ -81,12 +80,6 @@ async function initApplication(arg: initApplication_Argument) {
     databases = await makeAllDatabase({ notifyDatabaseCorruption });
 
     log.success("Database initialized.", 1);
-
-    addDatabaseEventListeners({
-      config,
-      closeApplication,
-      database: databases.internalDatabase,
-    });
   } catch (ex) {
     log({
       indentLevel: 1,

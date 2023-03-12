@@ -1,47 +1,37 @@
+import Database from "better-sqlite3";
 import Project from "entities/project";
-import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
 import buildProjectDatabase from "data-access/project-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 import ProjectDatabaseInterface from "use-cases/interfaces/project-db";
-import { makeDbSubProcess } from "data-access/db";
-import SqliteDatabase from "data-access/db/mainprocess-db";
 
 const IN_MEMORY_DB_PATH = ":memory:";
-let projectDb: ProjectDatabaseInterface;
 
-const _internalDb_ = new SqliteDatabase({
-  makeDbSubProcess,
-  dbCloseTimeoutMsWhenKilling: 30,
-  sqliteDbPath: IN_MEMORY_DB_PATH,
-});
+let projectDb: ProjectDatabaseInterface;
+let _internalDb_: SqliteDatabase;
 
 // -----    Test setup -----------------
 
 beforeEach(async () => {
-  await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
+  _internalDb_ = new Database(IN_MEMORY_DB_PATH);
   await initializeDatabase(_internalDb_);
 
-  if (!projectDb)
-    projectDb = buildProjectDatabase({
-      makeGetMaxId,
-      db: _internalDb_,
-      notifyDatabaseCorruption: () => {},
-    });
+  projectDb = buildProjectDatabase({
+    db: _internalDb_,
+    notifyDatabaseCorruption: () => {},
+  });
 });
 
-afterEach(async () => {
-  await _internalDb_.close();
+afterEach(() => {
+  _internalDb_.close();
 });
 
-afterAll(async () => {
-  await _internalDb_.kill();
-});
 // -----    Test setup -----------------
 describe("getMaxId", () => {
-  it(`returns 1 if db is empty`, async () => {
+  it(`returns 0 if db is empty`, async () => {
     // currently our db is empty
     const maxId = await projectDb.getMaxId();
-    expect(maxId).toBe(1);
+    expect(maxId).toBe(0);
   });
 
   it(`returns the maxId (i.e., lastInsertRowId)`, async () => {

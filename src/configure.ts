@@ -59,12 +59,6 @@ export async function configureApplication(arg: configureApplication_Argument) {
       }
     }
 
-    // the module name is coming from the webpack.config.js file
-    const DB_SUB_PROCESS_MODULE_PATH = path.join(
-      __dirname,
-      __DB_SUBPROCESS_FILE_NAME__
-    );
-
     const DB_PATH = path.join(fileConfig.DATA_DIR, initialConfig.DB_FILE_NAME);
     const MPLAYER_AUDIO_PATH =
       fileConfig.MPLAYER_AUDIO_PATH ||
@@ -75,7 +69,6 @@ export async function configureApplication(arg: configureApplication_Argument) {
         ...fileConfig,
         DB_PATH,
         MPLAYER_AUDIO_PATH,
-        DB_SUB_PROCESS_MODULE_PATH,
       },
     });
   }

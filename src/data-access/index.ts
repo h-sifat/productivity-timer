@@ -5,10 +5,8 @@ import {
 
 import { makeGetMaxId } from "./util";
 import { getConfig } from "src/config";
-import { makeDbSubProcess } from "./db";
 import { initializeDatabase } from "./init-db";
 import buildProjectDatabase from "./project-db";
-import SqliteDatabase from "./db/mainprocess-db";
 import buildCategoryDatabase from "./category-db";
 import buildWorkSessionDatabase from "./work-session-db";
 import { setInitialId, setInitialId_Argument } from "./id";
@@ -18,9 +16,10 @@ import type CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import type WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
 import type { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 import { buildMetaInfoDatabase } from "./meta-db";
+import Database from "better-sqlite3";
 
 export interface AllDatabases {
-  internalDatabase: SqliteDatabase;
+  internalDatabase: Database.Database;
   project: ProjectDatabaseInterface;
   category: CategoryDatabaseInterface;
   workSession: WorkSessionDatabaseInterface;
@@ -37,13 +36,7 @@ export async function makeAllDatabase(
 
   const config = getConfig();
 
-  const database = new SqliteDatabase({
-    makeDbSubProcess,
-    sqliteDbPath: config.DB_PATH,
-    dbCloseTimeoutMsWhenKilling: config.DB_CLOSE_TIMEOUT_WHEN_KILLING,
-  });
-
-  await database.open({ path: config.DB_PATH });
+  const database = new Database(config.DB_PATH, { fileMustExist: true });
 
   await initializeDatabase(database);
 

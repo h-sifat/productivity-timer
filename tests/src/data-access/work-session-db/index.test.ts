@@ -1,8 +1,7 @@
-import { makeDbSubProcess } from "data-access/db";
-
 import buildWorkSessionDatabase, {
   TABLE_NAME as WORK_SESSION_TABLE_NAME,
 } from "data-access/work-session-db";
+import Database from "better-sqlite3";
 
 import {
   normalizeDocumentToRecord,
@@ -10,10 +9,9 @@ import {
 } from "data-access/work-session-db/util";
 import Category from "entities/category";
 import { cloneDeep, deepFreeze } from "common/util/other";
-import { makeGetMaxId } from "data-access/util";
 import { initializeDatabase } from "data-access/init-db";
-import SqliteDatabase from "data-access/db/mainprocess-db";
 import buildCategoryDatabase from "data-access/category-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 import { SAMPLE_WORK_SESSION } from "fixtures/entities/work-session";
 import CategoryDatabaseInterface from "use-cases/interfaces/category-db";
 import WorkSessionDatabaseInterface from "use-cases/interfaces/work-session-db";
@@ -24,48 +22,37 @@ const notifyDatabaseCorruption = jest.fn();
 let workSessionDb: WorkSessionDatabaseInterface;
 let categoryDb: CategoryDatabaseInterface;
 
-const _internalDb_ = new SqliteDatabase({
-  makeDbSubProcess,
-  dbCloseTimeoutMsWhenKilling: 30,
-  sqliteDbPath: IN_MEMORY_DB_PATH,
-});
+let _internalDb_: SqliteDatabase;
 
 // -----    Test setup -----------------
 beforeEach(async () => {
-  await _internalDb_.open({ path: IN_MEMORY_DB_PATH });
+  _internalDb_ = new Database(IN_MEMORY_DB_PATH);
   await initializeDatabase(_internalDb_);
 
-  if (!workSessionDb)
-    workSessionDb = buildWorkSessionDatabase({
-      db: _internalDb_,
-      makeGetMaxId,
-      notifyDatabaseCorruption,
-      normalizeDocumentToRecord,
-      normalizeRecordToDocument,
-    });
+  workSessionDb = buildWorkSessionDatabase({
+    db: _internalDb_,
+    notifyDatabaseCorruption,
+    normalizeDocumentToRecord,
+    normalizeRecordToDocument,
+  });
 
-  if (!categoryDb)
-    categoryDb = buildCategoryDatabase({
-      makeGetMaxId,
-      db: _internalDb_,
-      notifyDatabaseCorruption: () => {},
-    });
+  categoryDb = buildCategoryDatabase({
+    db: _internalDb_,
+    notifyDatabaseCorruption: () => {},
+  });
 });
 
 afterEach(async () => {
-  await _internalDb_.close();
+  _internalDb_.close();
   notifyDatabaseCorruption.mockReset();
 });
 
-afterAll(async () => {
-  await _internalDb_.kill();
-});
 // -----    Test setup -----------------
 describe("getMaxId", () => {
-  it(`returns 1 if db is empty`, async () => {
+  it(`returns 0 if db is empty`, async () => {
     // currently our db is empty
     const maxId = await workSessionDb.getMaxId();
-    expect(maxId).toBe(1);
+    expect(maxId).toBe(0);
   });
 
   it(`returns the maxId (i.e., lastInsertRowId)`, async () => {
@@ -253,11 +240,9 @@ describe("Handling Data Corruption", () => {
       await workSessionDb.insert(workSession);
 
       // setting the elapsedTime.total to negative value which is invalid
-      await _internalDb_.execute({
-        sql: `update ${WORK_SESSION_TABLE_NAME}
+      _internalDb_.exec(`update ${WORK_SESSION_TABLE_NAME}
         set totalElapsedTime = -32423 
-        where id = ${workSession.id};`,
-      });
+        where id = ${workSession.id};`);
 
       expect(notifyDatabaseCorruption).not.toHaveBeenCalled();
 

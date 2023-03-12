@@ -5,9 +5,10 @@ import {
   MetaInformationInterface,
 } from "entities/meta";
 import EPP from "common/util/epp";
+import { asyncifyDatabaseMethods, prepareQueries } from "./util";
 import { MetaInformationDatabaseInterface } from "use-cases/interfaces/meta-db";
 
-import type SqliteDatabase from "./db/mainprocess-db";
+import type { Database as SqliteDatabase } from "better-sqlite3";
 
 interface BuildMetaInfoDatabase_Argument {
   db: SqliteDatabase;
@@ -17,14 +18,7 @@ interface BuildMetaInfoDatabase_Argument {
 export const TABLE_NAME = "meta_info";
 export const META_INFO_RECORD_ID = 1;
 
-const PREPARED_QUERY_NAMES = Object.freeze({
-  get: "meta/get",
-  set: "meta/set",
-});
-
-const PREPARED_QUERY_STATEMENTS: {
-  [key in keyof typeof PREPARED_QUERY_NAMES]: string;
-} = Object.freeze({
+const queries = Object.freeze({
   get: `select json, hash from ${TABLE_NAME} where id = ${META_INFO_RECORD_ID};`,
   set: `insert into ${TABLE_NAME} (id, json, hash)
   values (${META_INFO_RECORD_ID}, $json, $hash)
@@ -37,22 +31,14 @@ export function buildMetaInfoDatabase(
   builderArg: BuildMetaInfoDatabase_Argument
 ): MetaInformationDatabaseInterface {
   const { db, notifyDatabaseCorruption } = builderArg;
-
-  const metaInfoDatabase: MetaInformationDatabaseInterface = { get, set };
-  return Object.freeze(metaInfoDatabase);
+  const preparedQueryStatements = prepareQueries({ db, queries });
 
   // @ts-ignore
-  async function get(): Promise<MetaInformationInterface> {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.get,
-      statement: PREPARED_QUERY_STATEMENTS.get,
-    });
-
-    const result = await db.executePrepared({ name: PREPARED_QUERY_NAMES.get });
+  const getTransaction = db.transaction(() => {
+    const result = preparedQueryStatements.get.all();
 
     if (!result.length) {
-      await set(DEFAULT_META_INFO);
+      set(DEFAULT_META_INFO);
       return DEFAULT_META_INFO;
     }
 
@@ -91,27 +77,24 @@ export function buildMetaInfoDatabase(
 
       try {
         MetaInformation.validate(newMetaInfo);
-        await set(newMetaInfo);
+        set(newMetaInfo);
         return newMetaInfo;
       } catch (ex) {
         throwError();
       }
     }
-  }
+  });
 
-  async function set(metaInfo: MetaInformationInterface) {
-    await db.prepare({
-      overrideIfExists: false,
-      name: PREPARED_QUERY_NAMES.set,
-      statement: PREPARED_QUERY_STATEMENTS.set,
-    });
-
+  function set(metaInfo: MetaInformationInterface) {
     const json = JSON.stringify(metaInfo);
     const hash = generateMetaInfoHash(metaInfo);
 
-    await db.runPrepared({
-      statementArgs: { json, hash },
-      name: PREPARED_QUERY_NAMES.set,
-    });
+    preparedQueryStatements.set.run({ json, hash });
   }
+
+  const metaInfoDatabase: MetaInformationDatabaseInterface = Object.freeze(
+    asyncifyDatabaseMethods({ get: () => getTransaction.immediate(), set })
+  );
+
+  return metaInfoDatabase;
 }

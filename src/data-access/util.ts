@@ -1,6 +1,6 @@
 import EPP from "common/util/epp";
-import type SqliteDatabase from "./db/mainprocess-db";
-import type { MakeGetMaxId_Argument } from "./interface";
+import type { GetMaxId } from "./interface";
+import type { Database as SqliteDatabase, Statement } from "better-sqlite3";
 
 interface MakeProcessSingleValueReturningQueryResult_Argument {
   tableName: string;
@@ -47,43 +47,57 @@ export function makeProcessSingleValueReturningQueryResult<DocType>(
   };
 }
 
-export function makeGetMaxId(builderArg: MakeGetMaxId_Argument) {
-  const { db, maxIdColumnName, preparedQueryName, preparedQueryStatement } =
-    builderArg;
+export interface MakeGetMaxId_Argument {
+  tableName: string;
+  db: SqliteDatabase;
+  idFieldName: string;
+}
 
-  return async function getMaxId(): Promise<number> {
-    await db.prepare({
-      overrideIfExists: false,
-      name: preparedQueryName,
-      statement: preparedQueryStatement,
-    });
+export function makeGetMaxId(factoryArg: MakeGetMaxId_Argument): GetMaxId {
+  const { db, tableName, idFieldName } = factoryArg;
 
-    const result = (await db.executePrepared({
-      name: preparedQueryName,
-    })) as any;
+  const statement = db.prepare(
+    `select ifnull(max(${idFieldName}), 0) as max_id from ${tableName};`
+  );
 
-    // result should be [ { [maxIdColumnName]: maxId } ]
-    const maxId = result[0][maxIdColumnName];
-
-    return Number(maxId) || 1;
+  return function getMaxId() {
+    return statement.all()[0].max_id;
   };
 }
 
-interface GetAllTableNames_Argument {
-  db: Pick<SqliteDatabase, "prepare" | "executePrepared">;
-  preparedQueryName: string;
+export function prepareQueries<
+  Queries extends { readonly [k: string]: string }
+>(arg: {
+  queries: Queries;
+  db: SqliteDatabase;
+}): Readonly<Record<keyof Queries, Statement>> {
+  const { db, queries } = arg;
+
+  return Object.entries(queries)
+    .map(([name, query]) => [name, db.prepare(query)])
+    .reduce((obj, [name, statement]) => {
+      obj[<string>name] = statement;
+      return obj;
+    }, {} as any);
 }
-export async function getAllTableNames(
-  arg: GetAllTableNames_Argument
-): Promise<string[]> {
-  const { db, preparedQueryName } = arg;
 
-  await db.prepare({
-    name: preparedQueryName,
-    statement: `select name from sqlite_master where type = 'table';`,
-  });
+export function asyncifyDatabaseMethods(db: {
+  [k: string]: (...args: any[]) => any;
+}): any {
+  return Object.entries(db)
+    .map(([name, method]) => [name, async (...args: any[]) => method(...args)])
+    .reduce((obj, [name, method]) => {
+      obj[<string>name] = method;
+      return obj;
+    }, {} as any);
+}
 
-  const rows = await db.executePrepared({ name: preparedQueryName });
+export function getAllTableNames(arg: { db: SqliteDatabase }) {
+  const { db } = arg;
 
-  return rows.map((row: any) => row.name);
+  const getAllTableNamesStatement = db.prepare(
+    `select name from sqlite_master where type = 'table';`
+  );
+
+  return getAllTableNamesStatement.all().map(({ name }) => name) as string[];
 }
