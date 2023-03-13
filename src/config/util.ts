@@ -69,6 +69,11 @@ const ConfigFileSchema = z
         (dayName) => ({ message: `Invalid day name: "${dayName}"` })
       )
       .default("Sat"),
+
+    AUTO_START_BREAK: z.boolean().default(false),
+    AUTO_START_BREAK_DURATION: makeDurationSchema({
+      minValue: MS_IN_ONE_MINUTE * 1,
+    }).default(MS_IN_ONE_MINUTE * 5),
   })
   .strict();
 

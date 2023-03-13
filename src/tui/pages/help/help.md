@@ -44,6 +44,8 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
   "BEEP_DURATION_MS": "10s",
   "DEFAULT_TIMER_DURATION_MS": "10m",
   "SHOW_TIMER_NOTIFICATIONS": true,
+  "AUTO_START_BREAK": false,
+  "AUTO_START_BREAK_DURATION": 300000,
 
   // speaker
   "SPEAKER_VOLUME": 40,
@@ -72,6 +74,12 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
 
 1. `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
    timer ends.
+
+1. `AUTO_START_BREAK`: whether the app should automatically start the break
+   timer.
+
+1. `AUTO_START_BREAK_DURATION`: the timer duration of automatically started
+   breaks.
 
 #### Speaker
 

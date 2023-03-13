@@ -84,6 +84,8 @@ const config: ConfigInterface = Object.seal({
   DEFAULT_TIMER_DURATION_MS,
   SHOW_TIMER_NOTIFICATIONS: true,
   BEEP_DURATION_MS: DEFAULT_BEEP_DURATION_MS,
+  AUTO_START_BREAK: false,
+  AUTO_START_BREAK_DURATION: 5 * MS_IN_ONE_MINUTE,
 });
 
 export interface modifyConfig_Argument {

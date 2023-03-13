@@ -67,7 +67,8 @@ the app.
 
 **Productivity Timer** doesn't enforce strict Pomodoro sequence
 (`work -> break -> work`). It's entirely up to you when and how you start a
-timer.
+timer. But you can configure it to automatically start a break after each work
+sessions.
 
 If a timer has reference to a task category or a project it'll be saved and
 show up in your stats. Otherwise, it'll be considered as a break timer. So
@@ -137,6 +138,8 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
   "BEEP_DURATION_MS": "10s",
   "DEFAULT_TIMER_DURATION_MS": "10m",
   "SHOW_TIMER_NOTIFICATIONS": true,
+  "AUTO_START_BREAK": false,
+  "AUTO_START_BREAK_DURATION": 300000,
 
   // speaker
   "SPEAKER_VOLUME": 40,
@@ -165,6 +168,12 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
 
 1. `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
    timer ends.
+
+1. `AUTO_START_BREAK`: whether the app should automatically start the break
+   timer.
+
+1. `AUTO_START_BREAK_DURATION`: the timer duration of automatically started
+   breaks.
 
 #### Speaker
 

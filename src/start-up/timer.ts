@@ -14,7 +14,7 @@ export interface setUpTimerEventListeners_Argument {
   speaker: Speaker;
   FileConsole: Console;
   config: ConfigInterface;
-  timer: TimerInstance<TimerRefWithName>;
+  timer: TimerInstance<TimerRefWithName | null>;
   WorkSessionService: WorkSessionServiceInterface;
 }
 
@@ -75,6 +75,11 @@ export function setUpTimerEventListeners(
       const name = timerInfo.ref?.name;
       const message = name ? `The timer "${name}" has timed up.` : "Time up.";
       notify({ title: config.NOTIFICATION_TITLE, message });
+    }
+
+    if (config.AUTO_START_BREAK && timer.ref) {
+      timer.reset({ duration: config.AUTO_START_BREAK_DURATION, ref: null });
+      timer.start();
     }
   });
 
