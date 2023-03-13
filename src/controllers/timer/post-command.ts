@@ -11,6 +11,7 @@ import { Speaker } from "src/speaker";
 import type { Controller } from "../interface";
 import type { TimerRefWithName } from "./interface";
 import { TimerStateNames } from "src/countdown-timer/timer";
+import { MS_IN_ONE_HOUR } from "common/util/date-time";
 
 export interface TimerCommandResponsePayload {
   message: string;
@@ -61,7 +62,13 @@ export function makePostTimerCommand(
     })
     .strict();
 
-  const DurationSchema = z.number().nonnegative().int();
+  const DurationSchema = z
+    .number()
+    .nonnegative()
+    .int()
+    .max(MS_IN_ONE_HOUR * 5, {
+      message: `Duration cannot be greater than 5 hours.`,
+    });
   const CommandSchema = z.discriminatedUnion("name", [
     z.object({ name: z.literal("end") }).strict(),
     z.object({ name: z.literal("mute") }).strict(),
