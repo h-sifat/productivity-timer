@@ -3,7 +3,10 @@ import { Client } from "express-ipc";
 import { printErrorAndSetExitCode } from ".";
 import { API_AND_SERVER_CONFIG as config, CLI_NAME } from "src/config/other";
 
-export async function withClient(callback: (client: Client) => Promise<void>) {
+export async function withClient(
+  callback: (client: Client) => Promise<void>,
+  options: { onNotRunning?: (ex: Error) => void } = {}
+) {
   let client: Client;
   try {
     client = new Client({
@@ -28,6 +31,11 @@ export async function withClient(callback: (client: Client) => Promise<void>) {
     }
   } catch (ex) {
     client!.close();
+
+    if (options.onNotRunning) {
+      options.onNotRunning(ex);
+      return;
+    }
 
     console.error(colors.red("Could not connect to server."));
     console.error("Is the server running?");

@@ -30,6 +30,7 @@ const outputModuleNames = Object.freeze({
   CLI: "cli",
   TUI: "tui",
   SERVER: "server",
+  CLI_PLUGIN: "cli_plugin",
 });
 
 const BUILD_MODE =
@@ -51,6 +52,7 @@ const esbuildConfig = {
     { in: "src/index.ts", out: outputModuleNames.SERVER },
     { in: "src/tui/index.ts", out: outputModuleNames.TUI },
     { in: "src/cli/index.ts", out: outputModuleNames.CLI },
+    { in: "src/cli/plugin/index.ts", out: outputModuleNames.CLI_PLUGIN },
   ],
 
   define: globalConstants,

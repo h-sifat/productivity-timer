@@ -1,4 +1,5 @@
 export const CLI_NAME = "pt";
+export const CLI_PLUGIN_NAME = "pt_plugin";
 
 export const BROADCAST_CHANNELS = {
   TIMER_BROADCAST_CHANNEL: "timer",
