@@ -1,7 +1,17 @@
-# Productivity Timer
+<p align="center">
+  <img src="./assets/logo.svg" width="200px" align="center" alt="Productivity Timer Logo" />
+  <h1 align="center">Productivity Timer</h1>
+  <p align="center">A CLI/TUI Pomodoro timer and todo (coming soon) app for the keyboard addicts and
+  terminal fans.
+  </p>
+</p>
 
-A CLI/TUI Pomodoro timer and todo (coming soon) app for the keyboard addicts and
-terminal fans.
+<p align="center">
+<a href="https://github.com/h-sifat" rel="nofollow"><img src="https://img.shields.io/badge/created--by-h--sifat-green" alt="Created by Muhammad Sifat Hossain"></a>
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/h-sifat/productivity-timer" alt="License"></a>
+<a href="https://www.npmjs.com/package/productivity-timer" rel="nofollow"><img src="https://img.shields.io/npm/dw/productivity-timer.svg" alt="npm"></a>
+<a href="https://www.npmjs.com/package/productivity-timer" rel="nofollow"><img src="https://img.shields.io/github/stars/h-sifat/productivity-timer" alt="stars"></a>
+</p>
 
 ![productivity_timer demo](https://user-images.githubusercontent.com/80267830/223765835-e02cc6d0-bb17-492f-9cd6-f25776bf1653.gif)
 
