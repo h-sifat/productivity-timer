@@ -1,4 +1,5 @@
 import path from "path";
+import JSON5 from "json5";
 import EPP from "common/util/epp";
 import { promises as fsp } from "fs";
 import { accessPath } from "common/util/fs";
@@ -39,7 +40,7 @@ export async function configureApplication(arg: configureApplication_Argument) {
             "utf8"
           );
 
-          unValidatedConfig = JSON.parse(configJSON);
+          unValidatedConfig = JSON5.parse(configJSON);
         } catch (ex) {
           throw new Error(`Could not read/parse config file.`);
         }

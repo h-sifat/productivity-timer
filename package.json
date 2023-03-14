@@ -65,6 +65,7 @@
     "flexible-tree-printer": "^1.0.1",
     "fuse.js": "^6.6.2",
     "handy-types": "^2.0.0",
+    "json5": "^2.2.3",
     "lodash": "^4.17.21",
     "node-notifier": "^10.0.1",
     "node-object-hash": "^2.3.10",
