@@ -1,4 +1,5 @@
 import {
+  dailyStatsCleared,
   loadShortStats,
   selectShortStats,
   selectWorkSessions,
@@ -10,6 +11,7 @@ import {
 import blessed from "blessed";
 import { store } from "./store";
 import EventEmitter from "events";
+import reduxWatch from "redux-watch";
 import { Page } from "./components/page";
 import type { Client } from "express-ipc";
 import { withClient } from "cli/util/client";
@@ -18,6 +20,7 @@ import TimerManager from "./util/timer-manager";
 import { createClockPage } from "./pages/clock";
 import { createStatsPage } from "./pages/stats";
 import { createTimerPage } from "./pages/timer";
+import ConfigService from "client/services/config";
 import { NavigationBar } from "./components/navbar";
 import { createProjectPage } from "./pages/project";
 import ProjectService from "client/services/project";
@@ -33,7 +36,6 @@ import { loadProjects, selectProjects } from "./store/projectSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
-import ConfigService from "client/services/config";
 
 const screen = blessed.screen({
   smartCSR: true,
@@ -125,7 +127,15 @@ async function main(arg: { client: Client; closeClient(): void }) {
   client.on("broadcast", (arg) => {
     switch (arg.channel) {
       case BROADCAST_CHANNELS.TIMER_BROADCAST_CHANNEL:
-        timerEventsEmitter.emit(arg.data.event, arg.data.arg);
+        {
+          const eventName = arg.data.event;
+          const eventArg = arg.data.arg;
+
+          timerEventsEmitter.emit(eventName, eventArg);
+
+          if (["time_up", "end_manually"].includes(eventName))
+            store.dispatch(dailyStatsCleared());
+        }
         break;
 
       case BROADCAST_CHANNELS.CATEGORY_BROADCAST_CHANNEL:
@@ -222,13 +232,23 @@ async function main(arg: { client: Client; closeClient(): void }) {
   function reloadProjectAndCategoryData() {
     const categories = selectCategories(store);
     const projects = selectProjects(store);
-    const shortStats = selectShortStats(store);
 
     suggestionsProvider.update({ project: projects, category: categories });
     Categories.loadCategories(categories);
     Projects.loadProjects(projects);
+  }
 
-    Statistics.updateShortStats(shortStats);
+  {
+    const totalWorkMsWatcher = reduxWatch(store.getState, "stats.totalWorkMs");
+    store.subscribe(
+      totalWorkMsWatcher((newValue, oldValue) => {
+        if (newValue === oldValue) return;
+
+        const shortStats = selectShortStats(store);
+        Statistics.updateShortStats(shortStats);
+        Statistics.refreshStats();
+      })
+    );
   }
 
   // @TODO don't use subscribe directly

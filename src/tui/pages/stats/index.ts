@@ -130,5 +130,10 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     calendar.clearCache();
   }
 
-  return { page, setFirstDayOfWeek, updateShortStats };
+  return {
+    page,
+    updateShortStats,
+    setFirstDayOfWeek,
+    refreshStats: () => statsComponent.refresh(),
+  };
 }

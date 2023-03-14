@@ -228,6 +228,10 @@ export class StatsComponent {
     this.#fetchAndRenderStats();
   }
 
+  refresh() {
+    this.#fetchAndRenderStats();
+  }
+
   #setViewType(viewType: StatsViewType) {
     if (!this.#date)
       this.#alert({ text: "Please select a date first.", type: "error" });

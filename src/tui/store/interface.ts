@@ -42,8 +42,9 @@ export interface ShortStats {
 
 export interface StatsState {
   status: ResourceStatus;
-  error: ErrorMessageAndCode | null;
+  totalWorkMs: number | null;
   shortStatOfAllDays: ShortStats;
+  error: ErrorMessageAndCode | null;
   workSessionsPerDate: {
     [date: string]: {
       fetchTimestamp: number;

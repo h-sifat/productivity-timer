@@ -29,15 +29,19 @@ const statsSlice = createSlice({
     ) {
       const shortStatOfAllDays: StatsState["shortStatOfAllDays"] = {};
 
+      let totalWorkMs = 0;
       action.payload.forEach((dailyStat) => {
         shortStatOfAllDays[
           unixMsTimestampToUsLocaleDateString(dailyStat.date)
         ] = dailyStat;
+
+        totalWorkMs += dailyStat.totalDurationMs;
       });
 
       state.error = null;
       state.status = "loaded";
       state.workSessionsPerDate = {};
+      state.totalWorkMs = totalWorkMs;
       state.shortStatOfAllDays = shortStatOfAllDays;
     },
 
@@ -51,6 +55,10 @@ const statsSlice = createSlice({
 
     statsFetchStarted(state: StatsState) {
       state.status = "loading";
+    },
+
+    dailyStatsCleared(state: StatsState) {
+      state.workSessionsPerDate = {};
     },
 
     workSessionsFetched(
@@ -72,6 +80,7 @@ const statsSlice = createSlice({
 
 const { reducer: statsReducer, actions } = statsSlice;
 export default statsReducer;
+export const dailyStatsCleared = actions.dailyStatsCleared;
 
 // Thunks
 export const loadShortStats =
