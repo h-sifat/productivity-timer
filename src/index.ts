@@ -2,7 +2,7 @@ import path from "path";
 import { Speaker } from "./speaker";
 import { getConfig, getPublicConfig } from "./config";
 import { Log } from "./start-up/interface";
-import { notify } from "common/util/notify";
+import { makeNotify } from "common/util/notify";
 import { AllDatabases } from "./data-access";
 import WorkSession from "entities/work-session";
 import { log, TAB_CHAR } from "./start-up/util";
@@ -44,11 +44,16 @@ async function initApplication(arg: initApplication_Argument) {
 
   const config = getConfig();
   const server = new Server();
+  const notify = makeNotify({
+    title: config.NOTIFICATION_TITLE,
+    icon: config.NOTIFICATION_ICON_PATH,
+  });
 
   server.createChannels(Object.values(BROADCAST_CHANNELS));
 
   let databases: AllDatabases;
   const speaker = new Speaker({
+    notify,
     volume: config.SPEAKER_VOLUME,
     mPlayerPath: config.MPLAYER_PATH,
     audioPath: config.MPLAYER_AUDIO_PATH,
@@ -66,10 +71,7 @@ async function initApplication(arg: initApplication_Argument) {
   });
 
   async function notifyDatabaseCorruption(error: any) {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Database corrupted, Closing server. Please see logs.`,
-    });
+    notify(`Database corrupted, Closing server. Please see logs.`);
 
     FileConsole.log(Date.now(), error);
     await closeApplication();
@@ -103,7 +105,6 @@ async function initApplication(arg: initApplication_Argument) {
     database: databases.internalDatabase,
     log: FileConsole.log.bind(FileConsole),
     notify,
-    NOTIFICATION_TITLE: config.NOTIFICATION_TITLE,
     DB_BACKUP_FILE_PATH: path.join(
       config.DB_BACKUP_DIR,
       config.DB_BACKUP_FILE_NAME

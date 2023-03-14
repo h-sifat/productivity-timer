@@ -1,8 +1,7 @@
 import * as fs from "fs";
 import EPP from "common/util/epp";
 import { assert } from "handy-types";
-import { getConfig } from "src/config";
-import { notify } from "common/util/notify";
+import { Notify } from "common/interfaces/other";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 
 export interface spawnMPlayer_Argument {
@@ -44,24 +43,28 @@ function spawnMPlayer(arg: spawnMPlayer_Argument) {
   );
 }
 
-const { NOTIFICATION_TITLE } = getConfig();
 const M_PLAYER_TOGGLE_KEY_SEQUENCE = "p\n";
 
-export type SpeakerConstructor_Argument = Required<spawnMPlayer_Argument>;
+export type SpeakerConstructor_Argument = Required<spawnMPlayer_Argument> & {
+  notify: Notify;
+};
 export class Speaker {
   #isPlaying: boolean;
   #player: ChildProcessWithoutNullStreams;
   #pauseTimerId: NodeJS.Timeout | null = null;
   readonly #spawnPlayerArgument: spawnMPlayer_Argument;
+  readonly #notify: Notify;
 
   constructor(arg: SpeakerConstructor_Argument) {
     {
-      const { mPlayerPath, audioPath, volume } = arg;
+      const { mPlayerPath, audioPath, volume, notify } = arg;
       this.#spawnPlayerArgument = Object.freeze({
         volume,
         audioPath,
         mPlayerPath,
       });
+
+      this.#notify = notify;
     }
 
     this.#player = this.#createAndInitPlayer(this.#spawnPlayerArgument);
@@ -94,14 +97,11 @@ export class Speaker {
       message = `Speaker Error: the "mplayer" binary is not found.`;
     else message = `Speaker Error: ${String(error.message)}`;
 
-    notify({ title: NOTIFICATION_TITLE, message });
+    this.#notify(message);
   };
 
   handlePlayerExit = () => {
-    notify({
-      title: NOTIFICATION_TITLE,
-      message: `The mplayer process died. Trying to respawn.`,
-    });
+    this.#notify(`The mplayer process died. Trying to respawn.`);
 
     this.#removePlayerEventListeners(this.#player);
 

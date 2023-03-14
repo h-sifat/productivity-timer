@@ -8,11 +8,7 @@ export type DeepFreeze = <Type>(
   object: Type
 ) => Type extends object ? DeepFreezeTypeMapper<Type> : Type;
 
-export interface notify_Argument {
-  title: string;
-  message: string;
-}
-export type Notify = (arg: notify_Argument) => void;
+export type Notify = (message: string) => void;
 
 export type PickObject = <O extends object, K extends Array<keyof O>>(
   object: O,

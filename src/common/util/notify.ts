@@ -1,7 +1,12 @@
 import { Notify } from "common/interfaces/other";
 import { notify as __notify__ } from "node-notifier";
 
-export const notify: Notify = function _notify(arg) {
-  const { title, message } = arg;
-  __notify__({ title, message });
-};
+export interface makeNotify_Argument {
+  icon: string;
+  title: string;
+}
+
+export function makeNotify(arg: makeNotify_Argument): Notify {
+  const { icon, title } = arg;
+  return (message) => __notify__({ title, icon, message });
+}

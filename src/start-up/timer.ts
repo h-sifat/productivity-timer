@@ -44,17 +44,13 @@ export function setUpTimerEventListeners(
   } = arg;
 
   timer.on("err:time_decrement", () => {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Paused timer because date/time has decremented.`,
-    });
+    notify(`Paused timer because date/time has decremented.`);
   });
 
   timer.on("err:wake_up_or_time_increment", () => {
-    notify({
-      title: config.NOTIFICATION_TITLE,
-      message: `Paused timer because computer went to sleep or date/time has incremented.`,
-    });
+    notify(
+      `Paused timer because computer went to sleep or date/time has incremented.`
+    );
   });
 
   server.createChannels(config.TIMER_BROADCAST_CHANNEL);
@@ -74,7 +70,7 @@ export function setUpTimerEventListeners(
     if (config.SHOW_TIMER_NOTIFICATIONS) {
       const name = timerInfo.ref?.name;
       const message = name ? `The timer "${name}" has timed up.` : "Time up.";
-      notify({ title: config.NOTIFICATION_TITLE, message });
+      notify(message);
     }
 
     if (config.AUTO_START_BREAK && timer.ref) {
@@ -96,10 +92,7 @@ export function setUpTimerEventListeners(
       });
     } catch (ex) {
       FileConsole.log(Date.now(), ex);
-      notify({
-        title: config.NOTIFICATION_TITLE,
-        message: `Could not save work session to database. Please see logs.`,
-      });
+      notify(`Could not save work session to database. Please see logs.`);
     }
   }
 }

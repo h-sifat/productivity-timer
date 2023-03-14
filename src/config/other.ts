@@ -20,7 +20,6 @@ export const API_AND_SERVER_CONFIG = {
   ...BROADCAST_CHANNELS,
 
   // server
-  SERVER_NAMESPACE:
-    __BUILD_MODE__ === "production" ? "pt_by_sifat" : "pt_by_sifat_dev",
-  SERVER_ID: "v" + __APP_VERSION__,
+  SERVER_NAMESPACE: "pt_by_sifat",
+  SERVER_ID: __BUILD_MODE__ === "production" ? "prod" : "dev",
 };

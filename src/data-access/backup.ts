@@ -11,7 +11,6 @@ export type BackupDatabase = (
 ) => Promise<{ success: true; error: null } | { success: false; error: any }>;
 
 export interface makeBackupDatabase_Argument {
-  NOTIFICATION_TITLE: string;
   DB_BACKUP_FILE_PATH: string;
   DB_BACKUP_TEMP_FILE_PATH: string;
 
@@ -30,7 +29,6 @@ export function makeBackupDatabase(
     notify,
     database,
     sideEffect,
-    NOTIFICATION_TITLE,
     DB_BACKUP_FILE_PATH,
     DB_BACKUP_TEMP_FILE_PATH,
   } = builderArg;
@@ -49,10 +47,7 @@ export function makeBackupDatabase(
       log(`Timestamp: ${Date.now()}`, "Could not backup database.", ex);
 
       if (notifyError)
-        notify({
-          title: NOTIFICATION_TITLE,
-          message: `Could not backup database. Please see error logs.`,
-        });
+        notify(`Could not backup database. Please see error logs.`);
 
       return { success: false, error: ex };
     }

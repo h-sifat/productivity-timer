@@ -42,6 +42,7 @@ const globalConstants = {
   __M_PLAYER_AUDIO_FILE_NAME__: "alarm.mp3",
   __CLI_FILE_NAME__: outputModuleNames.CLI + ".js",
   __SERVER_FILE_NAME__: outputModuleNames.SERVER + ".js",
+  __NOTIFICATION_ICON_FILE_NAME__: "notification_logo.png",
 };
 
 for (const key in globalConstants)

@@ -4,14 +4,13 @@
   "description": "",
   "main": "index.js",
   "bin": {
+    "pt_plugin": "./dist/cli_plugin.js",
     "pt": "./dist/cli.js"
   },
   "files": [
+    "assets",
     "dist"
   ],
-  "config": {
-    "copy_audio": "cp ./src/speaker/alarm.mp3 ./dist"
-  },
   "scripts": {
     "prepare": "husky install",
     "typecheck": "tsc --noEmit",
@@ -21,12 +20,9 @@
     "build": "npm run build:prod",
     "prebuild:prod": "npm run typecheck && npm test && rm ./dist/*",
     "build:prod": "BUILD_MODE=production node ./esbuild.config.js",
-    "postbuild:prod": "$npm_package_config_copy_audio",
     "prepublishOnly": "npm run build:prod",
-    "prebuild:dev:watch": "$npm_package_config_copy_audio",
     "build:dev:watch": "BUILD_MODE=development node ./esbuild.config.js --watch",
     "build:dev": "BUILD_MODE=development node ./esbuild.config.js",
-    "postbuild:dev": "$npm_package_config_copy_audio",
     "format": "prettier --no-config --no-error-on-unmatched-pattern --write \"{src,tests}/**/*.{js,ts}\""
   },
   "keywords": [

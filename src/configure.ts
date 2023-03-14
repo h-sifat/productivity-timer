@@ -60,15 +60,23 @@ export async function configureApplication(arg: configureApplication_Argument) {
     }
 
     const DB_PATH = path.join(fileConfig.DATA_DIR, initialConfig.DB_FILE_NAME);
+
+    const assets_dir = path.join(__dirname, "../assets");
+
     const MPLAYER_AUDIO_PATH =
       fileConfig.MPLAYER_AUDIO_PATH ||
-      path.join(__dirname, __M_PLAYER_AUDIO_FILE_NAME__);
+      path.join(assets_dir, __M_PLAYER_AUDIO_FILE_NAME__);
 
+    const NOTIFICATION_ICON_PATH = path.join(
+      assets_dir,
+      __NOTIFICATION_ICON_FILE_NAME__
+    );
     modifyConfig({
       changes: {
         ...fileConfig,
         DB_PATH,
         MPLAYER_AUDIO_PATH,
+        NOTIFICATION_ICON_PATH,
       },
     });
   }

@@ -26,7 +26,7 @@ export const { DEFAULT_DATA_DIR, CONFIG_FILE_PATH, DEFAULT_BACKUP_DIR } =
   })();
 
 export const DEFAULT_MPLAYER_PATH = "mplayer";
-export const DEFAULT_BEEP_DURATION_MS = 20_000; // 20s
+export const DEFAULT_BEEP_DURATION_MS = 10_000; // 20s
 export const DEFAULT_DB_BACKUP_INTERVAL_MS = MS_IN_ONE_HOUR; // 1 hour
 export const DEFAULT_TIMER_DURATION_MS = 20 * MS_IN_ONE_MINUTE; // 20 minutes
 
@@ -75,8 +75,12 @@ const config: ConfigInterface = Object.seal({
   MPLAYER_AUDIO_PATH: "",
   SPEAKER_VOLUME: 80,
   FIRST_DAY_OF_WEEK: "Saturday",
+  NOTIFICATION_ICON_PATH: "",
 
-  NOTIFICATION_TITLE: "Productivity Timer",
+  NOTIFICATION_TITLE:
+    __BUILD_MODE__ === "production"
+      ? "Productivity Timer"
+      : "Productivity Timer Dev",
 
   // api
   ...API_AND_SERVER_CONFIG,
