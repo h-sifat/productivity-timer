@@ -373,11 +373,6 @@ It's probably intended by **blessed-contrib** as drawing that line is
 probably expensive. Not sure if I should create a new line-chart element after
 every resize event.
 
-**3.** Build fails on machines running Node 18LTS+
-
-Because `better-sqlite3` is not compatible yet. see [related
-PR](https://github.com/WiseLibs/better-sqlite3/pull/964)
-
 [Go to TOC](#table-of-contents)
 
 ## Tech stack
