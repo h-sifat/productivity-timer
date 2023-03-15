@@ -30,10 +30,10 @@ export interface printTimer_Arg {
   timeInfo: TimeInfo<TimerRefWithName>;
 }
 
-export function printTimerMethodCallResult(arg: printTimer_Arg) {
+export async function printTimerMethodCallResult(arg: printTimer_Arg) {
   const { ref, state } = arg;
 
-  const title = `[${ref?.name || "Anonymous"}]`;
+  const title = `[${ref?.name || "Break"}]`;
   const { duration, elapsedTime } = arg.timeInfo;
 
   const info: any = {
@@ -48,7 +48,7 @@ export function printTimerMethodCallResult(arg: printTimer_Arg) {
   }
 
   if (arg.message) console.log(arg.message);
-  printObjectAsBox({ object: info, title, useColors: false });
+  await printObjectAsBox({ object: info, title, useColors: false });
 }
 
 export function formatDuration(durationMs: number): string {

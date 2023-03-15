@@ -48,6 +48,6 @@ async function setDuration(duration: number, options: SetDurationOptions) {
     });
     if (options.json) return console.log(JSON.stringify(data));
 
-    printTimerMethodCallResult(data);
+    await printTimerMethodCallResult(data);
   });
 }

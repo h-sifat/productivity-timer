@@ -28,6 +28,6 @@ export async function restartTimer(options: Options) {
     const data = await timerService.start();
     if (options.json) return console.log(JSON.stringify(data));
 
-    printTimerMethodCallResult(data);
+    await printTimerMethodCallResult(data);
   });
 }

@@ -27,6 +27,6 @@ async function endTimer(options: Options) {
     const data = await timerService.end();
     if (options.json) return console.log(JSON.stringify(data));
 
-    printTimerMethodCallResult(data);
+    await printTimerMethodCallResult(data);
   });
 }

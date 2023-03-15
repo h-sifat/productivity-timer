@@ -66,6 +66,6 @@ export async function startBreak(
     const data = await timerService.startBreak({ duration: breakDurationMs });
     if (options.json) return console.log(JSON.stringify(data));
 
-    printTimerMethodCallResult(data);
+    await printTimerMethodCallResult(data);
   });
 }

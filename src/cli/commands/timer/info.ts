@@ -28,7 +28,7 @@ async function showTimerInfo(options: showTimerInfoOptions) {
     if (options.json) return console.log(JSON.stringify(data));
 
     const { state, duration, ref = null, elapsedTime, remainingTime } = data;
-    printTimerMethodCallResult({
+    await printTimerMethodCallResult({
       ref,
       state,
       timeInfo: { elapsedTime, duration, remainingTime },

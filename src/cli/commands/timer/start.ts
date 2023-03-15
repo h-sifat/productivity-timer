@@ -90,7 +90,7 @@ async function startTimer(options: startTimer_Options) {
     const data = await timerService.start(startCommand.arg);
     if (options.json) return console.log(JSON.stringify(data));
 
-    printTimerMethodCallResult(data);
+    await printTimerMethodCallResult(data);
   });
 }
 
