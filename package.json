@@ -1,6 +1,6 @@
 {
   "name": "productivity-timer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -18,7 +18,7 @@
     "test:watch": "jest --passWithNoTests --watch",
     "test:coverage": "jest --passWithNoTests --coverage",
     "build": "npm run build:prod",
-    "prebuild:prod": "npm run typecheck && npm test && rm ./dist/*",
+    "prebuild:prod": "npm run typecheck && npm test && rm -rf ./dist/*",
     "build:prod": "BUILD_MODE=production node ./esbuild.config.js",
     "prepublishOnly": "npm run build:prod",
     "build:dev:watch": "BUILD_MODE=development node ./esbuild.config.js --watch",
