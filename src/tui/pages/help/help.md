@@ -37,7 +37,6 @@ This app depends on a config file named `~/.ptrc.json`.
 1. Here `~/` means your **home** directory/folder. If you're not sure what is
    your home directory then run `node -p 'os.homedir()'` in your
    terminal/command prompt.
-
 1. The config JSON file supports comments and trailing commas thanks to JSON5.
 
 **Example Configuration:**
@@ -74,7 +73,7 @@ This app depends on a config file named `~/.ptrc.json`.
    up.
 
 1. `DEFAULT_TIMER_DURATION_MS`: this value will be used to start a timer when no
-   duration is provided.
+   explicit duration is provided.
 
 1. `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
    timer ends.
@@ -111,12 +110,11 @@ Example: `/home/muhammad/alarm.mp3`
 
 #### TUI
 
-1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar(s).
+1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar.
    Example day names: `"Saturday"`, `"Sat"` or `"Sa"`.
 
-**Tip:** All the duration fields ending with `_MS` can either take a
-milliseconds number value or descriptive duration string value (e.g., `"20m"`,
-`"1h30m"` etc.).
+**Tip:** All the duration fields can either take a milliseconds number value or
+a descriptive duration string value (e.g., `"20m"`, `"1h30m"` etc.).
 
 ## CLI
 
@@ -151,5 +149,5 @@ Please file a Github issue at `https://github.com/h-sifat/productivity-timer.git
 
 ## About
 
-Developed by **Muhammad Sifat Hossain** with frustration, depression, boredom
+Developed by **Muhammad Sifat Hossain** with depression, frustration, boredom
 and love. Feel free to reach out (`reach@sifat.cc`) if you have any questions.
