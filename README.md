@@ -1,8 +1,9 @@
 <p align="center">
   <img src="./assets/logo.svg" width="200px" align="center" alt="Productivity Timer Logo" />
   <h1 align="center">Productivity Timer</h1>
-  <p align="center">A CLI/TUI Pomodoro timer and todo (coming soon) app for the keyboard addicts and
-  terminal fans.
+  <p align="center">
+    A CLI/TUI Pomodoro timer and todo (coming soon) application for keyboard addicts
+    and terminal fans that makes you more productive.
   </p>
 </p>
 
@@ -17,7 +18,7 @@
 
 ## Features
 
-This application is **21k+** lines of code (including tests) terminal madness
+This application is **20k+** lines of code (including tests) terminal madness
 and packed with features. It
 
 - can be be used entirely from the CLI (you don't have to switch to another
@@ -26,36 +27,46 @@ and packed with features. It
 - plays alarm beep after every non-break timer ends
 - can show notifications
 - can show comprehensive stats (in the TUI)
-- has automatic database backup
-- it's fast! It uses IPC socket for CLI/TUI to backend service
-  communication.
+- has automatic database backup system
+- is fast! It uses IPC socket for CLI/TUI to backend service communication.
 - is reactive to changes. Changes from any TUI instance or CLI is reflected
   everywhere.
 
-## Installation
+## Installing
 
-If you don't have Node.js installed then go ahead and install it from
-[here](https://nodejs.org/) and run the following command in your terminal /
-command prompt.
+If you don't have Node.js installed then go ahead and install an LTS version
+from [here](https://nodejs.org/) and run the following command in your terminal
+or command prompt.
 
 ```bash
 npm install --location=global productivity-timer
 ```
 
-**Productivity timer** depends on the **mplayer** CLI for playing audio. It
+After installing run `pt -v` to verify, it should print the current version of
+the app.
+
+### Updating
+
+To update the app run the following command:
+
+```bash
+npm install --location=global productivity-timer@latest
+```
+
+### Installing `mplayer`
+
+Productivity Timer depends on the **mplayer** CLI for playing audio. It
 should be accessible globally in your shell as the `mplayer` command. If it's
 not globally available in the shell then you can manually provide the `mplayer`
 binary path in the config.
 
-### Installing `mplayer`
-
-**On Arch - based systems**
+**On Arch based systems**
 
 ```bash
 sudo pacman -S mplayer
 ```
 
-**On Debian systems:**
+**On Debian based systems:**
 
 ```bash
 sudo apt install mplayer
@@ -67,28 +78,24 @@ sudo apt install mplayer
 brew install mplayer
 ```
 
-**On Windows and other OSs:** Please visit the [official mplayer
-website](http://www.mplayerhq.hu) for download instructions.
-
-After installation run `pt -v` to verify. It should print the current version of
-the app.
+**On Windows and other OSs:** Please refer to the [official mplayer
+website](http://www.mplayerhq.hu) or your package manager for installation
+instructions.
 
 ## Usages
 
-**Productivity Timer** doesn't enforce strict Pomodoro sequence
-(`work -> break -> work`). It's entirely up to you when and how you start a
-timer. But you can configure it to automatically start a break after each work
-sessions.
+Productivity Timer doesn’t enforce a strict Pomodoro sequence (work -> break ->
+work). It’s entirely up to you when you want to start a timer, though you can
+configure the app to automatically start a break after each work session.
 
-If a timer has reference to a task category or a project it'll be saved and
-show up in your stats. Otherwise, it'll be considered as a break timer. So
-break sessions are not logged in the database, it's only your hard work that
-counts!
+If a timer has a reference to a task category or project, it’ll be saved and
+show up in your stats. Otherwise, it’ll be considered a break timer and not be
+logged. It is only your hard work that counts!
 
-#### CLI
+### CLI
 
 Kindly read the **help** page (with `pt --help`) to learn about all the
-features.
+commands.
 
 **Note:** In the help page of the CLI you'll see commands like `pause|p`. Here
 `|p` means an alias named `p`.
@@ -106,7 +113,7 @@ pt start --category --name study -d 25m # or: pt start -cn study -d 20m
 # see the current status
 pt info # or: pt i
 
-# after above timer times up start a short break (5m)
+# after the above timer times up start a short break (5m)
 pt break -s # or: pt b -s
 
 # shortcut to start the study timer again
@@ -118,9 +125,9 @@ pt start --last # or: pt s -l
 1. When the timer is beeping you can mute it by issuing the mute command. e.g.,
    `pt mute`.
 1. Don't worry about writing long commands. Almost every command has a
-   single character alias.
+   single-character alias.
 
-#### TUI
+### TUI
 
 ```bash
 # before starting the TUI start the server
@@ -134,11 +141,14 @@ When in the TUI press <kbd>F1</kbd> to see the help page.
 
 ## Configuration
 
-This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
-**home** directory/folder.
+This app depends on a config file named `~/.ptrc.json`.
 
-**Tip:** If you're not sure what is your home directory then run
-`node -p 'os.homedir()'` in your terminal/command prompt.
+**Tip:**
+
+1. Here `~/` means your **home** directory/folder. If you're not sure what is
+   your home directory then run `node -p 'os.homedir()'` in your
+   terminal/command prompt.
+1. The config JSON file supports comments and trailing commas thanks to JSON5.
 
 **Example Configuration:**
 
@@ -174,7 +184,7 @@ This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
    up.
 
 1. `DEFAULT_TIMER_DURATION_MS`: this value will be used to start a timer when no
-   duration is provided.
+   explicit duration is provided.
 
 1. `SHOW_TIMER_NOTIFICATIONS`: whether the app should show a notification when a
    timer ends.
@@ -211,45 +221,124 @@ Example: `/home/muhammad/alarm.mp3`
 
 #### TUI
 
-1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar(s).
+1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar.
    Example day names: `"Saturday"`, `"Sat"` or `"Sa"`.
 
-**Tip:** All the duration fields ending with `_MS` can either take a
-milliseconds number value or descriptive duration string value (e.g., `"20m"`,
-`"1h30m"` etc.).
+**Tip:** All the duration fields can either take a milliseconds number value or
+a descriptive duration string value (e.g., `"20m"`, `"1h30m"` etc.).
+
+## Integrating in other apps
+
+### With the `pt_plugin` CLI
+
+The `pt_plugin` is a lightweight CLI provided by Productivity Timer for easy
+integration with other applications that can show status by invoking shell
+commands (e.g., Polybar). Right now, it has only one command named `info` that
+can either take a template to format status message or output raw JSON.
+
+Run `pt_plugin info --help` to see the command structure.
+
+#### Status Template
+
+**Example**
+
+```bash
+pt_plugin info -t "[ref] | [ed]/[td] | [state]"
+# will print something like: 'p(2)/Timer | 00:00:06/01:00:00 | RUNNING'
+```
+
+**Syntax**
+
+You can write anything in the template and to interpolate a variable, write it
+inside `[]`. To escape the `[` and `]` characters use `%` and to write a single
+`%` write `%%`.
+
+**Examples**
+
+```bash
+pt_plugin info -t "Elapsed time: [ed]"
+# example output: 'Elapsed time: 01:23'
+
+pt_plugin info -t "Elapsed time%% %[[ed]%]"
+# example output: 'Elapsed time% [01:23]'
+```
+
+**Available Variables**
+
+1. `ref`: the timer reference. It will be formatted as `[pc](id)/name`. Here `c`
+   and `p` means task category and project respectively. If ref is `null` i.e.
+   it's a break timer then it'll be set to the string `"Break"`. Also the `name`
+   field is truncated to **15** characters.
+
+1. `state`: timer states: `ENDED`, `PAUSED`, `RUNNING`, `TIMED_UP`, and
+   `NOT_STARTED`.
+
+1. `td`: target duration.
+1. `ed`: elapsed duration.
+1. `rd`: remaining duration.
+
+#### JSON
+
+If the template doesn't suit your needs then you can provide the `--json` flag
+to get the raw JSON data.
+
+```bash
+pt_plugin info --json
+```
+
+The response data has the following interface:
+
+```ts
+type InfoCommandResponse =
+  | { error: null; data: any }
+  | { error: { message: string; code: string }; data: null };
+```
+
+### With Node.js
+
+You can programmatically communication with Productivity Timer through IPC
+socket.
+
+1. Install [express-ipc](https://github.com/h-sifat/express-ipc)
+1. Copy the config from `src/config/other.ts` module and the client services
+   from `src/client/services` directory.
+
+**Example:** see the `docs/api-integration.ts` file.
 
 ## Privacy Policy
 
 I have the utmost respect for your privacy and zero interest in your personal
 data. Whatever data you generate with this app lives in your own machine and it
 doesn't make any network requests. But the sqlite database is unencrypted
-though!
+though and is accessible to every application running on your system!
 
 ## Known Issues
 
 **1.** The app shows the background color of my terminal!
 
-**Ans:** The library I'm using to build the TUI is called **blessed**. It's a
+The library I'm using to build the TUI is called **blessed**. It's a
 very old library and it hasn't been updated in the last **seven years.** It
 doesn't support inheritance for background color styling. So to fix this I've to
 manually assign a background color to every element. Even if I assign a value of
 "#000" it doesn't become as black as my terminal background. So yeah, it's a
-feature.
+feature!
 
-**2.** The line-char in the stats page is responsive.
+**2.** The line-chart in the stats page of TUI is not responsive.
 
-**Ans:** It's probably intended by **blessed-contrib** as drawing that line is
+It's probably intended by **blessed-contrib** as drawing that line is
 probably expensive. Not sure if I should create a new line-chart element after
-every resize.
+every resize event.
 
-**3.** Build fails on machines running Node 19+ because `better-sqlite3` is not compatible yet.
-see [related PR](https://github.com/WiseLibs/better-sqlite3/pull/964)
+**3.** Build fails on machines running Node 18LTS+
+
+Because `better-sqlite3` is not compatible yet. see [related
+PR](https://github.com/WiseLibs/better-sqlite3/pull/964)
 
 ## Tech stack
 
 This project has been made possible with help of following open source libraries
 and frameworks. I'm just a lousy developer who have stitched together all this
-technologies.
+technologies. Long live open source!
 
 - Backend Service
 
@@ -260,43 +349,47 @@ technologies.
 
 - CLI (commander)
 
+  - IPC Client: express-ipc
   - Text formatting: ansi-colors
   - Table: cli-table
   - Box: boxen
 
 - TUI (blessed + blessed-contrib)
 
-  - State management: redux
   - Pie chart: cli-pie
-  - Terminal Canvas: drawille-canvas
   - Fuzzy search: fuse.js
+  - State management: redux
+  - Terminal Canvas: drawille-canvas
   - Tree printing: flexible-tree-printer
 
 - Other
-  - Date utilities: date-fns
   - Utils: lodash
+  - Date utilities: date-fns
 
 ## Todo
 
 This app is far from being complete. I still have to implement so many features.
+If you think you can help me implement some features then please do so. It's
+becoming very tiresome for me to do everything singlehandedly.
 
-- [x] Remove the overengineered sub-process database layer.
 - [ ] Add todo feature.
-- [ ] Replace nasty validation logic with zod schemas.
 - [ ] Write code documentation.
-- [ ] Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
+- [ ] Write a GNOME top-bar extension
+- [ ] Replace nasty validation logic with zod schemas.
+- [x] Remove the overengineered sub-process database layer.
+- [x] Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
       selectively update stats.
 
 ## Development
 
 ```bash
-# running test
+# running tests
 npm test
 npm run test:watch # in watch mode
 npm run test:coverage # to see test coverage
 
 # building
-npm run build:watch # run build in watch mode
+npm run build:dev:watch # run build in watch mode
 npm run build:dev
 npm run build:prod # the debug log won't be visible in the TUI
 
@@ -308,11 +401,15 @@ npm run format
 
 My main inspiration in building this app was that, I didn't like to move my
 hands from the keyboard to start a Pomodoro timer. Now I can be more productive
-and never leave VIM and my terminal. Though, ironically I spent more than three
-months building this thing. I guess that's productivity at the peak 😅.
+and never leave VIM and my terminal. Though, ironically I've spent more than
+five months building this app. I guess that's productivity at the peak 😅. But
+that's not the point. I actually learned a lot (sqlite, child process
+management, blessed, redux ...) while building this app and also built an entire
+IPC server framework ([express-ipc](https://github.com/h-sifat/express-ipc))
+from scratch.
 
 If you like this app, give it a ⭐ on Github and share it with others. You can
-also buy me a coffee if you want 💝.
+also buy me a coffee if you want, I would really appreciate that 💝.
 
 <a href="https://www.buymeacoffee.com/sifathossain" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >

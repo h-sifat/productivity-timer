@@ -30,11 +30,15 @@ form element.
 
 ## Configuration
 
-This app depends on a config file named `~/.ptrc.json`. Here `~/` means your
-**home** directory/folder.
+This app depends on a config file named `~/.ptrc.json`.
 
-**Tip:** If you're not sure what is your home directory then run
-`node -p 'os.homedir()'` in your terminal/command prompt.
+**Tip:**
+
+1. Here `~/` means your **home** directory/folder. If you're not sure what is
+   your home directory then run `node -p 'os.homedir()'` in your
+   terminal/command prompt.
+
+1. The config JSON file supports comments and trailing commas thanks to JSON5.
 
 **Example Configuration:**
 
