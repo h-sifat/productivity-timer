@@ -16,6 +16,26 @@
 
 ![productivity_timer demo](https://user-images.githubusercontent.com/80267830/223765835-e02cc6d0-bb17-492f-9cd6-f25776bf1653.gif)
 
+## Table of Contents
+
+- [Features](#features)
+- [Installing](#installing)
+- [Usages](#usages)
+  - [CLI](#cli)
+  - [TUI](#tui)
+- [Configuration](#configuration)
+  - [Timer](#timer)
+  - [Speaker](#speaker)
+  - [Database](#database)
+  - [TUI](#tui-1)
+- [Integrating with other apps](#integrating-in-other-apps)
+- [Privacy Policy](#privacy-policy)
+- [Known Issues](#known-issues)
+- [Tech Stack](#tech-stack)
+- [Todo](#todo)
+- [Development](#development)
+- [Conclusion](#conclusion)
+
 ## Features
 
 This application is **20k+** lines of code (including tests) terminal madness
@@ -31,6 +51,8 @@ and packed with features. It
 - is fast! It uses IPC socket for CLI/TUI to backend service communication.
 - is reactive to changes. Changes from any TUI instance or CLI is reflected
   everywhere.
+
+[Go to TOC](#table-of-contents)
 
 ## Installing
 
@@ -82,6 +104,8 @@ brew install mplayer
 website](http://www.mplayerhq.hu) or your package manager for installation
 instructions.
 
+[Go to TOC](#table-of-contents)
+
 ## Usages
 
 Productivity Timer doesn’t enforce a strict Pomodoro sequence (work -> break ->
@@ -91,6 +115,8 @@ configure the app to automatically start a break after each work session.
 If a timer has a reference to a task category or project, it’ll be saved and
 show up in your stats. Otherwise, it’ll be considered a break timer and not be
 logged. It is only your hard work that counts!
+
+[Go to TOC](#table-of-contents)
 
 ### CLI
 
@@ -127,6 +153,8 @@ pt start --last # or: pt s -l
 1. Don't worry about writing long commands. Almost every command has a
    single-character alias.
 
+[Go to TOC](#table-of-contents)
+
 ### TUI
 
 ```bash
@@ -138,6 +166,8 @@ pt tui
 ```
 
 When in the TUI press <kbd>F1</kbd> to see the help page.
+
+[Go to TOC](#table-of-contents)
 
 ## Configuration
 
@@ -178,6 +208,8 @@ This app depends on a config file named `~/.ptrc.json`.
 
 **Descriptions:**
 
+[Go to TOC](#table-of-contents)
+
 #### Timer
 
 1. `BEEP_DURATION_MS`: for how long the beep should be played when a timer times
@@ -195,6 +227,8 @@ This app depends on a config file named `~/.ptrc.json`.
 1. `AUTO_START_BREAK_DURATION`: the timer duration of automatically started
    breaks.
 
+[Go to TOC](#table-of-contents)
+
 #### Speaker
 
 1. `MPLAYER_PATH`: this app uses the `mplayer` audio player to play the alarm.
@@ -209,6 +243,8 @@ This app depends on a config file named `~/.ptrc.json`.
 **Note:** All path must be absolute, i.e. should start from your root directory.
 Example: `/home/muhammad/alarm.mp3`
 
+[Go to TOC](#table-of-contents)
+
 #### Database
 
 1. `DATA_DIR`: the directory where the sqlite database and error logs should be
@@ -219,6 +255,8 @@ Example: `/home/muhammad/alarm.mp3`
 1. `DB_BACKUP_INTERVAL_MS`: database backup interval timer. I recommend setting
    this to `1h` to be on the safe side.
 
+[Go to TOC](#table-of-contents)
+
 #### TUI
 
 1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar.
@@ -226,6 +264,8 @@ Example: `/home/muhammad/alarm.mp3`
 
 **Tip:** All the duration fields can either take a milliseconds number value or
 a descriptive duration string value (e.g., `"20m"`, `"1h30m"` etc.).
+
+[Go to TOC](#table-of-contents)
 
 ## Integrating in other apps
 
@@ -305,12 +345,16 @@ socket.
 
 **Example:** see the `docs/api-integration.ts` file.
 
+[Go to TOC](#table-of-contents)
+
 ## Privacy Policy
 
 I have the utmost respect for your privacy and zero interest in your personal
 data. Whatever data you generate with this app lives in your own machine and it
 doesn't make any network requests. But the sqlite database is unencrypted
 though and is accessible to every application running on your system!
+
+[Go to TOC](#table-of-contents)
 
 ## Known Issues
 
@@ -333,6 +377,8 @@ every resize event.
 
 Because `better-sqlite3` is not compatible yet. see [related
 PR](https://github.com/WiseLibs/better-sqlite3/pull/964)
+
+[Go to TOC](#table-of-contents)
 
 ## Tech stack
 
@@ -366,10 +412,12 @@ technologies. Long live open source!
   - Utils: lodash
   - Date utilities: date-fns
 
+[Go to TOC](#table-of-contents)
+
 ## Todo
 
 This app is far from being complete. I still have to implement so many features.
-If you think you can help me implement some features then please do so. It's
+If you think you can help me to implement some features then please do so. It's
 becoming very tiresome for me to do everything singlehandedly.
 
 - [ ] Add todo feature.
@@ -379,6 +427,8 @@ becoming very tiresome for me to do everything singlehandedly.
 - [x] Remove the overengineered sub-process database layer.
 - [x] Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
       selectively update stats.
+
+[Go to TOC](#table-of-contents)
 
 ## Development
 
@@ -396,6 +446,8 @@ npm run build:prod # the debug log won't be visible in the TUI
 # formatting
 npm run format
 ```
+
+[Go to TOC](#table-of-contents)
 
 ## Conclusion
 
