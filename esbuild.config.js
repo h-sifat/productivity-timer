@@ -65,6 +65,10 @@ const esbuildConfig = {
 
   loader: { ".md": "text" },
 
+  banner: {
+    js: "#!/usr/bin/env node",
+  },
+
   treeShaking: true,
   target: ["esnext", "node14"],
 

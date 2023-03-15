@@ -1,3 +1,7 @@
+## v2.0.2
+
+1. Forgot to add the shabang header in my executable files 😭.
+
 ## v2.0.1
 
 1. Forgot add the "description" field in the `package.json` file.
