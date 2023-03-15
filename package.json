@@ -1,7 +1,7 @@
 {
   "name": "productivity-timer",
-  "version": "2.0.0",
-  "description": "",
+  "version": "2.0.1",
+  "description": "A CLI/TUI Pomodoro timer and todo (coming soon) application for keyboard addicts and terminal fans that makes you more productive.",
   "main": "index.js",
   "bin": {
     "pt_plugin": "./dist/cli_plugin.js",
