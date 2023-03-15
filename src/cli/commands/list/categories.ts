@@ -3,9 +3,9 @@ import type { Command } from "commander";
 import { withClient } from "cli/util/client";
 import { printTree } from "flexible-tree-printer";
 import { formatString, printObjectAsBox } from "cli/util";
-import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 import { CategoryFields } from "entities/category/category";
 import { API_AND_SERVER_CONFIG as config } from "src/config/other";
+import { preprocessCategory, printCategoriesAsTable } from "cli/util/category";
 import type { QuerySchemaInterface } from "src/controllers/category/get-categories";
 
 export function addListCategoriesCommand(ListCommand: Command) {
@@ -92,7 +92,7 @@ function printCategoriesAsTree(categories: CategoryFields[]) {
       console.log(formatString({ string: ".", color: "yellow" })),
     parentNode: tree,
     getSubNodes: ({ parentNode }) =>
-      parentNode.children.map((child: any) => ({
+      parentNode!.children.map((child: any) => ({
         name: child.name,
         value: child,
       })),

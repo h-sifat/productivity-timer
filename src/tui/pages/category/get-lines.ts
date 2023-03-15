@@ -22,20 +22,20 @@ export function getTreeLines(arg: getTreeLines_Argument): TreeLine[] {
   };
   const map = new Map<string, LineInfo>();
 
-  printTree({
+  printTree<CategoryBranch>({
     printRootNode() {},
     parentNode: rootBranch,
     shouldDescend({ parentNode: parentBranch }) {
-      return !folded.has(parentBranch.value.id);
+      return !folded.has(parentBranch!.value.id);
     },
 
     getSubNodes({ parentNode: parentBranch }) {
-      const children = parentBranch.children.map((branch: any) => ({
+      const children = parentBranch!.children.map((branch) => ({
         value: branch,
         name: branch.value.name,
       }));
 
-      const parentId = parentBranch.value.id;
+      const parentId = parentBranch!.value.id;
 
       if (map.has(parentId))
         map.get(parentId)!.hasSubNodes = Boolean(children.length);

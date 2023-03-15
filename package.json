@@ -62,7 +62,7 @@
     "drawille-canvas": "^1.2.1",
     "express-ipc": "^1.0.2",
     "flat-colors": "^3.3.12",
-    "flexible-tree-printer": "^1.0.1",
+    "flexible-tree-printer": "^1.0.2",
     "fuse.js": "^6.6.2",
     "handy-types": "^2.0.0",
     "json5": "^2.2.3",
