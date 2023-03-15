@@ -54,7 +54,7 @@ describe("get/set", () => {
 
   it(`sets the meta info`, async () => {
     const insertedMetaInfo = Object.freeze({
-      version: "1.0.0",
+      version: __APP_VERSION__,
       lastBackupTime: Date.now(),
     });
     await metaInfoDb.set(insertedMetaInfo);
