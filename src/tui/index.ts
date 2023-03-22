@@ -1,7 +1,7 @@
 import {
-  dailyStatsCleared,
   loadShortStats,
   selectShortStats,
+  dailyStatsCleared,
   selectWorkSessions,
 } from "./store/statsSlice";
 import {
@@ -133,25 +133,27 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
           timerEventsEmitter.emit(eventName, eventArg);
 
-          if (["time_up", "end_manually"].includes(eventName))
+          if (["time_up", "end_manually"].includes(eventName)) {
             store.dispatch(dailyStatsCleared());
+            store.dispatch(loadShortStats(workSessionService));
+          }
         }
         break;
 
       case BROADCAST_CHANNELS.CATEGORY_BROADCAST_CHANNEL:
         store.dispatch(loadCategories(categoryService));
+        store.dispatch(loadShortStats(workSessionService));
         break;
 
       case BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL:
         store.dispatch(loadProjects(projectService));
+        store.dispatch(loadShortStats(workSessionService));
         break;
 
       case BROADCAST_CHANNELS.META_INFO_BROADCAST_CHANNEL:
         store.dispatch(loadMetaInfo(metaInfoService));
         break;
     }
-
-    store.dispatch(loadShortStats(workSessionService));
   });
 
   // ------------------- Creating Components And Pages ---------------
