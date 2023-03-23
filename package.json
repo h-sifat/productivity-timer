@@ -71,6 +71,7 @@
     "node-object-hash": "^2.3.10",
     "redux-watch": "^1.2.0",
     "type-fest": "^3.5.2",
+    "update-check": "^1.5.4",
     "zod": "^3.19.1"
   }
 }

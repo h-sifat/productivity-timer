@@ -9,6 +9,7 @@
     "outDir": "./dist",
     "declaration": false,
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
 
     "baseUrl": "./",
