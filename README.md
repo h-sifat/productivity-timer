@@ -48,7 +48,6 @@ and packed with features. It
 - can show notifications
 - can show comprehensive stats (in the TUI)
 - has automatic database backup system
-- is fast! It uses IPC socket for CLI/TUI to backend service communication.
 - is reactive to changes. Changes from any TUI instance or CLI is reflected
   everywhere.
 
@@ -202,7 +201,10 @@ This app depends on a config file named `~/.ptrc.json`.
   "DB_BACKUP_DIR": "/home/muhammad/.p-timer-bak",
 
   // tui
-  "FIRST_DAY_OF_WEEK": "Mon"
+  "FIRST_DAY_OF_WEEK": "Mon",
+
+  // other
+  "CHECK_UPDATE": true
 }
 ```
 
@@ -262,6 +264,11 @@ Example: `/home/muhammad/alarm.mp3`
 1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar.
    Example day names: `"Saturday"`, `"Sat"` or `"Sa"`.
 
+#### Other
+
+1. `CHECK_UPDATE`: Whether the app should check for updates and show
+   notification.
+
 **Tip:** All the duration fields can either take a milliseconds number value or
 a descriptive duration string value (e.g., `"20m"`, `"1h30m"` etc.).
 
@@ -317,6 +324,9 @@ pt_plugin info -t "Elapsed time%% %[[ed]%]"
 1. `ed`: elapsed duration.
 1. `rd`: remaining duration.
 
+**Tip:** Checkout [executor](https://github.com/raujonas/executor) if you're
+using Gnome. It can show the output of any shell command in your top panel.
+
 #### JSON
 
 If the template doesn't suit your needs then you can provide the `--json` flag
@@ -351,8 +361,9 @@ socket.
 
 I have the utmost respect for your privacy and zero interest in your personal
 data. Whatever data you generate with this app lives in your own machine and it
-doesn't make any network requests. But the sqlite database is unencrypted
-though and is accessible to every application running on your system!
+doesn't make any network requests except for update check (you can turn it off).
+But the sqlite database is unencrypted though and is accessible to every
+application running on your system!
 
 [Go to TOC](#table-of-contents)
 
@@ -417,7 +428,6 @@ becoming very tiresome for me to do everything singlehandedly.
 
 - [ ] Add todo feature.
 - [ ] Write code documentation.
-- [ ] Write a GNOME top-bar extension
 - [ ] Replace nasty validation logic with zod schemas.
 - [x] Remove the overengineered sub-process database layer.
 - [x] Don't refresh stats in the TUI for unrelated changes. Use `redux-watch` to
@@ -459,5 +469,5 @@ If you like this app, give it a ⭐ on Github and share it with others. You can
 also buy me a coffee if you want, I would really appreciate that 💝.
 
 <a href="https://www.buymeacoffee.com/sifathossain" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" width="217" >
 </a>

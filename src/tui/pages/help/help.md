@@ -61,7 +61,10 @@ This app depends on a config file named `~/.ptrc.json`.
   "DB_BACKUP_DIR": "/home/muhammad/.p-timer-bak",
 
   // tui
-  "FIRST_DAY_OF_WEEK": "Mon"
+  "FIRST_DAY_OF_WEEK": "Mon",
+
+  // other
+  "CHECK_UPDATE": true
 }
 ```
 
@@ -112,6 +115,11 @@ Example: `/home/muhammad/alarm.mp3`
 
 1. `FIRST_DAY_OF_WEEK`: The TUI depends on this field to render calendar.
    Example day names: `"Saturday"`, `"Sat"` or `"Sa"`.
+
+#### Other
+
+1. `CHECK_UPDATE`: Whether the app should check for updates and show
+   notification.
 
 **Tip:** All the duration fields can either take a milliseconds number value or
 a descriptive duration string value (e.g., `"20m"`, `"1h30m"` etc.).

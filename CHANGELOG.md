@@ -1,3 +1,9 @@
+## v2.1.0
+
+1. TUI: Fix form reset while a timer is running.
+2. Add update checker
+3. Stop redundant TUI update
+
 ## v2.0.2
 
 1. Forgot to add the shabang header in my executable files 😭.
