@@ -74,6 +74,8 @@ const ConfigFileSchema = z
     AUTO_START_BREAK_DURATION: makeDurationSchema({
       minValue: MS_IN_ONE_MINUTE * 1,
     }).default(MS_IN_ONE_MINUTE * 5),
+
+    CHECK_UPDATE: z.boolean().default(true),
   })
   .strict();
 

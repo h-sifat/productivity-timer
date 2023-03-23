@@ -76,6 +76,7 @@ const config: ConfigInterface = Object.seal({
   SPEAKER_VOLUME: 80,
   FIRST_DAY_OF_WEEK: "Saturday",
   NOTIFICATION_ICON_PATH: "",
+  CHECK_UPDATE: true,
 
   NOTIFICATION_TITLE:
     __BUILD_MODE__ === "production"
@@ -109,7 +110,7 @@ export function getConfig(): ConfigInterface {
 
 export const PUBLIC_CONFIG_FIELDS: Readonly<
   Array<keyof PublicConfigInterface>
-> = Object.freeze(["FIRST_DAY_OF_WEEK"] as const);
+> = Object.freeze(["FIRST_DAY_OF_WEEK", "CHECK_UPDATE"] as const);
 
 export function getPublicConfig() {
   return pick(config, [...PUBLIC_CONFIG_FIELDS]);

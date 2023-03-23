@@ -2,7 +2,7 @@ import { deepFreeze } from "common/util/other";
 import { Request } from "src/controllers/interface";
 import { makeGetConfig } from "src/controllers/config/get";
 
-const CONFIG = Object.freeze({ FIRST_DAY_OF_WEEK: "Sat" });
+const CONFIG = Object.freeze({ FIRST_DAY_OF_WEEK: "Sat", CHECK_UPDATE: true });
 const validRequestObject: Request = deepFreeze({
   body: {},
   query: {},

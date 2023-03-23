@@ -39,6 +39,7 @@ export interface ConfigInterface {
   NOTIFICATION_TITLE: string;
   FIRST_DAY_OF_WEEK: string;
   NOTIFICATION_ICON_PATH: string;
+  CHECK_UPDATE: boolean;
 
   // server
   API_APP_PATH: string;
@@ -64,4 +65,7 @@ export interface ConfigInterface {
   AUTO_START_BREAK: boolean;
 }
 
-export type PublicConfigInterface = Pick<ConfigInterface, "FIRST_DAY_OF_WEEK">;
+export type PublicConfigInterface = Pick<
+  ConfigInterface,
+  "FIRST_DAY_OF_WEEK" | "CHECK_UPDATE"
+>;
