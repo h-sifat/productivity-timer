@@ -10,6 +10,7 @@ import {
 } from "src/config/other";
 import blessed from "blessed";
 import { store } from "./store";
+import { isEqual } from "lodash";
 import EventEmitter from "events";
 import reduxWatch from "redux-watch";
 import { Page } from "./components/page";
@@ -23,20 +24,18 @@ import { createTimerPage } from "./pages/timer";
 import ConfigService from "client/services/config";
 import { NavigationBar } from "./components/navbar";
 import { createProjectPage } from "./pages/project";
+import { loadProjects } from "./store/projectSlice";
 import ProjectService from "client/services/project";
 import { TimerService } from "client/services/timer";
-import { loadMetaInfo } from "./store/metaInfoSlice";
 import { PromptComponent } from "./components/prompt";
 import { createCategoryPage } from "./pages/category";
 import CategoryService from "client/services/category";
-import MetaInfoService from "client/services/meta-info";
+import { loadCategories } from "./store/categorySlice";
 import { createAlertElement } from "./components/alert";
 import WorkSessionService from "client/services/work-session";
-import { loadProjects, selectProjects } from "./store/projectSlice";
-import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
-import { loadCategories, selectCategories } from "./store/categorySlice";
-import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
 import { showUpdateNotification } from "common/util/update-check";
+import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
+import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
 
 const screen = blessed.screen({
   smartCSR: true,
@@ -109,11 +108,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
     url: config.API_WORK_SESSION_PATH,
   });
 
-  const metaInfoService = new MetaInfoService({
-    client,
-    url: config.API_META_INFO_PATH,
-  });
-
   const configService = new ConfigService({
     client,
     url: config.API_CONFIG_PATH,
@@ -143,16 +137,14 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
       case BROADCAST_CHANNELS.CATEGORY_BROADCAST_CHANNEL:
         store.dispatch(loadCategories(categoryService));
+        // a project is dependent on a category if it has a categoryId
+        store.dispatch(loadProjects(projectService));
         store.dispatch(loadShortStats(workSessionService));
         break;
 
       case BROADCAST_CHANNELS.PROJECT_BROADCAST_CHANNEL:
         store.dispatch(loadProjects(projectService));
         store.dispatch(loadShortStats(workSessionService));
-        break;
-
-      case BROADCAST_CHANNELS.META_INFO_BROADCAST_CHANNEL:
-        store.dispatch(loadMetaInfo(metaInfoService));
         break;
     }
   });
@@ -230,17 +222,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
   screen.append(alertElement);
 
   // ---------------- Managing State changes -------------------------
-  // @TODO don't update everything. Use redux-watch to update states
-  // selectively
-  function reloadProjectAndCategoryData() {
-    const categories = selectCategories(store);
-    const projects = selectProjects(store);
-
-    suggestionsProvider.update({ project: projects, category: categories });
-    Categories.loadCategories(categories);
-    Projects.loadProjects(projects);
-  }
-
   {
     const totalWorkMsWatcher = reduxWatch(store.getState, "stats.totalWorkMs");
     store.subscribe(
@@ -254,10 +235,35 @@ async function main(arg: { client: Client; closeClient(): void }) {
     );
   }
 
-  // @TODO don't use subscribe directly
-  store.subscribe(() => {
-    reloadProjectAndCategoryData();
-  });
+  {
+    const categoryWatcher = reduxWatch(
+      store.getState,
+      "category.categoriesArray",
+      isEqual
+    );
+
+    store.subscribe(
+      categoryWatcher((categories) => {
+        suggestionsProvider.update({ category: categories });
+        Categories.loadCategories(categories);
+      })
+    );
+  }
+
+  {
+    const projectWatcher = reduxWatch(
+      store.getState,
+      "project.projectsArray",
+      isEqual
+    );
+
+    store.subscribe(
+      projectWatcher((projects) => {
+        Projects.loadProjects(projects);
+        suggestionsProvider.update({ project: projects });
+      })
+    );
+  }
 
   // ------ Setting up global Keypress and Navigation Handling -------------
   const state = Object.seal({
@@ -309,7 +315,6 @@ async function main(arg: { client: Client; closeClient(): void }) {
   // loading initial states
   store.dispatch(loadCategories(categoryService));
   store.dispatch(loadProjects(projectService));
-  store.dispatch(loadMetaInfo(metaInfoService));
   store.dispatch(loadShortStats(workSessionService));
 
   try {
