@@ -23,8 +23,12 @@ import { setUpTimerEventListeners } from "./start-up/timer";
 import { TimerRefWithName } from "./controllers/timer/interface";
 import { makeServiceSideEffects } from "./start-up/make-side-effects";
 import { makeServices, makeServices_Argument } from "./make-services";
-import { unixMsTimestampToUsLocaleDateString } from "./common/util/date-time";
+import {
+  MS_IN_ONE_MINUTE,
+  unixMsTimestampToUsLocaleDateString,
+} from "./common/util/date-time";
 import { makeDocumentDeleteSideEffect } from "./start-up/document-delete-side-effect";
+import { showUpdateNotification } from "common/util/update-check";
 
 interface initApplication_Argument {
   log: Log;
@@ -246,6 +250,11 @@ async function initApplication(arg: initApplication_Argument) {
       await backupManager.init();
       log.success(`Backup manager initialized.`, 1);
       notifyApplicationStartupStatus({ success: true });
+
+      if (config.CHECK_UPDATE)
+        setTimeout(() => {
+          showUpdateNotification({ notify, retry: true });
+        }, MS_IN_ONE_MINUTE);
     },
   });
 }

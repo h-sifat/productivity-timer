@@ -36,6 +36,7 @@ import { loadProjects, selectProjects } from "./store/projectSlice";
 import { SuggestionsProvider } from "./pages/timer/suggestions-provider";
 import { loadCategories, selectCategories } from "./store/categorySlice";
 import { makeGlobalKeypressHandler } from "./util/global-keypress-handler";
+import { showUpdateNotification } from "common/util/update-check";
 
 const screen = blessed.screen({
   smartCSR: true,
@@ -312,8 +313,15 @@ async function main(arg: { client: Client; closeClient(): void }) {
   store.dispatch(loadShortStats(workSessionService));
 
   try {
-    const { FIRST_DAY_OF_WEEK } = await configService.get();
+    const { FIRST_DAY_OF_WEEK, CHECK_UPDATE } = await configService.get();
     Statistics.setFirstDayOfWeek(FIRST_DAY_OF_WEEK);
+
+    if (CHECK_UPDATE)
+      showUpdateNotification({
+        retry: true,
+        scheduleTask: timerManager.setTimeout as any,
+        notify: (msg) => alert({ text: msg, type: "log" }),
+      });
   } catch (ex) {
     alert({
       type: "error",
