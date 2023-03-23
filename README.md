@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/logo.svg" width="200px" align="center" alt="Productivity Timer Logo" />
+  <img src="https://user-images.githubusercontent.com/80267830/227173633-15b85265-29ea-4942-a565-07dcc6b5e906.svg" width="200px" align="center" alt="Productivity Timer Logo" />
   <h1 align="center">Productivity Timer</h1>
   <p align="center">
     A CLI/TUI Pomodoro timer and todo (coming soon) application for keyboard addicts
