@@ -60,19 +60,30 @@ from [here](https://nodejs.org/) and run the following command in your terminal
 or command prompt.
 
 ```bash
-npm install --location=global productivity-timer
+npm i -g productivity-timer
 ```
 
 After installing run `pt -v` to verify, it should print the current version of
 the app.
 
-### Updating
+#### Updating
 
 To update the app run the following command:
 
 ```bash
-npm install --location=global productivity-timer@latest
+npm i -g productivity-timer@latest
 ```
+
+#### Uninstalling
+
+To uninstall the app run:
+
+```bash
+npm un -g productivity-timer
+```
+
+**Note:** You have to remove the config file `~/ptrc.json` and the data
+directories specified in the config manually.
 
 ### Installing `mplayer`
 
@@ -383,6 +394,12 @@ feature!
 It's probably intended by **blessed-contrib** as drawing that line is
 probably expensive. Not sure if I should create a new line-chart element after
 every resize event.
+
+**3.** The key bindings doesn't work or app is not responding to key press.
+
+You probably clicked somewhere in the app that removed the focus from the
+selected element. Try pressing <kbd>ctrl-j</kbd> or <kbd>ctrl-k</kbd> to bring
+back the focus or move to another tab and come back to the current one.
 
 [Go to TOC](#table-of-contents)
 
