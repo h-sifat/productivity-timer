@@ -54,7 +54,7 @@ export async function configureApplication(arg: configureApplication_Argument) {
 
         await fsp.writeFile(
           initialConfig.CONFIG_FILE_PATH,
-          JSON.stringify(fileConfig),
+          JSON.stringify(fileConfig, null, 4),
           "utf8"
         );
       }

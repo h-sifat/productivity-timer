@@ -1,8 +1,15 @@
+## v2.1.1
+
+1. TUI: Fix keybindings not working after mouse click
+1. TUI: In the stats page load the current day stats and move calendar cursor
+   to current date.
+1. Pretty print config file (`~/.ptrc.json`).
+
 ## v2.1.0
 
 1. TUI: Fix form reset while a timer is running.
-2. Add update checker
-3. Stop redundant TUI update
+1. Add update checker
+1. Stop redundant TUI update
 
 ## v2.0.2
 
