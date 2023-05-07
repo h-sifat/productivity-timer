@@ -119,7 +119,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
   });
 
   wrapper.append(startNewTimerForm.element);
-  startNewTimerForm.element.hide();
+  startNewTimerForm.hide();
 
   startNewTimerForm.onSubmit = async (data) => {
     const { duration, ref = null } = data;
@@ -176,7 +176,7 @@ export function createTimerPage(arg: createTimerPage_Argument) {
   // if we come back to the timer page and the form is still open
   // then focus the form element.
   wrapper.on("focus", () => {
-    if (!startNewTimerForm.element.hidden) startNewTimerForm.element.focus();
+    if (!startNewTimerForm.element.hidden) startNewTimerForm.focus();
     renderScreen();
   });
 

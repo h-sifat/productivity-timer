@@ -226,6 +226,10 @@ export class TimerForm {
     this.#renderScreen();
   }
 
+  focus() {
+    this.#formElement.focus();
+  }
+
   #clearContent() {
     this.#referenceInput.setValue({ value: "" });
     this.#durationInput.setValue("");

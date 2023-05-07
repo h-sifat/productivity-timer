@@ -15,6 +15,7 @@ import EventEmitter from "events";
 import reduxWatch from "redux-watch";
 import { Page } from "./components/page";
 import type { Client } from "express-ipc";
+import { disableClick } from "./util/other";
 import { withClient } from "cli/util/client";
 import { createHelpPage } from "./pages/help";
 import TimerManager from "./util/timer-manager";
@@ -302,6 +303,11 @@ async function main(arg: { client: Client; closeClient(): void }) {
 
     renderScreen();
   };
+
+  // Disable click for every element recursively. Because sometimes clicking on
+  // the screen removes the focus from the currently focused element and makes
+  // it unresponsive to keypress.
+  disableClick(screen);
 
   // --------- Rendering the screen and showing the first page --------------
   state.currentPage.show();
