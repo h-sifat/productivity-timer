@@ -41,7 +41,10 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     position: { top: 0, left: 0 },
   });
 
-  calendar.setCurrentYear({ year: new Date().getFullYear() });
+  {
+    const today = new Date();
+    calendar.setCurrentYear({ year: today.getFullYear(), moveCursorTo: today });
+  }
 
   let shortStats: ShortStats | undefined;
 
@@ -120,6 +123,9 @@ export function createStatsPage(arg: createStatsPage_Argument) {
     statsComponent.firstDayOfWeek = DAY_NAMES_LOWERCASE_TRIPLET_ARRAY.findIndex(
       (names) => names.includes(dayName)
     );
+
+    // load stats of today
+    statsComponent.setDate(new Date());
   }
 
   function updateShortStats(_shortStats: ShortStats) {

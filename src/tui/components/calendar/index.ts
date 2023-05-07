@@ -49,7 +49,7 @@ import { makeCalendarElements } from "./util/make-elements";
 import { mergeWithDefaultCalendarStyles } from "./util/style";
 
 import { assert } from "handy-types";
-import { endOfDay, isSameDay } from "date-fns";
+import { endOfDay, isSameDay, isValid as isValidDate } from "date-fns";
 import { deepFreeze } from "common/util/other";
 import type { ReadonlyDeep, PartialDeep } from "type-fest";
 
@@ -123,6 +123,7 @@ export class Calendar {
 
   readonly #debug: Debug;
   readonly #renderScreen: () => void;
+  readonly #timerManager: TimerManagerInterface;
 
   // ---- States --------------
   #today = new Date();
@@ -150,6 +151,7 @@ export class Calendar {
   constructor(arg: Calendar_Argument) {
     this.#debug = arg.debug;
     this.#renderScreen = arg.renderScreen;
+    this.#timerManager = arg.timerManager;
 
     {
       const { additionalKeyBindings = {} } = arg;
@@ -171,7 +173,7 @@ export class Calendar {
         const newDate = new Date();
 
         if (isSameDay(newDate, this.#today)) {
-          arg.timerManager.clearTimeout(timerId);
+          this.#timerManager.clearTimeout(timerId);
         } else {
           this.#today = newDate;
           const year = this.#today.getFullYear();
@@ -187,7 +189,7 @@ export class Calendar {
         const msLeftBeforeNextDay =
           endOfDay(this.#today).getTime() - newDate.getTime();
 
-        timerId = arg.timerManager.setTimeout(
+        timerId = this.#timerManager.setTimeout(
           currentDateUpdater,
           msLeftBeforeNextDay + /* arbitrary offset */ 2000
         );
@@ -538,6 +540,18 @@ export class Calendar {
 
   // -------------------- Utils --------------------
 
+  #iterateYearDateMatrix(
+    yearDateMatrix: YearCalendarState["yearDateMatrix"],
+    callback: (arg: { cursor: Coordinate; date: Date | null }) => void
+  ) {
+    for (let y = 0; y < yearDateMatrix.length; y++) {
+      const row = yearDateMatrix[y];
+
+      for (let x = 0; x < row.length; x++)
+        callback({ cursor: { x, y }, date: row[x] });
+    }
+  }
+
   #yearMatrixCursorToMonthIndex(cursor: Coordinate) {
     return Math.floor(cursor.y / MONTH_DATE_MATRIX_INFO.NUM_OF_ROWS_IN_MONTH);
   }
@@ -551,7 +565,11 @@ export class Calendar {
   }
 
   // ------------ Updater Methods -------------------
-  setCurrentYear(arg: { year: number; range?: Partial<DateRange> }) {
+  setCurrentYear(arg: {
+    year: number;
+    range?: Partial<DateRange>;
+    moveCursorTo?: Date;
+  }) {
     const range = DateRangeSchema.parse(arg.range || {});
     this.#allowedRange = Object.freeze(range);
 
@@ -563,6 +581,25 @@ export class Calendar {
     this.#state[this.#currentYear] = this.#initYearCalendarState({
       year: this.#currentYear,
     });
+
+    if (arg.moveCursorTo && isValidDate(arg.moveCursorTo)) {
+      const { moveCursorTo } = arg;
+
+      let newCursor: Coordinate | null = null;
+      this.#iterateYearDateMatrix(
+        this.#state[this.#currentYear].yearDateMatrix,
+        ({ cursor, date }) => {
+          if (date && isSameDay(date, moveCursorTo)) newCursor = cursor;
+        }
+      );
+
+      if (newCursor) Object.assign(this.#cursor, newCursor);
+
+      this.#timerManager.setTimeout(() => {
+        this.#moveCursor({ step: 1, direction: "up" });
+        this.#moveCursor({ step: 1, direction: "down" });
+      }, 0);
+    }
 
     this.#renderCalenderContent({ renderScreen: true });
     this.#moveCursorToInitialPosition();
