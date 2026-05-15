@@ -5,4 +5,4 @@ dist/
 trash.*
 tags
 tags.lock
-
+target/
